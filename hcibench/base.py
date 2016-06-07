@@ -1,5 +1,6 @@
 from PyQt5 import QtCore, QtWidgets
 from hcibench import daq
+from hcibench import pipeline
 from hcibench.templates.baseui import Ui_BaseUI
 
 
@@ -19,6 +20,9 @@ class Plugin(QtWidgets.QWidget):
     @property
     def name(self):
         return self._name
+
+    def set_recorder(self, recorder):
+        self.recorder = recorder
 
     def setup_recorder(self):
         """
@@ -93,6 +97,7 @@ class BaseUI(QtWidgets.QMainWindow):
             otherwise it can be shown through the Utilities menu.
         """
         name = plugin.name
+        plugin.set_recorder(self.record_thread)
         self.utilities[name] = plugin
         action = self.ui.menuUtilities.addAction(name)
         action.setCheckable(True)
@@ -126,7 +131,7 @@ class BaseUI(QtWidgets.QMainWindow):
 
     def showEvent(self, event):
         if not self.record_thread.running:
-            self.record_thread.run()
+            self.record_thread.start()
 
     def closeEvent(self, event):
         if self.record_thread is not None:
@@ -149,12 +154,16 @@ class RecordThread(QtCore.QThread):
     updated = QtCore.pyqtSignal(object)
     disconnected = QtCore.pyqtSignal()
 
-    def __init__(self, daq, parent=None):
+    def __init__(self, daq, pipeline=None, parent=None):
         super(RecordThread, self).__init__(parent=parent)
         self.daq = daq
 
         self._running = False
-        self._pipeline = None
+
+        if pipeline is None:
+            self.pipeline = self._default_pipeline()
+        else:
+            self.pipeline = pipeline
 
     @property
     def pipeline(self):
@@ -162,13 +171,26 @@ class RecordThread(QtCore.QThread):
 
     @pipeline.setter
     def pipeline(self, pipeline):
+        was_running = False
+        if self._running:
+            was_running = True
+            self.kill()
+
         self._pipeline = pipeline
+
+        if was_running:
+            self.start()
+
+    def remove_pipeline(self):
+        self.pipeline = self._default_pipeline()
 
     @property
     def running(self):
         return self._running
 
     def run(self):
+        self._running = True
+
         if self._pipeline is not None:
             self._pipeline.clear()
 
@@ -181,17 +203,19 @@ class RecordThread(QtCore.QThread):
             try:
                 d = self.daq.read()
             except daq.DisconnectException:
-                self.error_sig.emit()
+                self.disconnected.emit()
                 return
 
-            if self.pipeline is not None:
-                y = self._pipeline.process(d)
-                self.prediction_sig.emit(y)
-
-            self.update_sig.emit(d)
+            if self._pipeline is not None:
+                self.updated.emit(self._pipeline.process(d))
+            else:
+                self.updated.emit(d)
 
         self.daq.stop()
 
     def kill(self):
         self._running = False
         self.wait()
+
+    def _default_pipeline(self):
+        return pipeline.Pipeline(pipeline.PipelineBlock())
