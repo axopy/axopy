@@ -1,8 +1,6 @@
-import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 
-from hcibench import pipeline
 from hcibench.base import Plugin
 
 
