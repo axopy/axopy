@@ -1,0 +1,5 @@
+[flake8]
+
+exclude = .git,.venv,__pycache__,hcibench/templates/*
+# E206: mising whitespace around arithmetic operator (personal taste)
+ignore = E226

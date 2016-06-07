@@ -1,0 +1,4 @@
+numpy
+scipy
+pyqt5
+git+https://github.com/pyqtgraph/pyqtgraph.git
