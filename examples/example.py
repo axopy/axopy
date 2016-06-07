@@ -11,6 +11,7 @@ if __name__ == '__main__':
 
     base = BaseUI(daq)
     base.install_utility(Plugin(), show=True)
+    base.install_utility(Plugin(name="Plugin2"))
 
     base.show()
     app.exec_()

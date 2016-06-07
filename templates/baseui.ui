@@ -41,6 +41,9 @@
       <property name="tabsClosable">
        <bool>false</bool>
       </property>
+      <property name="movable">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
    </layout>
@@ -51,7 +54,7 @@
      <x>0</x>
      <y>0</y>
      <width>1004</width>
-     <height>24</height>
+     <height>19</height>
     </rect>
    </property>
    <property name="defaultUp">

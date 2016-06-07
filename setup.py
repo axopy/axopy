@@ -8,7 +8,7 @@ def readme():
 setup(
     name='hcibench',
     version='0.1',
-    description='Human-computer interface experimentation library'
+    description='Human-computer interface experimentation library',
     long_description=readme(),
 
     classifiers=[

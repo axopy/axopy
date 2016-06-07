@@ -13,6 +13,8 @@ class Plugin(QtWidgets.QWidget):
 
         if name is None:
             self._name = self.__class__.__name__
+        else:
+            self._name = name
 
     @property
     def name(self):
@@ -30,10 +32,10 @@ class Plugin(QtWidgets.QWidget):
         """
         pass
 
-    def showEvent(self):
+    def showEvent(self, event):
         self.setup_recorder()
 
-    def hideEvent(self):
+    def hideEvent(self, event):
         self.dispose_recorder()
 
 
@@ -70,6 +72,10 @@ class BaseUI(QtWidgets.QMainWindow):
 
         self.setWindowTitle("hey")
 
+        self.utilities = {}
+        self.ui.menuUtilities.triggered[QtWidgets.QAction].connect(
+            self.on_utility_clicked)
+
         self.daq = daq
         self.record_thread = RecordThread(daq)
 
@@ -84,9 +90,14 @@ class BaseUI(QtWidgets.QMainWindow):
         show: bool, optional
             Specifies whether or not the plugin should be added as a tab
             automatically. If True, the plugin is added as a tab in the UI,
-            otherwise it can be shown through the view menu.
+            otherwise it can be shown through the Utilities menu.
         """
-        pass
+        name = plugin.name
+        self.utilities[name] = plugin
+        action = self.ui.menuUtilities.addAction(name)
+        action.setCheckable(True)
+        if show:
+            action.trigger()
 
     def install_session(self, plugin):
         """
@@ -102,6 +113,16 @@ class BaseUI(QtWidgets.QMainWindow):
             Any plugin extending the base Plugin class.
         """
         pass
+
+    def on_utility_clicked(self, action):
+        name = action.text()
+        if action.isChecked():
+            self.ui.tabWidget.addTab(self.utilities[name], name)
+            self.ui.tabWidget.setCurrentIndex(
+                self.ui.tabWidget.indexOf(self.utilities[name]))
+        else:
+            self.ui.tabWidget.removeTab(
+                self.ui.tabWidget.indexOf(self.utilities[name]))
 
     def showEvent(self, event):
         if not self.record_thread.running:
