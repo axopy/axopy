@@ -2,7 +2,7 @@
 *.pyc
 tags
 __pycache__
-/build
+build
 /dist
 /hcibench.egg-info
 /.venv
