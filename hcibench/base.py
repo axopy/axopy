@@ -24,6 +24,14 @@ class Plugin(QtWidgets.QWidget):
     def set_recorder(self, recorder):
         self.recorder = recorder
 
+    def set_central_widget(self, widget):
+        """
+        Convenience function for creating plugins with default QGridLayout.
+        """
+        layout = QtWidgets.QGridLayout()
+        layout.addWidget(widget)
+        self.setLayout(layout)
+
     def setup_recorder(self):
         """
         Register recorder callbacks.
