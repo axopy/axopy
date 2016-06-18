@@ -11,3 +11,4 @@ involving the use of electrophysiological signals, such as electromyography
    :hidden:
 
    pipeline
+   features
