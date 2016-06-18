@@ -1,9 +1,6 @@
 Pipeline
 ========
 
-Introduction
-------------
-
 The :mod:`hcibench.pipeline` module is a small infrastructure for processing
 data in a pipeline style. You create pipeline blocks, then connect them up with
 an efficient (but still readable) syntax.
@@ -39,8 +36,8 @@ the output types. You are responsible for ensuring that pipeline blocks can be
 connected as specified.
 
 Sometimes, you might want to pass the output of a block to some block structure
-*and* somewhere downstream. To handle this case, ``copper`` has
-a "pass-through" pipeline that you can use as a block within another pipeline::
+*and* somewhere downstream. To handle this case, there is a "pass-through"
+pipeline that you can use as a block within another pipeline::
 
     passthrough pipeline p ← (b, c):
 
@@ -139,3 +136,12 @@ example::
 Now, the call to ``process`` on the pipeline will input 3 to block ``a``, block
 ``a`` will add 1 then print ``FooBlock output is 4``, and then 4 will be passed
 to block ``b``, which will return 8.
+
+
+Common Pipeline Blocks
+----------------------
+
+Some common pipeline block implementations are included.
+
+.. automodule:: hcibench.pipeline.common
+   :members:

@@ -1,3 +1,8 @@
+"""
+Base classes for pipelines and pipeline blocks.
+"""
+
+
 class PipelineBlock(object):
 
     def __init__(self, name=None, hooks=None):
@@ -42,12 +47,12 @@ class Pipeline(PipelineBlock):
     output of block `a` is passed to both blocks `b` and `c`. The output of
     blocks `b` and `c` are then both passed to block `d`.
 
-    >>> from pygesture import pipeline
-    >>> a = pipeline.PipelineBlock()
-    >>> b = pipeline.PipelineBlock()
-    >>> c = pipeline.PipelineBlock()
-    >>> d = pipeline.PipelineBlock()
-    >>> p = pipeline.Pipeline([a, (b, c), d])
+    >>> from hcibench.pipeline import Pipeline, PipelineBlock
+    >>> a = PipelineBlock()
+    >>> b = PipelineBlock()
+    >>> c = PipelineBlock()
+    >>> d = PipelineBlock()
+    >>> p = Pipeline([a, (b, c), d])
 
     Blocks that are arranged to take multiple inputs (such as block `d` in the
     above example) should expect to take the corresponding number of inputs in
