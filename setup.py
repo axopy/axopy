@@ -37,8 +37,6 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'pyqtgraph',
-        'PyQt5'
     ],
 
     extras_require={}
