@@ -8,15 +8,78 @@ from ..util import ensure_2d, rolling_window
 
 
 class MAV(Feature):
-    """
-    Computes the mean absolute value of each signal.
+    """Computes the mean absolute value of each signal.
 
-    Literally the mean of the absolute value of the signal.
+    Mean absolute value is a popular feature for obtaining amplitude
+    information from EMG, especially in gesture classification contexts.
+
+    There is an optional windowing function applied to the rectified signal,
+    described as MAV1 and MAV2 in some references (e.g. [2]).
+
+    Parameters
+    ----------
+    weights : str or ndarray, optional
+        Weights to use. Possible values:
+
+            - 'mav' : all samples in the signal are weighted equally (default).
+            - 'mav1' : rectangular window with the middle half of the signal
+              receiving unit weight and the first and last quarters of the
+              signal receiving half weight.
+            - 'mav2' : similar to 'mav1', but weights on the first and last
+              quarters increase and decrease between 0 and 1 respectively,
+              forming a trapezoidal window.
+            - [ndarray] : user-supplied weights to apply. Must be a 1D array
+              with the same length as the signals received in the ``compute``
+              method.
+
+    References
+    ----------
+    .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
+           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
+    .. [2] A. Phinyomark, P. Phukpattaranont, and C. Limsakul, "Feature
+           Reduction and Selection for EMG Signal Classification," Expert
+           Systems with Applications, vol. 39, no. 8, pp. 7420–7431, 2012.
     """
+
+    def __init__(self, weights='mav'):
+        self.weights = weights
+
+        self._n = 0
 
     def compute(self, x):
         x = ensure_2d(x)
-        return np.mean(np.absolute(x), axis=1)
+
+        n = x.shape[1]
+        if n != self._n:
+            self._n = n
+            self._init_weights()
+
+        return np.mean(self._w * np.absolute(x), axis=1)
+
+    def _init_weights(self):
+        if self.weights == 'mav':
+            # unit weights
+            self._w = np.ones(self._n)
+        elif self.weights == 'mav1':
+            # rectangular window de-emphasizing first and last quarters
+            self._w = 0.5 * np.ones(self._n)
+            self._w[int(0.25 * self._n):int(0.75 * self._n)] = 1
+        elif self.weights == 'mav2':
+            # trapezoidal window de-emphasizing first and last quarters
+            self._w = np.ones(self._n)
+            r1 = np.arange(0, int(0.25 * self._n))
+            r2 = np.arange(int(0.75 * self._n), self._n)
+            self._w[r1] = 4 * r1 / self._n
+            self._w[r2] = 4 * (self._n - r2) / self._n
+        elif isinstance(self.weights, np.ndarray):
+            self._w = self.weights
+            if len(self._w) != self._n:
+                raise ValueError("Number of weights in custom window function "
+                                 "does not match input size.")
+        else:
+            raise ValueError("Weights not recognized: should be 'mav', "
+                             "'mav1', 'mav2', or a numpy array.")
 
 
 class WL(Feature):
@@ -24,6 +87,12 @@ class WL(Feature):
 
     Waveform length is the sum of the absolute value of the deltas between
     adjacent values (in time) of the signal.
+
+    References
+    ----------
+    .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
+           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     """
 
     def compute(self, x):
@@ -43,6 +112,12 @@ class ZC(Feature):
         A threshold for discriminating true zero crossings from those caused
         by low-level noise situated about zero. By default, no threshold is
         used, so every sign change in the signal is counted.
+
+    References
+    ----------
+    .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
+           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     """
 
     def __init__(self, threshold=0):
@@ -74,6 +149,12 @@ class SSC(Feature):
         caused by low-level noise fluctuating about a specific value. By
         default, no threshold is used, so every slope sign change in the signal
         is counted.
+
+    References
+    ----------
+    .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
+           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     """
 
     def __init__(self, threshold=0):
