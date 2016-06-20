@@ -1,5 +1,3 @@
 numpy
 scipy
-pyqt5
-h5py
 git+https://github.com/pyqtgraph/pyqtgraph.git
