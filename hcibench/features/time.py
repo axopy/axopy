@@ -8,13 +8,48 @@ from ..util import ensure_2d, rolling_window
 
 
 class MAV(Feature):
-    """Computes the mean absolute value of each signal.
+    r"""Computes the mean absolute value of each signal.
 
     Mean absolute value is a popular feature for obtaining amplitude
     information from EMG, especially in gesture classification contexts.
 
     There is an optional windowing function applied to the rectified signal,
-    described as MAV1 and MAV2 in some references (e.g. [2]).
+    described as MAV1 and MAV2 in some references (e.g. [2]). A custom
+    window can also be used. The general definition is given as:
+
+    .. math::
+
+        \text{MAV} = \frac{1}{N} \sum_{i=1}^{N} w_i |x_i|
+
+    Normal MAV does not use a windowing function, equivalent to setting all
+    :math:`w_i = 1`.
+
+    MAV1 refers to a rectangular window which de-emphasizes the beginning and
+    ending of an input window. The first quarter of the input samples receive
+    a weight of 0.5, the middle half of the input samples receive a weight of
+    1, and the final quarter recieves a weight of 0.5:
+
+    .. math::
+
+        w_i =
+        \begin{cases}
+            1,   & \frac{N}{4} \leq i \leq \frac{3N}{4} \\
+            0.5, & \text{otherwise}
+        \end{cases}
+
+    MAV2 uses a similar window structure to MAV1 (i.e. broken into first
+    quarter, middle half, and final quarter), but the window is trapezoidal
+    in shape, ramping from 0 to 1 over the first quarter and from 1 to 0 over
+    the last quarter:
+
+    .. math::
+
+        w_i =
+        \begin{cases}
+            1, & \frac{N}{4} \leq i \leq \frac{3N}{4} \\
+            \frac{4i}{N}, & i < \frac{N}{4} \\
+            \frac{4(N - i)}{N}, & i > \frac{3N}{4}
+        \end{cases}
 
     Parameters
     ----------
@@ -63,15 +98,16 @@ class MAV(Feature):
             self._w = np.ones(self._n)
         elif self.weights == 'mav1':
             # rectangular window de-emphasizing first and last quarters
-            self._w = 0.5 * np.ones(self._n)
-            self._w[int(0.25 * self._n):int(0.75 * self._n)] = 1
+            self._w = np.ones(self._n)
+            self._w[:int(np.ceil(0.25 * self._n)) - 1] = 0.5
+            self._w[int(np.floor(0.75 * self._n)):] = 0.5
         elif self.weights == 'mav2':
             # trapezoidal window de-emphasizing first and last quarters
             self._w = np.ones(self._n)
-            r1 = np.arange(0, int(0.25 * self._n))
-            r2 = np.arange(int(0.75 * self._n), self._n)
-            self._w[r1] = 4 * r1 / self._n
-            self._w[r2] = 4 * (self._n - r2) / self._n
+            r1 = np.arange(0, int(np.ceil(0.25 * self._n)) - 1)
+            r2 = np.arange(int(np.floor(0.75 * self._n)), self._n)
+            self._w[r1] = 4 * (r1 + 1) / self._n
+            self._w[r2] = 4 * (self._n - (r2 + 1)) / self._n
         elif isinstance(self.weights, np.ndarray):
             self._w = self.weights
             if len(self._w) != self._n:

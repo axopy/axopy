@@ -4,7 +4,6 @@ from numpy.testing import assert_equal
 from hcibench.features import MAV, WL, ZC, SSC
 
 
-# TODO: test mav1 and mav2 weight constructions
 class TestMAV(TestCase):
 
     def test_mav(self):
@@ -13,6 +12,32 @@ class TestMAV(TestCase):
         truth = np.array([1, 2])
 
         _assert_match(truth, mav, x)
+
+    def test_mav1(self):
+        mav = MAV(weights='mav1')
+
+        x = np.zeros(8)
+        mav.compute(x)
+        weights = np.array([0.5, 1, 1, 1, 1, 1, 0.5, 0.5])
+        assert_equal(mav._w, weights)
+
+        x = np.zeros(9)
+        mav.compute(x)
+        weights = np.array([0.5, 0.5, 1, 1, 1, 1, 0.5, 0.5, 0.5])
+        assert_equal(mav._w, weights)
+
+    def test_mav2(self):
+        mav = MAV(weights='mav2')
+
+        x = np.zeros(8)
+        mav.compute(x)
+        weights = np.array([0.5, 1, 1, 1, 1, 1, 0.5, 0])
+        assert_equal(mav._w, weights)
+
+        x = np.zeros(9)
+        mav.compute(x)
+        weights = np.array([4/9., 8/9., 1, 1, 1, 1, 8/9., 4/9., 0])
+        assert_equal(mav._w, weights)
 
     def test_custom_weights(self):
         x = np.ones((4, 10))
@@ -76,5 +101,6 @@ class TestSSC(TestCase):
 
 
 def _assert_match(truth, feature, data):
+    """Numerically checks input/output with both 2D and 1D input arrays."""
     assert_equal(truth, feature.compute(data))
     assert_equal(truth[0], feature.compute(data[0]))
