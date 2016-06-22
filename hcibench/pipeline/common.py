@@ -9,7 +9,8 @@ from .base import PipelineBlock
 
 
 class Windower(PipelineBlock):
-    """
+    """Windows incoming data to specific length and overlap.
+
     Takes new input data and combines with past data to maintain a sliding
     window with overlap. It is assumed that the input to this block has length
     (length-overlap).
@@ -18,8 +19,9 @@ class Windower(PipelineBlock):
     ----------
     length : int
         Total number of samples to output on each iteration.
-    overlap : int, default=0
+    overlap : int, optional
         Number of samples from previous input to keep in the current window.
+        Default is 0, which means there is no overlap between updates.
     """
 
     def __init__(self, length, overlap=0):
@@ -49,8 +51,12 @@ class Windower(PipelineBlock):
 
 
 class Filter(PipelineBlock):
-    """
-    Filters incoming data, accounting for initial conditions.
+    """Filters incoming data with a time domain filter.
+
+    This filter implementation takes filter coefficients that are designed
+    by the user -- it merely applies the filter to the input, remembering the
+    final inputs/outputs from the previous update and using them as initial
+    conditions for the current update.
 
     Parameters
     ----------
@@ -62,6 +68,8 @@ class Filter(PipelineBlock):
     overlap : int, optional
         Number of samples overlapping in consecutive inputs. Needed for
         correct filter initial conditions in each filtering operation.
+        Default is 0, meaning the final inputs/outputs of the previous update
+        are used.
     """
 
     def __init__(self, b, a=1, overlap=0):
@@ -73,10 +81,22 @@ class Filter(PipelineBlock):
         self.clear()
 
     def clear(self):
+        """Clears the filter initial conditions.
+
+        Clearing the initial conditions is important when starting a new
+        recording.
+        """
         self.x_prev = None
         self.y_prev = None
 
     def process(self, data):
+        """Applies the filter to the input.
+
+        Parameters
+        ----------
+        data : ndarray, shape (n_channels, n_samples)
+            Input signals.
+        """
         if self.x_prev is None:
             # first pass has no initial conditions
             out = signal.lfilter(
@@ -100,3 +120,42 @@ class Filter(PipelineBlock):
         self.x_prev = data
         self.y_prev = out
         return out
+
+
+class FeatureExtractor(PipelineBlock):
+    """Computes multiple features from the input, concatenating the results.
+
+    Parameters
+    ----------
+    features : list
+        List of Feature objects (i.e. implementing a ``compute`` method).
+
+    """
+
+    def __init__(self, features):
+        super(FeatureExtractor, self).__init__()
+        self.features = features
+
+
+class Estimator(PipelineBlock):
+    """A pipeline block wrapper around scikit-learn's idea of an estimator.
+
+    An estimator is an object that can be trained with some data (``fit``) and,
+    once trained, can output predictions from novel inputs. A common use-case
+    for this block is to utilize a scikit-learn pipeline in the context of a
+    hcibench pipeline.
+
+    Parameters
+    ----------
+    estimator : object
+        An object implementing the scikit-learn Estimator interface (i.e.
+        implementing ``fit`` and ``predict`` methods).
+    """
+
+    def __init__(self, estimator):
+        super(Estimator, self).__init__()
+        self.estimator = estimator
+
+    def process(self, data):
+        """Calls the estimator's ``predict`` method and returns the result."""
+        return self.estimator.predict(data)

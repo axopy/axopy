@@ -1,6 +1,103 @@
 Pipeline
 ========
 
+A pipeline is a series of processing routines for transforming raw input data
+(e.g. electrophysiological data such as EMG) into useful output, such as the
+velocity of a cursor on the screen. These routines can usually be broken down
+into blocks which have common functionality.
+
+Common Blocks
+-------------
+
+The typical picture for an electrophysiological signal processing pipeline
+looks something like::
+
+             Input
+               ↓
+    ┌──────────────────────┐
+    │       Windowing      │
+    └──────────────────────┘
+               ↓
+    ┌──────────────────────┐
+    │     Conditioning     │
+    └──────────────────────┘
+               ↓
+    ┌──────────────────────┐
+    │  Feature Extraction  │
+    └──────────────────────┘
+               ↓
+    ┌──────────────────────┐
+    │  Intent Recognition  │
+    └──────────────────────┘
+               ↓
+    ┌──────────────────────┐
+    │    Output Mapping    │
+    └──────────────────────┘
+               ↓
+             Output
+
+Each block in this example is really a *type* of processing block, and the
+actual processing involved in each can vary. hcibench implements some of the
+common cases, but creating custom blocks and connecting them together in a
+pipeline structure is simple. Also, the picture above shows a simple series
+structure, where each block takes input only from the block before it. More
+complex structures are sometimes convenient or necessary, and some complexity
+is implemented by :mod:`hcibench.pipeline`.
+
+Windowing
+^^^^^^^^^
+
+Windowing involves specifying a time window over which the rest of the pipeline
+will operate. That is, a windower keeps track of the current input data and
+optionally some data from the past, concatentating the two and passing it
+along. This is useful for calculating statistics over a sufficient sample
+size while updating the pipeline output at a rapid rate, achieved by
+overlapping windows. In an offline processing context (i.e. processing static
+recordings), windowing also specifies how much data to read in on each
+iteration through the recording.
+
+.. autoclass:: hcibench.pipeline.Windower
+   :members:
+
+Conditioning
+^^^^^^^^^^^^
+
+Raw data conditioning (or pre-processing) usually involves things like
+filtering and normalization. Usually the output of a conditioning block does
+not fundamentally change the representation of the input.
+
+.. autoclass:: hcibench.pipeline.Filter
+   :members:
+
+Feature Extraction
+^^^^^^^^^^^^^^^^^^
+
+Features are statistics computed on a window of input data. Generally, they
+should represent the information contained in the raw input in a compact way.
+A feature extractor is just a collection of features to compute from the
+input. hcibench implements a small sampling of some :doc:`common features
+</features>`.
+
+.. autoclass:: hcibench.pipeline.FeatureExtractor
+   :members:
+
+Intent Recognition
+^^^^^^^^^^^^^^^^^^
+
+Intent recognition is the prediction or estimation of what the user intends to
+do based on the signals generated. An example would be a large signal sensed at
+the group of extensor muscles in the forearm for communicating "wrist
+extension." Sometimes this mapping can be specified a priori, but most of the
+time we rely on machine learning techniques to infer this mapping from training
+data.
+
+.. autoclass:: hcibench.pipeline.Estimator
+   :members:
+
+
+Connecting Blocks
+-----------------
+
 The :mod:`hcibench.pipeline` module is a small infrastructure for processing
 data in a pipeline style. You create pipeline blocks, then connect them up with
 an efficient (but still readable) syntax.
@@ -136,12 +233,3 @@ example::
 Now, the call to ``process`` on the pipeline will input 3 to block ``a``, block
 ``a`` will add 1 then print ``FooBlock output is 4``, and then 4 will be passed
 to block ``b``, which will return 8.
-
-
-Common Pipeline Blocks
-----------------------
-
-Some common pipeline block implementations are included.
-
-.. automodule:: hcibench.pipeline.common
-   :members:
