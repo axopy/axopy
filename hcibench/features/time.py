@@ -1,5 +1,9 @@
 """
 Time-domain features.
+
+Notation:
+    - :math:`x_i` : value of a signal at time index :math:`i`
+    - :math:`N` : length of the signal
 """
 
 import numpy as np
@@ -17,9 +21,7 @@ class MAV(Feature):
     described as MAV1 and MAV2 in some references (e.g. [2]). A custom
     window can also be used. The general definition is given as:
 
-    .. math::
-
-        \text{MAV} = \frac{1}{N} \sum_{i=1}^{N} w_i |x_i|
+    .. math:: \text{MAV} = \frac{1}{N} \sum_{i=1}^{N} w_i |x_i|
 
     Normal MAV does not use a windowing function, equivalent to setting all
     :math:`w_i = 1`.
@@ -30,7 +32,6 @@ class MAV(Feature):
     1, and the final quarter recieves a weight of 0.5:
 
     .. math::
-
         w_i =
         \begin{cases}
             1,   & \frac{N}{4} \leq i \leq \frac{3N}{4} \\
@@ -43,7 +44,6 @@ class MAV(Feature):
     the last quarter:
 
     .. math::
-
         w_i =
         \begin{cases}
             1, & \frac{N}{4} \leq i \leq \frac{3N}{4} \\
@@ -119,10 +119,12 @@ class MAV(Feature):
 
 
 class WL(Feature):
-    """Computes the waveform length of each signal.
+    r"""Computes the waveform length of each signal.
 
     Waveform length is the sum of the absolute value of the deltas between
-    adjacent values (in time) of the signal.
+    adjacent values (in time) of the signal:
+
+    .. math:: \text{WL} = \sum_{i=1}^{N-1} | x_{i+1} - x_i |
 
     References
     ----------
@@ -140,7 +142,8 @@ class ZC(Feature):
     """Computes the number of zero crossings of each signal.
 
     A zero crossing occurs when two adjacent values (in time) of the signal
-    have opposite sign.
+    have opposite sign. A threshold is used to mitigate the effect of noise
+    around zero. It is used as a measure of frequency information.
 
     Parameters
     ----------
@@ -208,3 +211,17 @@ class SSC(Feature):
                     np.absolute(
                         np.diff(x, axis=1)), 2), axis=-1) > self.threshold),
             axis=1)
+
+
+class RMS(Feature):
+    r"""Computes the root mean square of each signal.
+
+    RMS is a commonly used feature for extracting amplitude information from
+    physiological signals.
+
+    .. math:: \text{RMS} = \sqrt{\frac{1}{N} \sum_{i=1}^N x_i^2}
+    """
+
+    def compute(self, x):
+        x = ensure_2d(x)
+        return np.sqrt(np.mean(np.square(x), axis=1))

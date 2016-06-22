@@ -1,7 +1,7 @@
 import numpy as np
 from unittest import TestCase
 from numpy.testing import assert_equal
-from hcibench.features import MAV, WL, ZC, SSC
+from hcibench.features import MAV, WL, ZC, SSC, RMS
 
 
 class TestMAV(TestCase):
@@ -98,6 +98,15 @@ class TestSSC(TestCase):
 
         _assert_match(truth_nothresh, self.ssc_nothresh, x)
         _assert_match(truth_thresh, self.ssc_thresh, x)
+
+
+class TestRMS(TestCase):
+
+    def test(self):
+        x = np.array([[1, -1, 1, -1], [2, 4, 0, 0]])
+        truth = np.array([1., np.sqrt(5)])
+        rms = RMS()
+        _assert_match(truth, rms, x)
 
 
 def _assert_match(truth, feature, data):
