@@ -4,7 +4,7 @@ data processing and implements some common types of processing blocks.
 """
 
 from .base import PipelineBlock, Pipeline, PassthroughPipeline
-from .common import Windower, Filter, FeatureExtractor, Estimator
+from .common import Windower, Filter, FeatureExtractor, Estimator, Transformer
 
 __all__ = ['PipelineBlock',
            'Pipeline',
@@ -12,4 +12,5 @@ __all__ = ['PipelineBlock',
            'Windower',
            'Filter',
            'FeatureExtractor',
-           'Estimator']
+           'Estimator',
+           'Transformer']

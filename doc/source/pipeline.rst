@@ -94,6 +94,8 @@ data.
 .. autoclass:: hcibench.pipeline.Estimator
    :members:
 
+.. autoclass:: hcibench.pipeline.Transformer
+
 
 Connecting Blocks
 -----------------

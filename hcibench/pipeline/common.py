@@ -125,16 +125,48 @@ class Filter(PipelineBlock):
 class FeatureExtractor(PipelineBlock):
     """Computes multiple features from the input, concatenating the results.
 
+    Each feature should be able to take in the same data and output a 1D array,
+    so overall output of the FeatureExtractor can be a single 1D array.
+
     Parameters
     ----------
     features : list
-        List of Feature objects (i.e. implementing a ``compute`` method).
+        List of (name, feature) tuples (i.e. implementing a ``compute``
+        method).
 
+    Attributes
+    ----------
+    named_features : dict
+        Dictionary of features accessed by name.
     """
 
     def __init__(self, features):
         super(FeatureExtractor, self).__init__()
         self.features = features
+
+        self._output = None
+
+    @property
+    def named_features(self):
+        return dict(self.features)
+
+    def clear(self):
+        """Clears the output array.
+
+        This should be called if the input is going to change form in some
+        way (i.e. the shape of the input array changes).
+        """
+        self._output = None
+
+    def process(self, data):
+        """Run data through the list of features.
+
+        Parameters
+        ----------
+        data : array
+            Input data. Must be appropriate for all features.
+        """
+        pass
 
 
 class Estimator(PipelineBlock):
@@ -159,3 +191,28 @@ class Estimator(PipelineBlock):
     def process(self, data):
         """Calls the estimator's ``predict`` method and returns the result."""
         return self.estimator.predict(data)
+
+
+class Transformer(PipelineBlock):
+    """A pipeline block wrapper around scikit-learn's idea of a transformer.
+
+    A transformer is trained with some data (``fit``) and, once trained, can
+    output projections of the input data to some other space. A common example
+    is projecting data in high-dimensional space to a lower-dimensional space
+    using principal components analysis.
+
+    Parameters
+    ----------
+    transformer : object
+        An object implementing the scikit-learn Transformer interface (i.e.
+        implementing ``fit`` and ``transform`` methods).
+    """
+
+    def __init__(self, transformer):
+        super(Transformer, self).__init__()
+        self.transformer = transformer
+
+    def process(self, data):
+        """Calls the transformer's ``transform`` method and returns the result.
+        """
+        return self.transformer.transform(data)
