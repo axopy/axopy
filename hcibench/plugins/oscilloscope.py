@@ -1,9 +1,9 @@
-from hcibench.base import Plugin
+from hcibench.base import TaskUI
 
 from hcibench.templates.oscilloscope import Ui_Oscilloscope
 
 
-class Oscilloscope(Plugin):
+class Oscilloscope(TaskUI):
     """
     Simple oscilloscope-like plugin for viewing signals in real-time.
 

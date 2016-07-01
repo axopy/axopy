@@ -4,13 +4,13 @@ from hcibench import pipeline
 from hcibench.templates.baseui import Ui_BaseUI
 
 
-class Plugin(QtWidgets.QWidget):
+class TaskUI(QtWidgets.QWidget):
     """
-    Base plugin that does nothing.
+    Base task that does nothing.
     """
 
     def __init__(self, name=None, parent=None):
-        super(Plugin, self).__init__(parent)
+        super(TaskUI, self).__init__(parent)
 
         if name is None:
             self._name = self.__class__.__name__
@@ -55,87 +55,90 @@ class BaseUI(QtWidgets.QMainWindow):
     """
     The base user interface for running experiments.
 
-    Plugins are installed and can be instantiated through the base UI. When a
-    plugin becomes visible, it has access to the data acquisition thread and
-    receives callbacks when new data becomes available. When the plugin is
-    hidden or closed, the data acquisition events go back to the base UI.
-
-    There are two types of plugins that can be added. There are "experiment"
-    plugins, which typically read from the DAQ, do some processing, possibly
-    interact with an external program, and record data. Experiment plugins
-    tend to be complex and you usually don't want to navigate away from them
-    once they start running.
-
-    There are also "utility" plugins, which tend to be simpler. An example is
-    an oscilloscope for viewing raw DAQ signals. You usually keep these open
-    as tabs in the base UI and switch to them as needed.
-
     Parameters
     ----------
     daq : Daq
         Data acquisition device.
+    participant_dialog : class, optional
+        A class derived from NewParticipantDialog. By default, a simple dialog
+        is shown which contains a single entry for the participant ID.
     """
 
-    def __init__(self, daq, parent=None):
+    def __init__(self, daq, database, participant_dialog=None, parent=None):
         super(BaseUI, self).__init__(parent)
 
         self.ui = Ui_BaseUI()
         self.ui.setupUi(self)
 
-        self.setWindowTitle("hey")
-
-        self.utilities = {}
-        self.ui.menuUtilities.triggered[QtWidgets.QAction].connect(
-            self.on_utility_clicked)
-
         self.daq = daq
         self.record_thread = RecordThread(daq)
 
-    def install_utility(self, plugin, show=False):
-        """
-        Add a plugin to the UI.
+        self.database = database
+        for p in self.database.get_participants():
+            self.ui.listWidget.addItem(p)
 
-        Parameters
-        ----------
-        plugin : Plugin
-            Any plugin extending the base Plugin class.
-        show: bool, optional
-            Specifies whether or not the plugin should be added as a tab
-            automatically. If True, the plugin is added as a tab in the UI,
-            otherwise it can be shown through the Utilities menu.
-        """
-        name = plugin.name
-        plugin.set_recorder(self.record_thread)
-        self.utilities[name] = plugin
-        action = self.ui.menuUtilities.addAction(name)
-        action.setCheckable(True)
-        if show:
-            action.trigger()
-
-    def install_session(self, plugin):
-        """
-        Add a session to the UI.
-
-        The session is registered with the BaseUI, so that when the File->New
-        action is triggered, the session is a choice in the resulting "new
-        session dialog".
-
-        Parameters
-        ----------
-        session : Plugin
-            Any plugin extending the base Plugin class.
-        """
-        pass
-
-    def on_utility_clicked(self, action):
-        name = action.text()
-        if action.isChecked():
-            self.ui.tabWidget.addTab(self.utilities[name], name)
-            self.ui.tabWidget.setCurrentIndex(
-                self.ui.tabWidget.indexOf(self.utilities[name]))
+        if participant_dialog is None:
+            self.participant_dialog = NewParticipantDialog
         else:
-            self.ui.tabWidget.removeTab(
-                self.ui.tabWidget.indexOf(self.utilities[name]))
+            self.participant_dialog = participant_dialog
+
+        self.tasks = {}
+
+        self.ui.newParticipantButton.clicked.connect(self._on_new_participant)
+
+    @property
+    def participant_dialog(self):
+        return self._participant_dialog
+
+    @participant_dialog.setter
+    def participant_dialog(self, dialog):
+        self._participant_dialog = dialog
+
+    def install_task(self, task):
+        """
+        Add a task to the UI.
+
+        Parameters
+        ----------
+        task: TaskUI
+            Any task extending the base TaskUI class.
+        """
+        name = task.name
+        task.set_recorder(self.record_thread)
+        self.tasks[name] = task
+        self.ui.tabWidget.addTab(task, name)
+
+    def _on_new_participant(self):
+        dialog = self.participant_dialog(self)
+        if not dialog.exec_():
+            return
+
+        data = dialog.get_data()
+        pid = data['pid']
+
+        # make sure a participant ID was entered
+        if pid == '':
+            QtWidgets.QMessageBox().warning(
+                self,
+                "Warning",
+                "Participant ID must not be empty.",
+                QtWidgets.QMessageBox.Ok)
+            return
+
+        # make sure the participant ID doesn't already exist
+        found = self.ui.listWidget.findItems(pid, QtCore.Qt.MatchExactly)
+        if found:
+            # participant ID already in database, select and show warning
+            match = found[0]
+            self.ui.listWidget.setCurrentItem(match)
+            QtWidgets.QMessageBox().warning(
+                self,
+                "Warning",
+                "Participant '{}' already exists in data file.".format(pid),
+                QtWidgets.QMessageBox.Ok)
+            return
+
+        self.ui.listWidget.addItem(pid)
 
     def showEvent(self, event):
         if not self.record_thread.running:
@@ -144,6 +147,61 @@ class BaseUI(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         if self.record_thread is not None:
             self.record_thread.kill()
+
+
+class NewParticipantDialog(QtWidgets.QDialog):
+    """
+    A very simple QDialog for getting a participant ID from the operator.
+
+    This class is intentionally easy to extend so experiments can specify
+    additional participant attributes to input. Define a class which inherits
+    from this one and specify the class attribute ``attributes``, which should
+    be a list of tuples ``('attribute_id', 'Attribute Label')``.  The attribute
+    ID is used as the key to retrieving the input once the dialog is accepted,
+    and the attribute label is what's shown in the dialog.
+
+    Examples
+    --------
+    >>> from hcibench.base import NewParticipantDialog
+    >>> class CustomDialog(NewParticipantDialog):
+    ...     attributes = [('handedness', 'Handedness'),
+    ...                   ('gender', 'Gender')]
+    """
+
+    attributes = []
+
+    def __init__(self, parent=None):
+        super(NewParticipantDialog, self).__init__(parent=parent)
+
+        self._init_ui()
+
+    def _init_ui(self):
+        self.form_layout = QtWidgets.QFormLayout()
+        self.line_edits = {}
+
+        attrs = list(self.attributes)
+        attrs.insert(0, ('pid', 'Participant ID'))
+        for attr, label in attrs:
+            edit = QtWidgets.QLineEdit()
+            self.line_edits[attr] = edit
+            self.form_layout.addRow(label, edit)
+
+        button_box = QtWidgets.QDialogButtonBox()
+        button_box.setOrientation(QtCore.Qt.Horizontal)
+        button_box.setStandardButtons(
+            QtWidgets.QDialogButtonBox.Cancel |
+            QtWidgets.QDialogButtonBox.Ok)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(self.form_layout)
+        layout.addWidget(button_box)
+        self.setLayout(layout)
+
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+
+    def get_data(self):
+        return {a: str(e.text()) for a, e in self.line_edits.items()}
 
 
 class RecordThread(QtCore.QThread):

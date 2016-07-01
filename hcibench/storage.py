@@ -1,13 +1,5 @@
 """
 Basic data storage framework backed by h5py.
-
-group[root]
-    group[participants]
-        group[p<pid>]
-            group[<experiment_id>]
-                dataset[...]
-                dataset[...]
-    group[misc]
 """
 
 import h5py
@@ -34,18 +26,16 @@ class ExperimentDatabase(h5py.File):
     def require_experiment(self, pid, name):
         return self.require_group(experiment_path(pid, name))
 
+    def get_participants(self):
+        return list(self[participants_path()].keys())
 
-class ExperimentBase(object):
 
-    def __init__(self, group):
-        self.group = group
-
-    def create_session(self, name):
-        return self.group.create_group(new_session_name(name))
+def participants_path():
+    return '/participants'
 
 
 def participant_path(pid):
-    return '/participants/{}'.format(pid)
+    return '{}/{}'.format(participants_path(), pid)
 
 
 def experiment_path(pid, experiment_id):
