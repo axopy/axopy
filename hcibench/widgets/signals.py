@@ -1,3 +1,7 @@
+"""
+Widgets for plotting multi-channel signals.
+"""
+
 import pyqtgraph
 
 

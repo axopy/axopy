@@ -2,8 +2,8 @@ from PyQt5 import QtWidgets, QtGui
 
 from hcibench.base import BaseUI, TaskUI, NewParticipantDialog
 from hcibench.storage import ExperimentDatabase
-from hcibench.plugins import Oscilloscope
 from hcibench.daq import Daq
+from hcibench.experiments import Oscilloscope
 
 
 class CustomParticipantDialog(NewParticipantDialog):

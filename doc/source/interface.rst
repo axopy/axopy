@@ -15,6 +15,25 @@ but a full experiment implementation will most likely involve one or more
 custom task UI classes.
 
 
+Built-In Widgets
+----------------
+
+Some Qt widgets which do or display common things are built in to make the
+process of prototyping an experiment efficient.
+
+Prompts
+^^^^^^^
+
+.. automodule:: hcibench.widgets.prompts
+   :members:
+
+Signals
+^^^^^^^
+
+.. automodule:: hcibench.widgets.signals
+   :members:
+
+
 .. _Qt: https://www.qt.io/
 .. _PyQt5: https://www.riverbankcomputing.com/software/pyqt/intro
 .. _QMainWindow: https://doc.qt.io/qt-5/qmainwindow.html

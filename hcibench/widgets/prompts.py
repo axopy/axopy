@@ -1,7 +1,11 @@
+"""
+Some common widgets for prompting subject response.
+"""
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class ImageLabel(QtWidgets.QLabel):
+class ImagePrompt(QtWidgets.QLabel):
     """
     Displays an image (QPixmap), centered and fit to the containing widget.
     """
@@ -18,11 +22,22 @@ class ImageLabel(QtWidgets.QLabel):
         self.setPixmap(QtGui.QPixmap(path))
 
     def setPixmap(self, pixmap):
+        """
+        Overrides the QLabel method. Can be called directly.
+
+        Parameters
+        ----------
+        pixmap : QPixmap
+            The image to fill the label.
+        """
         self._pixmap_src = pixmap
         self._pixmap = pixmap
         self.repaint()
 
     def paintEvent(self, event):
+        """
+        Overrides the QLabel method. Shouldn't need to be called directly.
+        """
         super().paintEvent(event)
 
         if self._pixmap_src is None:
@@ -38,7 +53,7 @@ class ImageLabel(QtWidgets.QLabel):
         painter.drawPixmap(x, y, self._pixmap)
 
 
-class PromptProgressBar(QtWidgets.QProgressBar):
+class AnnotatedProgressBar(QtWidgets.QProgressBar):
     """
     A custom QProgressBar which paints tick marks and a highlight bar over the
     base bar. The ticks can be used, for instance, for indicating the number
@@ -47,7 +62,7 @@ class PromptProgressBar(QtWidgets.QProgressBar):
     """
 
     def __init__(self, parent=None):
-        super(PromptProgressBar, self).__init__(parent)
+        super(AnnotatedProgressBar, self).__init__(parent)
 
         self.value = 0
         self._ticks = 1

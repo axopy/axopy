@@ -1,7 +1,5 @@
 from hcibench.base import TaskUI
-
-from hcibench.templates.oscilloscope import Ui_Oscilloscope
-
+from hcibench.widgets import OscilloscopeWidget
 
 class Oscilloscope(TaskUI):
     """
@@ -20,10 +18,10 @@ class Oscilloscope(TaskUI):
     def __init__(self, pipeline=None, name=None):
         super(Oscilloscope, self).__init__(name=name)
 
-        self.ui = Ui_Oscilloscope()
-        self.ui.setupUi(self)
-
         self.pipeline = pipeline
+
+        self.oscope_widget = OscilloscopeWidget()
+        self.set_central_widget(self.oscope_widget)
 
     def setup_recorder(self):
         if self.pipeline is None:
@@ -36,4 +34,4 @@ class Oscilloscope(TaskUI):
         self.recorder.updated.disconnect(self.on_recorder_update)
 
     def on_recorder_update(self, data):
-        self.ui.graphicsLayout.add_window(data)
+        self.oscope_widget.add_window(data)
