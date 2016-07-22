@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from hcibench import daq
 from hcibench import pipeline
 from hcibench.templates.baseui import Ui_BaseUI
@@ -70,6 +70,12 @@ class BaseUI(QtWidgets.QMainWindow):
         self.ui = Ui_BaseUI()
         self.ui.setupUi(self)
 
+        # set up Ctrl+PgUp and Ctrl+PgDown shortcuts for changing tabs
+        nt = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self)
+        nt.activated.connect(self._on_next_tab)
+        pt = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self)
+        pt.activated.connect(self._on_prev_tab)
+
         self.daq = daq
         self.record_thread = RecordThread(daq)
 
@@ -139,6 +145,19 @@ class BaseUI(QtWidgets.QMainWindow):
             return
 
         self.ui.listWidget.addItem(pid)
+
+    def _on_next_tab(self):
+        print("hey")
+        i = self.ui.tabWidget.currentIndex() + 1
+        if i == self.ui.tabWidget.count():
+            i = 0
+        self.ui.tabWidget.setCurrentIndex(i)
+
+    def _on_prev_tab(self):
+        i = self.ui.tabWidget.currentIndex() - 1
+        if i == -1:
+            i = self.ui.tabWidget.count() - 1
+        self.ui.tabWidget.setCurrentIndex(i)
 
     def showEvent(self, event):
         if not self.record_thread.running:

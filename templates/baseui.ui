@@ -127,7 +127,7 @@
      <x>0</x>
      <y>0</y>
      <width>665</width>
-     <height>19</height>
+     <height>26</height>
     </rect>
    </property>
    <property name="defaultUp">
@@ -155,38 +155,6 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
-   </property>
-  </action>
-  <action name="actionNew">
-   <property name="checkable">
-    <bool>false</bool>
-   </property>
-   <property name="icon">
-    <iconset theme="document-new">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;New</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+N</string>
-   </property>
-  </action>
-  <action name="actionOpen">
-   <property name="icon">
-    <iconset theme="document-open">
-     <normaloff>.</normaloff>.</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Open</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
-  <action name="actionStart_Task">
-   <property name="text">
-    <string>Start Task</string>
    </property>
   </action>
  </widget>
