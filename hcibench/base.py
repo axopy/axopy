@@ -9,18 +9,6 @@ class TaskUI(QtWidgets.QWidget):
     Base task that does nothing.
     """
 
-    def __init__(self, name=None, parent=None):
-        super(TaskUI, self).__init__(parent)
-
-        if name is None:
-            self._name = self.__class__.__name__
-        else:
-            self._name = name
-
-    @property
-    def name(self):
-        return self._name
-
     def set_recorder(self, recorder):
         self.recorder = recorder
 
@@ -49,6 +37,9 @@ class TaskUI(QtWidgets.QWidget):
 
     def hideEvent(self, event):
         self.dispose_recorder()
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class BaseUI(QtWidgets.QMainWindow):
@@ -109,7 +100,7 @@ class BaseUI(QtWidgets.QMainWindow):
         task: TaskUI
             Any task extending the base TaskUI class.
         """
-        name = task.name
+        name = str(task)
         task.set_recorder(self.record_thread)
         self.tasks[name] = task
         self.ui.tabWidget.addTab(task, name)

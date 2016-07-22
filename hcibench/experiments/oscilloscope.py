@@ -1,6 +1,7 @@
 from hcibench.base import TaskUI
 from hcibench.widgets import OscilloscopeWidget
 
+
 class Oscilloscope(TaskUI):
     """
     Simple oscilloscope-like plugin for viewing signals in real-time.
@@ -15,8 +16,8 @@ class Oscilloscope(TaskUI):
         Name of the plugin. If None, uses the class name.
     """
 
-    def __init__(self, pipeline=None, name=None):
-        super(Oscilloscope, self).__init__(name=name)
+    def __init__(self, pipeline=None):
+        super(Oscilloscope, self).__init__()
 
         self.pipeline = pipeline
 
