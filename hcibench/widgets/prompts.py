@@ -10,6 +10,11 @@ class ImagePrompt(QtWidgets.QLabel):
     Displays an image (QPixmap), centered and fit to the containing widget.
     """
 
+    def __init__(self, parent=None):
+        super(ImagePrompt, self).__init__(parent)
+        self._pixmap_src = None
+        self._pixmap = None
+
     def set_image(self, path):
         """
         Convenience method for setting the image by path.
@@ -51,6 +56,48 @@ class ImagePrompt(QtWidgets.QLabel):
 
         painter = QtGui.QPainter(self)
         painter.drawPixmap(x, y, self._pixmap)
+
+
+class ImageDeck(ImagePrompt):
+    """
+
+    Parameters
+    ----------
+    image_paths : dict
+        Dictionary mapping image names to their paths.
+    """
+
+    def __init__(self, image_paths, parent=None):
+        super(ImageDeck, self).__init__(parent=parent)
+        self.image_paths = image_paths
+        self.pixmaps = {k: QtGui.QPixmap(v) for k, v in image_paths.items()}
+
+    def set_image(self, name):
+        self.setPixmap(self.pixmaps[name])
+
+
+class LabelDeck(QtWidgets.QLabel):
+    """
+    Parameters
+    ----------
+    labels : dict
+        Dictionary mapping label names to the text to show.
+    """
+
+    def __init__(self, labels, parent=None):
+        super(LabelDeck, self).__init__(parent)
+        self.labels = labels
+        self.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        self.clear()
+
+    def set_image(self, name):
+        self.setText(self.labels[name])
+
+    def clear(self):
+        if 'clear' in self.labels:
+            self.set_image('clear')
+        else:
+            self.setText('')
 
 
 class AnnotatedProgressBar(QtWidgets.QProgressBar):

@@ -1,13 +1,49 @@
+from contextlib import contextmanager
 from PyQt5 import QtCore, QtWidgets, QtGui
 from hcibench import daq
 from hcibench import pipeline
 from hcibench.templates.baseui import Ui_BaseUI
 
 
+@contextmanager
+def application(*args, **kwargs):
+    """
+    Convenience context manager for running a BasUI in a QApplication. The
+    application instance is created on entry and executed on exit. The
+    arguments and keyword arguments are passed along to BaseUI, and the BaseUI
+    instance is yielded.
+
+    Examples
+    --------
+    This is a sort of pseudo-code example showing how to use the application
+    context manager. A couple custom tasks are installed, and the application
+    runs upon exit from the context.
+
+    >>> with application(daq, db) as app:
+    ...     app.install_task(CustomTask())
+    ...     app.install_task(AnotherCustomTask())
+    """
+    app = QtWidgets.QApplication([])
+    ui = BaseUI(*args, **kwargs)
+    yield ui
+    ui.show()
+    app.exec_()
+
+
 class TaskUI(QtWidgets.QWidget):
     """
     Base task that does nothing.
+
+    Attributes
+    ----------
+    base : BaseUI
+        The BaseUI in which this task resides. This allows sub-classes to
+        access the resources shared by all tasks in an experiment.
     """
+
+    def __init__(self, parent=None):
+        super(TaskUI, self).__init__(parent)
+        self.base = None
 
     def set_recorder(self, recorder):
         self.recorder = recorder
@@ -58,6 +94,22 @@ class BaseUI(QtWidgets.QMainWindow):
     def __init__(self, daq, database, participant_dialog=None, parent=None):
         super(BaseUI, self).__init__(parent)
 
+        self.daq = daq
+        self.database = database
+
+        if participant_dialog is None:
+            self.participant_dialog = NewParticipantDialog
+        else:
+            self.participant_dialog = participant_dialog
+
+        self.tasks = {}
+
+        self.record_thread = RecordThread(daq)
+
+        self._setup_ui()
+
+    def _setup_ui(self):
+        # initialize form class from Qt Designer-generated UI
         self.ui = Ui_BaseUI()
         self.ui.setupUi(self)
 
@@ -67,19 +119,9 @@ class BaseUI(QtWidgets.QMainWindow):
         pt = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self)
         pt.activated.connect(self._on_prev_tab)
 
-        self.daq = daq
-        self.record_thread = RecordThread(daq)
-
-        self.database = database
+        # populate participant list from database
         for p in self.database.get_participants():
             self.ui.listWidget.addItem(p)
-
-        if participant_dialog is None:
-            self.participant_dialog = NewParticipantDialog
-        else:
-            self.participant_dialog = participant_dialog
-
-        self.tasks = {}
 
         self.ui.newParticipantButton.clicked.connect(self._on_new_participant)
 
@@ -138,7 +180,6 @@ class BaseUI(QtWidgets.QMainWindow):
         self.ui.listWidget.addItem(pid)
 
     def _on_next_tab(self):
-        print("hey")
         i = self.ui.tabWidget.currentIndex() + 1
         if i == self.ui.tabWidget.count():
             i = 0
@@ -165,20 +206,20 @@ class NewParticipantDialog(QtWidgets.QDialog):
 
     This class is intentionally easy to extend so experiments can specify
     additional participant attributes to input. Define a class which inherits
-    from this one and specify the class attribute ``attributes``, which should
-    be a list of tuples ``('attribute_id', 'Attribute Label')``.  The attribute
-    ID is used as the key to retrieving the input once the dialog is accepted,
-    and the attribute label is what's shown in the dialog.
+    from this one and specify the class attribute ``extra_attributes``, which
+    should be a list of tuples ``('attribute_id', 'Attribute Label')``.  The
+    attribute ID is used as the key to retrieving the input once the dialog is
+    accepted, and the attribute label is what's shown in the dialog.
 
     Examples
     --------
     >>> from hcibench.base import NewParticipantDialog
     >>> class CustomDialog(NewParticipantDialog):
-    ...     attributes = [('handedness', 'Handedness'),
-    ...                   ('gender', 'Gender')]
+    ...     extra_attributes = [('handedness', 'Handedness'),
+    ...                         ('gender', 'Gender')]
     """
 
-    attributes = []
+    extra_attributes = []
 
     def __init__(self, parent=None):
         super(NewParticipantDialog, self).__init__(parent=parent)
@@ -189,7 +230,7 @@ class NewParticipantDialog(QtWidgets.QDialog):
         self.form_layout = QtWidgets.QFormLayout()
         self.line_edits = {}
 
-        attrs = list(self.attributes)
+        attrs = list(self.extra_attributes)
         attrs.insert(0, ('pid', 'Participant ID'))
         for attr, label in attrs:
             edit = QtWidgets.QLineEdit()

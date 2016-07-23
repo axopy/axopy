@@ -1,24 +1,16 @@
 from PyQt5 import QtWidgets, QtGui
 
-from hcibench.base import BaseUI, TaskUI, NewParticipantDialog
+from hcibench.application import application, TaskUI
 from hcibench.storage import ExperimentDatabase
 from hcibench.daq import Daq
-from hcibench.experiments import Oscilloscope
-
-
-class CustomParticipantDialog(NewParticipantDialog):
-    attributes = [('handedness', 'Handedness'),
-                  ('gender', 'Gender')]
+from hcibench.tasks import Oscilloscope
 
 
 class SomeTask(TaskUI):
 
-    def __init__(self, parent=None):
-        super(SomeTask, self).__init__(parent=parent)
+    def __init__(self):
+        super(SomeTask, self).__init__()
 
-        self._init_ui()
-
-    def _init_ui(self):
         layout = QtGui.QVBoxLayout()
 
         self.list_widget = QtWidgets.QListWidget()
@@ -35,8 +27,6 @@ class SomeTask(TaskUI):
 
 
 if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-
     daq = Daq(2000, 1, (0, 1), 500)
 
     # for this example use memory-backed store instead of file
@@ -44,9 +34,6 @@ if __name__ == '__main__':
     db.create_participant('p0')
     db.create_participant('p1')
 
-    base = BaseUI(daq, db, participant_dialog=CustomParticipantDialog)
-    base.install_task(Oscilloscope())
-    base.install_task(SomeTask())
-
-    base.show()
-    app.exec_()
+    with application(daq, db) as app:
+        app.install_task(Oscilloscope())
+        app.install_task(SomeTask())
