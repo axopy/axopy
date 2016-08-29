@@ -8,6 +8,10 @@ import datetime
 
 class ExperimentDatabase(h5py.File):
 
+    def __init__(self, *args, **kwargs):
+        super(ExperimentDatabase, self).__init__(*args, **kwargs)
+        self.create_group(participants_path())
+
     def create_participant(self, pid):
         return self.create_group(participant_path(pid))
 
