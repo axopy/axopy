@@ -15,6 +15,9 @@ class Windower(PipelineBlock):
     window with overlap. It is assumed that the input to this block has length
     (length-overlap).
 
+    Input data is assumed to act like a numpy array with shape (num_channels,
+    num_samples).
+
     Parameters
     ----------
     length : int
@@ -36,18 +39,18 @@ class Windower(PipelineBlock):
 
     def process(self, data):
         if self._out is None:
-            self._preallocate(data.shape[1])
+            self._preallocate(data.shape[0])
 
         if self.overlap == 0:
             return data
 
-        self._out[:self.overlap, :] = self._out[-self.overlap:, :]
-        self._out[self.overlap:, :] = data
+        self._out[:, :self.overlap] = self._out[:, -self.overlap:]
+        self._out[:, self.overlap:] = data
 
         return self._out.copy()
 
-    def _preallocate(self, cols):
-        self._out = np.zeros((self.length, cols))
+    def _preallocate(self, num_channels):
+        self._out = np.zeros((num_channels, self.length))
 
 
 class Filter(PipelineBlock):
@@ -100,22 +103,22 @@ class Filter(PipelineBlock):
         if self.x_prev is None:
             # first pass has no initial conditions
             out = signal.lfilter(
-                self.b, self.a, data, axis=0)
+                self.b, self.a, data, axis=-1)
         else:
             # subsequent passes get ICs from previous input/output
-            num_ch = data.shape[1]
+            num_ch = data.shape[0]
             K = max(len(self.a)-1, len(self.b)-1)
-            self.zi = np.zeros((K, num_ch))
+            self.zi = np.zeros((num_ch, K))
             # unfortunately we have to get zi channel by channel
-            for c in range(data.shape[1]):
-                self.zi[:, c] = signal.lfiltic(
+            for c in range(data.shape[0]):
+                self.zi[c, :] = signal.lfiltic(
                     self.b,
                     self.a,
-                    self.y_prev[-(self.overlap+1)::-1, c],
-                    self.x_prev[-(self.overlap+1)::-1, c])
+                    self.y_prev[c, -(self.overlap+1)::-1],
+                    self.x_prev[c, -(self.overlap+1)::-1])
 
             out, zf = signal.lfilter(
-                self.b, self.a, data, axis=0, zi=self.zi)
+                self.b, self.a, data, axis=-1, zi=self.zi)
 
         self.x_prev = data
         self.y_prev = out

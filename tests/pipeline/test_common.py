@@ -8,8 +8,13 @@ from hcibench.pipeline import Windower, Filter
 
 np.random.seed(12345)
 
-rand_data_1d = np.random.rand(100, 1)
-rand_data_2d = np.random.rand(100, 5)
+rand_data_1d = np.random.rand(1, 100)
+rand_data_2d = np.random.rand(5, 100)
+
+
+def window_generator(data, length, windower):
+    for i in range(data.shape[-1]//10):
+        yield windower.process(data[:, i*length:(i+1)*length])
 
 
 class TestWindower(TestCase):
@@ -18,19 +23,28 @@ class TestWindower(TestCase):
         data = rand_data_2d
         windower = Windower(10, 0)
 
-        for i in range(data.shape[0]//10):
-            new_data = windower.process(data[i*10:(i+1)*10, :])
+        for win in window_generator(data, 10, windower):
+            pass
 
-        assert_array_equal(new_data, data[-10:, :])
+        assert_array_equal(win, data[:, -10:])
 
     def test_overlap(self):
         data = rand_data_2d
         windower = Windower(13, 3)
 
-        for i in range(data.shape[0]//10):
-            new_data = windower.process(data[i*10:(i+1)*10, :])
+        for win in window_generator(data, 10, windower):
+            pass
 
-        assert_array_equal(new_data, data[-13:, :])
+        assert_array_equal(win, data[:, -13:])
+
+    def test_1d(self):
+        data = rand_data_1d
+        windower = Windower(10, 0)
+
+        for win in window_generator(data, 10, windower):
+            pass
+
+        assert_array_equal(win, data[:, -10:])
 
 
 class TestFilter(TestCase):
@@ -50,9 +64,9 @@ class TestFilter(TestCase):
         overlap = 5
         block = Filter(self.b, self.a, overlap=overlap)
 
-        data1 = data[0:win_length]
-        data2 = data[win_length-overlap:win_length-overlap+win_length]
+        data1 = data[:, 0:win_length]
+        data2 = data[:, win_length-overlap:win_length-overlap+win_length]
         out1 = block.process(data1)
         out2 = block.process(data2)
 
-        assert_array_almost_equal(out1[-overlap:], out2[:overlap])
+        assert_array_almost_equal(out1[:, -overlap:], out2[:, :overlap])
