@@ -131,6 +131,11 @@ class FeatureExtractor(PipelineBlock):
     Each feature should be able to take in the same data and output a 1D array,
     so overall output of the FeatureExtractor can be a single 1D array.
 
+    This block isn't strictly necessary, since you could just apply multiple
+    feature blocks in parallel and the result of each will be passed to the
+    next block. However, the block following feature computation typically
+    expects the input to be a single array (or row) per data sample.
+
     Parameters
     ----------
     features : list
@@ -141,12 +146,17 @@ class FeatureExtractor(PipelineBlock):
     ----------
     named_features : dict
         Dictionary of features accessed by name.
+    feature_indices : dict
+        Dictionary of (start, stop) tuples indicating the bounds of each
+        feature, accessed by name. Will be empty until after data is first
+        passed through.
     """
 
     def __init__(self, features):
         super(FeatureExtractor, self).__init__()
         self.features = features
 
+        self.feature_indices = {}
         self._output = None
 
     @property
@@ -159,17 +169,42 @@ class FeatureExtractor(PipelineBlock):
         This should be called if the input is going to change form in some
         way (i.e. the shape of the input array changes).
         """
+        self.feature_indices = {}
         self._output = None
 
     def process(self, data):
-        """Run data through the list of features.
+        """Run data through the list of features and concatenates the results.
+
+        The first pass (after a ``clear`` call) will be a little slow since the
+        extractor needs to allocate the output array.
 
         Parameters
         ----------
-        data : array
+        data : array, shape (n_channels, n_samples)
             Input data. Must be appropriate for all features.
+
+        Returns
+        -------
+        out : array, shape (n_features,)
         """
-        pass
+        allocating = (self._output is None)
+        ind = 0
+        for i, (name, feature) in enumerate(self.features):
+            if allocating:
+                x = feature.compute(data)
+                self.feature_indices[name] = (ind, ind+x.size)
+                ind += x.size
+
+                if self._output is None:
+                    self._output = x
+                else:
+                    self._output = np.hstack([self._output, x])
+            else:
+                self._output[self.feature_indices[name][0]:
+                             self.feature_indices[name][1]] = \
+                    feature.compute(data)
+
+        return self._output
 
 
 class Estimator(PipelineBlock):

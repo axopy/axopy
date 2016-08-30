@@ -4,7 +4,7 @@ from scipy import signal
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from hcibench.pipeline import Windower, Filter
+from hcibench.pipeline import Windower, Filter, FeatureExtractor
 
 np.random.seed(12345)
 
@@ -70,3 +70,50 @@ class TestFilter(TestCase):
         out2 = block.process(data2)
 
         assert_array_almost_equal(out1[:, -overlap:], out2[:, :overlap])
+
+
+class TestFeatureExtractor(TestCase):
+
+    def test_simple(self):
+        f0 = _NthSampleFeature(0)
+        ex = FeatureExtractor([('0', f0),
+                               ('1', _NthSampleFeature(1))])
+        data = np.array([[0, 1, 2, 3, 4],
+                         [5, 6, 7, 8, 9]])
+
+        assert_array_equal(np.array([0, 5, 1, 6]), ex.process(data))
+        assert_array_equal(np.array([0, 5, 1, 6]), ex.process(data))
+        self.assertEqual(ex.feature_indices['0'], (0, 2))
+        self.assertEqual(ex.feature_indices['1'], (2, 4))
+
+        self.assertIs(ex.named_features['0'], f0)
+
+    def test_unequal_feature_sizes(self):
+        ex = FeatureExtractor([('0', _NthSampleFeature(0)),
+                               ('1', _NthSampleFeature(2, channel=1))])
+        data = np.array([[0, 1, 2, 3, 4],
+                         [5, 6, 7, 8, 9]])
+        assert_array_equal(np.array([0, 5, 7]), ex.process(data))
+
+    def test_clear(self):
+        ex = FeatureExtractor([('0', _NthSampleFeature(0)),
+                               ('1', _NthSampleFeature(2))])
+        data_2ch = np.array([[0, 1, 2, 3, 4],
+                             [5, 6, 7, 8, 9]])
+        data_1ch = np.array([[0, 1, 2, 3, 4]])
+
+        assert_array_equal(np.array([0, 5, 2, 7]), ex.process(data_2ch))
+        ex.clear()
+        assert_array_equal(np.array([0, 2]), ex.process(data_1ch))
+
+
+class _NthSampleFeature(object):
+    def __init__(self, ind, channel=None):
+        self.ind = ind
+        self.channel = channel
+
+    def compute(self, data):
+        if self.channel is None:
+            return data[:, self.ind]
+        else:
+            return data[self.channel, self.ind]
