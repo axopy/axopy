@@ -9,11 +9,10 @@ from .base import PipelineBlock
 
 
 class Windower(PipelineBlock):
-    """Windows incoming data to specific length and overlap.
+    """Windows incoming data to specific length.
 
     Takes new input data and combines with past data to maintain a sliding
-    window with overlap. It is assumed that the input to this block has length
-    (length-overlap).
+    window with optional overlap.
 
     Input data is assumed to act like a numpy array with shape (num_channels,
     num_samples).
@@ -21,16 +20,14 @@ class Windower(PipelineBlock):
     Parameters
     ----------
     length : int
-        Total number of samples to output on each iteration.
-    overlap : int, optional
-        Number of samples from previous input to keep in the current window.
-        Default is 0, which means there is no overlap between updates.
+        Total number of samples to output on each iteration. This must be at
+        least as large as the number of samples input to the windower on each
+        iteration.
     """
 
-    def __init__(self, length, overlap=0):
+    def __init__(self, length):
         super(Windower, self).__init__()
         self.length = length
-        self.overlap = overlap
 
         self.clear()
 
@@ -41,11 +38,12 @@ class Windower(PipelineBlock):
         if self._out is None:
             self._preallocate(data.shape[0])
 
-        if self.overlap == 0:
-            return data
-
-        self._out[:, :self.overlap] = self._out[:, -self.overlap:]
-        self._out[:, self.overlap:] = data
+        n = data.shape[1]
+        if n == self.length:
+            self._out = data
+        else:
+            self._out[:, :self.length-n] = self._out[:, -(self.length-n):]
+            self._out[:, -n:] = data
 
         return self._out.copy()
 

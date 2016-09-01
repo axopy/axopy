@@ -12,37 +12,37 @@ rand_data_1d = np.random.rand(1, 100)
 rand_data_2d = np.random.rand(5, 100)
 
 
-def window_generator(data, length, windower):
-    for i in range(data.shape[-1]//10):
-        yield windower.process(data[:, i*length:(i+1)*length])
+def window_generator(data, length):
+    for i in range(0, data.shape[-1], length):
+        yield data[:, i:i+length]
 
 
 class TestWindower(TestCase):
 
     def test_no_overlap(self):
         data = rand_data_2d
-        windower = Windower(10, 0)
+        windower = Windower(10)
 
-        for win in window_generator(data, 10, windower):
-            pass
+        for samp in window_generator(data, 10):
+            win = windower.process(samp)
 
         assert_array_equal(win, data[:, -10:])
 
     def test_overlap(self):
         data = rand_data_2d
-        windower = Windower(13, 3)
+        windower = Windower(13)
 
-        for win in window_generator(data, 10, windower):
-            pass
+        for samp in window_generator(data, 10):
+            win = windower.process(samp)
 
         assert_array_equal(win, data[:, -13:])
 
     def test_1d(self):
         data = rand_data_1d
-        windower = Windower(10, 0)
+        windower = Windower(10)
 
-        for win in window_generator(data, 10, windower):
-            pass
+        for samp in window_generator(data, 5):
+            win = windower.process(samp)
 
         assert_array_equal(win, data[:, -10:])
 
