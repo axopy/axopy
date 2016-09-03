@@ -48,5 +48,6 @@ Some terminology is defined here to make the rest of the documentation clear.
 
    interface
    storage
+   daq
    pipeline
    features

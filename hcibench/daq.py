@@ -9,27 +9,76 @@ except ImportError:
     pass
 
 
-class Daq(object):
+class EmulatedDaq(object):
     """
-    A base class which fakes DAQ device functionality by generating random
-    data.
+    An emulated data acquisition device which generates random data.
+
+    Each sample of the generated data is sampled from a zero-mean Gaussian
+    distribution with variance determined by the amplitude specified, which
+    corresponds to three standard deviations. That is, approximately 99.7% of
+    the samples should be within the desired peak amplitude.
+
+    :class:`EmulatedDaq` is meant to emulate data acquisition devices that
+    block on each request for data until the data is available. See
+    :meth:`read` for details.
+
+    Parameters
+    ----------
+    rate : int, optional
+        Sample rate in Hz. Default is 1000.
+    num_channels : int, optional
+        Number of "channels" to generate. Default is 1.
+    amplitude : float, optional
+        Approximate peak amplitude of the signal to generate. Specifically, the
+        amplitude represents three standard deviations for generating the
+        Gaussian distributed data. Default is 1.
+    read_size : int, optional
+        Number of samples to generate per :meth:`read()` call. Default is 100.
     """
 
-    def __init__(self, rate, input_range, channel_range, samples_per_read):
+    def __init__(self, rate=1000, num_channels=1, amplitude=1.0, read_size=100):
         self.rate = rate
-        self.input_range = input_range
-        self.samples_per_read = samples_per_read
+        self.num_channels = num_channels
+        self.amplitude = amplitude
+        self.read_size = read_size
 
-        self.set_channel_range(channel_range)
+        self._sigma = amplitude / 3
+
+        self._t_last_read = None
+        self._t_per_read = float(self.read_size / self.rate)
 
     def start(self):
         pass
 
     def read(self):
-        d = 0.2*self.input_range*(
-            np.random.rand(self.num_channels, self.samples_per_read) - 0.5)
-        time.sleep(float(self.samples_per_read/self.rate))
-        return d
+        """
+        Generates zero-mean Gaussian data.
+
+        This method blocks (calls ``time.sleep()``) to emulate other data
+        acquisition units which wait for the requested number of samples to be
+        read. The amount of time to block is calculated such that consecutive
+        calls will always return with constant frequency, assuming the calls
+        occur faster than required (i.e. processing doesn't fall behind).
+
+        Returns
+        -------
+        data : ndarray, shape (num_channels, read_size)
+            The generated data.
+        """
+        t = time.time()
+        if self._t_last_read is None:
+            time.sleep(self._t_per_read)
+        else:
+            try:
+                time.sleep(self._t_per_read - (t - self._t_last_read))
+            except ValueError:
+                # if we're not meeting real-time requirement, don't wait
+                pass
+
+        data = self._sigma * np.random.randn(self.num_channels, self.read_size)
+
+        self._t_last_read = time.time()
+        return data
 
     def stop(self):
         pass
@@ -37,13 +86,30 @@ class Daq(object):
     def reset(self):
         pass
 
-    def set_channel_range(self, channel_range):
-        self.num_channels = channel_range[1] - channel_range[0] + 1
 
-
-class MccDaq(Daq):
+class MccDaq(object):
     """
-    Access to data read by a Measurement Computing DAQ.
+    Measurement Computing data acquisition device.
+
+    Use of this class requires `PyDAQFlex
+    <https://github.com/torfbolt/PyDAQFlex/>`__.
+
+    This implementation has been verified to work with the USB-1608G, though
+    it should work with additional hardware thanks to PyDAQFlex. As long as the
+    device supports analog input, it should *just work* (TM). Start by
+    installing PyDAQFlex on your chosen platform. On Windows, that *should* be
+    all that's needed. On Linux, you'll need to install a udev rule (e.g.
+    create a file ``/etc/udev/rules.d/61-mcc.rules``) for your device to be
+    accessible by non-root users. Populate the file with a line like the
+    following::
+
+        SUBSYSTEM=="usb", ATTR{idVendor}=="09db", ATTR{idProduct}=="0110", MODE="0666"
+
+    Replace the ``idProduct`` attribute with the product ID of your device (the
+    example above is for the USB-1608G). The product ID can be found using
+    ``lsusb``. After creating the udev rule, you can log out of your account
+    and log back in. Finally, try running the ``examples/test_mccdaq.py``
+    script. If no errors occur, the device should be set up correctly.
 
     Parameters
     ----------
@@ -56,29 +122,24 @@ class MccDaq(Daq):
         channels lowchan through highchan
     samples_per_read : int
         Number of samples per channel to read in each read operation
-
-    Examples
-    --------
-    This is a basic example of how to set up the DAQ, read some data, and
-    finish.
-
-    >>> from pygesture import daq
-    >>> dev = daq.MccDaq(2048, 1, (0, 1), 1024)
-    >>> dev.start()
-    >>> data = dev.read()
-    >>> dev.stop()
+    devname : str, optional
+        Name of the device as implemented in PyDAQFlex.  Default is
+        ``'USB_1608G'``.
     """
 
-    def __init__(self, rate, input_range, channel_range, samples_per_read):
+    def __init__(self, rate, input_range, channel_range, samples_per_read,
+                 devname='USB_1608G'):
         self.rate = rate
         self.input_range = input_range
         self.channel_range = channel_range
         self.samples_per_read = samples_per_read
 
+        self.devname = devname
+
         self._initialize()
 
     def _initialize(self):
-        self.device = daqflex.USB_1608G()
+        self.device = getattr(daqflex, self.devname)()
 
         self.device.send_message("AISCAN:XFRMODE=BLOCKIO")
         self.device.send_message("AISCAN:SAMPLES=0")
@@ -146,14 +207,21 @@ class MccDaq(Daq):
 
 class TrignoDaq(object):
     """
-    Access to data served by Trigno Control Utility for the Delsys Trigno
-    wireless EMG system. TCU is Windows-only, but this class can be used to
-    stream data from it on another machine. TCU runs a TCP/IP server, with EMG
-    data from the sensors on one port and accelerometer data on another. Only
-    EMG data retrieval is currently implemented. The TCU must be running before
-    a TrignoDaq object can be instantiated. The signal range of the Trigno
-    wireless sensors is 11 mV (according to the user's guide), so scaling is
-    performed on the signal to achieve an output ranging from -1 to 1.
+    Delsys Trigno wireless EMG system.
+
+    This class provides access to data served by Trigno Control Utility for the
+    Delsys Trigno wireless EMG system. TCU is Windows-only, but this class can
+    be used to stream data from it on another machine. TCU runs a TCP/IP
+    server, with EMG data from the sensors on one port and accelerometer data
+    on another. Only EMG data retrieval is currently implemented. The TCU must
+    be running before a TrignoDaq object can be instantiated. The signal range
+    of the Trigno wireless sensors is 11 mV (according to the user's guide), so
+    scaling is performed on the signal to achieve an output ranging from -1 to
+    1.
+
+    You can test operation of the device by running `examples/test_trigno.py`
+    to see if things are set up correctly -- if no errors occur, it should be
+    ready to go.
 
     Parameters
     ----------
@@ -165,33 +233,33 @@ class TrignoDaq(object):
     addr : str, default='localhost'
         IP address the TCU server is running on.
 
-    Examples
-    --------
-    This is a basic example of how to set up the DAQ, read some data, and
-    finish.
-
-    >>> from pygesture import daq
-    >>> dev = daq.TrignoDaq('127.0.0.1', (0, 1), 1024)
-    >>> dev.start()
-    >>> data = dev.read()
-    >>> dev.close()
+    Attributes
+    ----------
+    RATE : int
+        EMG data sample rate.
+    CMD_PORT : int
+        Port the command server runs on, specified by TCU.
+    EMG_PORT : int
+        Port the EMG server runs on, specified by TCU.
+    BYTES_PER_CHANNEL : int
+        Number of bytes per sample per channel.
+    NUM_CHANNELS : int
+        Number of channels in the system.
+    MIN_RECV_SIZE : int
+        Minimum recv size in bytes (16 sensors * 4 bytes/channel).
+    COMM_TERM : str
+        Command string termination.
+    SCALE : float
+        Scaling factor to apply to output to get a (-1, 1) range.
     """
 
-    """EMG data sample rate. Cannot be changed."""
     RATE = 2000
-    """Port the command server runs on, specified by TCU."""
     CMD_PORT = 50040
-    """Port the EMG server runs on, specified by TCU."""
     EMG_PORT = 50041
-    """Number of bytes per sample per channel."""
     BYTES_PER_CHANNEL = 4
-    """Number of channels in the system."""
     NUM_CHANNELS = 16
-    """Minimum recv size in bytes (16 sensors * 4 bytes/channel)."""
     MIN_RECV_SIZE = NUM_CHANNELS * BYTES_PER_CHANNEL
-    """Command string termination."""
     COMM_TERM = '\r\n\r\n'
-    """Scaling factor to apply to output to get a (-1, 1) range."""
     SCALE = 1 / 0.011
 
     def __init__(self, channel_range, samples_per_read, addr='localhost'):
@@ -217,9 +285,21 @@ class TrignoDaq(object):
             (self.addr, self.EMG_PORT), 2)
 
     def start(self):
+        """
+        Tell the device to begin streaming data.
+
+        You should call ``read()`` soon after this, though the device typically
+        takes about two seconds to send back the first batch of data.
+        """
         self._send_cmd('START')
 
     def read(self):
+        """
+        Request a sample of data from the device.
+
+        This is a blocking method, meaning it returns only once the requested
+        number of samples are available.
+        """
         l_des = self.samples_per_read * self.MIN_RECV_SIZE
         l = 0
         packet = bytes()
@@ -241,9 +321,11 @@ class TrignoDaq(object):
         return data
 
     def stop(self):
+        """Tell the device to stop streaming data."""
         self._send_cmd('STOP')
 
     def reset(self):
+        """Restart the connection to the Trigno Control Utility server."""
         self._initialize()
 
     def __del__(self):
