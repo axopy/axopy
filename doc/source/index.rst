@@ -1,3 +1,4 @@
+========
 hcibench
 ========
 
@@ -44,8 +45,5 @@ Some terminology is defined here to make the rest of the documentation clear.
    :maxdepth: 1
    :hidden:
 
-   interface
-   storage
-   daq
-   pipeline
-   features
+   user_guide
+   api

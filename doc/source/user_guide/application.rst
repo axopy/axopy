@@ -1,5 +1,10 @@
+.. _user_interface:
+
+==============
 User Interface
 ==============
+
+.. currentmodule:: hcibench.application
 
 Overview
 --------
@@ -14,25 +19,10 @@ the base UI interacts with it. Some common tasks are built into the library,
 but a full experiment implementation will most likely involve one or more
 custom task UI classes.
 
+Building on a Base
+------------------
 
-Built-In Widgets
-----------------
-
-Some Qt widgets which do or display common things are built in to make the
-process of prototyping an experiment efficient.
-
-Prompts
-^^^^^^^
-
-.. automodule:: hcibench.widgets.prompts
-   :members:
-
-Signals
-^^^^^^^
-
-.. automodule:: hcibench.widgets.signals
-   :members:
-
+Some explanation of the :class:`BaseUI`.
 
 .. _Qt: https://www.qt.io/
 .. _PyQt5: https://www.riverbankcomputing.com/software/pyqt/intro

@@ -4,6 +4,8 @@ Base classes for pipelines and pipeline blocks.
 
 
 class PipelineBlock(object):
+    """Basic unit of processing in a pipeline.
+    """
 
     def __init__(self, name=None, hooks=None):
         self._name = name
@@ -148,6 +150,8 @@ class Pipeline(PipelineBlock):
 
 
 class PassthroughPipeline(Pipeline):
+    """Convenience block for passing input along to output.
+    """
 
     def __init__(self, blocks, expand_output=True, name=None):
         super(PassthroughPipeline, self).__init__(blocks, name=name)

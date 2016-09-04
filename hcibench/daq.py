@@ -94,22 +94,7 @@ class MccDaq(object):
     Use of this class requires `PyDAQFlex
     <https://github.com/torfbolt/PyDAQFlex/>`__.
 
-    This implementation has been verified to work with the USB-1608G, though
-    it should work with additional hardware thanks to PyDAQFlex. As long as the
-    device supports analog input, it should *just work* (TM). Start by
-    installing PyDAQFlex on your chosen platform. On Windows, that *should* be
-    all that's needed. On Linux, you'll need to install a udev rule (e.g.
-    create a file ``/etc/udev/rules.d/61-mcc.rules``) for your device to be
-    accessible by non-root users. Populate the file with a line like the
-    following::
-
-        SUBSYSTEM=="usb", ATTR{idVendor}=="09db", ATTR{idProduct}=="0110", MODE="0666"
-
-    Replace the ``idProduct`` attribute with the product ID of your device (the
-    example above is for the USB-1608G). The product ID can be found using
-    ``lsusb``. After creating the udev rule, you can log out of your account
-    and log back in. Finally, try running the ``examples/test_mccdaq.py``
-    script. If no errors occur, the device should be set up correctly.
+    For more information, refer to the :ref:`User Guide <mcc_daq>`.
 
     Parameters
     ----------
@@ -209,19 +194,9 @@ class TrignoDaq(object):
     """
     Delsys Trigno wireless EMG system.
 
-    This class provides access to data served by Trigno Control Utility for the
-    Delsys Trigno wireless EMG system. TCU is Windows-only, but this class can
-    be used to stream data from it on another machine. TCU runs a TCP/IP
-    server, with EMG data from the sensors on one port and accelerometer data
-    on another. Only EMG data retrieval is currently implemented. The TCU must
-    be running before a TrignoDaq object can be instantiated. The signal range
-    of the Trigno wireless sensors is 11 mV (according to the user's guide), so
-    scaling is performed on the signal to achieve an output ranging from -1 to
-    1.
+    Requires the Trigno Control Utility to be running.
 
-    You can test operation of the device by running `examples/test_trigno.py`
-    to see if things are set up correctly -- if no errors occur, it should be
-    ready to go.
+    For more information, refer to the :ref:`User Guide <trigno_daq>`.
 
     Parameters
     ----------
