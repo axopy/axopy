@@ -36,10 +36,8 @@ Some terminology is defined here to make the rest of the documentation clear.
 - **Task**: A distinct element in the experiment workflow. The interface for
   a task is implemented as a tab in the base UI.
 - **Run**: A run through the entire implementation of a task, once.
-- **Trial**: Runs typically involve repeated performance of a individual
-  trials, such as repeatedly moving a cursor to random target locations.in
-  which the subject repeatedly produces data of the same type, such as moving
-  a cursor to random
+- **Trial**: Runs typically involve repeated performance of individual trials,
+  such as repeatedly moving a cursor to random target locations.
 
 
 .. toctree::
