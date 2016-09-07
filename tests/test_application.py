@@ -1,4 +1,4 @@
-from hcibench.application import NewParticipantDialog
+from axopy.application import NewParticipantDialog
 
 
 def test_new_participant_dialog(qtbot):

@@ -1,5 +1,5 @@
 [run]
-source = hcibench
+source = axopy
 omit =
     */__init__.py
     */tests*

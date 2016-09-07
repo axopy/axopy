@@ -8,7 +8,7 @@ from PyQt5 import uic
 
 
 SRC = 'templates'
-DEST = os.path.join('hcibench', 'templates')
+DEST = os.path.join('axopy', 'templates')
 
 
 if __name__ == '__main__':

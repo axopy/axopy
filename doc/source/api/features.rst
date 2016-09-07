@@ -2,10 +2,10 @@
 features
 ========
 
-.. automodule:: hcibench.features
+.. automodule:: axopy.features
 
 time
 ----
 
-.. automodule:: hcibench.features.time
+.. automodule:: axopy.features.time
    :members:

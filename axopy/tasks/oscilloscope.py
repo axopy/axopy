@@ -1,5 +1,5 @@
-from hcibench.application import TaskUI
-from hcibench.widgets import OscilloscopeWidget
+from ..application import TaskUI
+from ..widgets import OscilloscopeWidget
 
 
 class Oscilloscope(TaskUI):

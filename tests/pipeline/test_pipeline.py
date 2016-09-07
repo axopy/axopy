@@ -1,4 +1,4 @@
-from hcibench.pipeline import Pipeline, PipelineBlock, PassthroughPipeline
+from axopy.pipeline import Pipeline, PipelineBlock, PassthroughPipeline
 
 from unittest import TestCase
 

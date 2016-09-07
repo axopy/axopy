@@ -1,5 +1,5 @@
 """
-The :mod:`hcibench.pipeline` module provides a flexible infrastructure for
+The :mod:`axopy.pipeline` module provides a flexible infrastructure for
 data processing and implements some common types of processing blocks.
 """
 

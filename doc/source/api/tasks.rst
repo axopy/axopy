@@ -2,10 +2,10 @@
 tasks
 =====
 
-.. automodule:: hcibench.tasks
+.. automodule:: axopy.tasks
 
 oscilloscope
 ------------
 
-.. automodule:: hcibench.tasks.oscilloscope
+.. automodule:: axopy.tasks.oscilloscope
    :members:

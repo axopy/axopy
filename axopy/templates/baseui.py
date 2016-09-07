@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'templates/baseui.ui'
 #
-# Created by: PyQt5 UI code generator 5.6
+# Created by: PyQt5 UI code generator 5.7
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -89,7 +89,7 @@ class Ui_BaseUI(object):
 
     def retranslateUi(self, BaseUI):
         _translate = QtCore.QCoreApplication.translate
-        BaseUI.setWindowTitle(_translate("BaseUI", "HCI Bench"))
+        BaseUI.setWindowTitle(_translate("BaseUI", "axopy"))
         self.label.setText(_translate("BaseUI", "Existing Participants:"))
         self.listWidget.setSortingEnabled(True)
         self.newParticipantButton.setText(_translate("BaseUI", "New Participant"))

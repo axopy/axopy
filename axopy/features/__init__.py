@@ -1,5 +1,5 @@
 """
-The :mod:`hcibench.features` module provides implementations of common
+The :mod:`axopy.features` module provides implementations of common
 features in electrophysiological signal processing applications.
 """
 

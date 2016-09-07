@@ -1,8 +1,9 @@
 from contextlib import contextmanager
 from PyQt5 import QtCore, QtWidgets, QtGui
-from hcibench import daq
-from hcibench import pipeline
-from hcibench.templates.baseui import Ui_BaseUI
+
+from . import daq
+from . import pipeline
+from .templates.baseui import Ui_BaseUI
 
 
 @contextmanager
@@ -213,7 +214,7 @@ class NewParticipantDialog(QtWidgets.QDialog):
 
     Examples
     --------
-    >>> from hcibench.base import NewParticipantDialog
+    >>> from axopy.base import NewParticipantDialog
     >>> class CustomDialog(NewParticipantDialog):
     ...     extra_attributes = [('handedness', 'Handedness'),
     ...                         ('gender', 'Gender')]

@@ -2,5 +2,5 @@
 storage
 =======
 
-.. automodule:: hcibench.storage
+.. automodule:: axopy.storage
    :members:

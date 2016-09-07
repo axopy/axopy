@@ -49,7 +49,7 @@ class Pipeline(PipelineBlock):
     output of block `a` is passed to both blocks `b` and `c`. The output of
     blocks `b` and `c` are then both passed to block `d`.
 
-    >>> from hcibench.pipeline import Pipeline, PipelineBlock
+    >>> from axopy.pipeline import Pipeline, PipelineBlock
     >>> a = PipelineBlock()
     >>> b = PipelineBlock()
     >>> c = PipelineBlock()

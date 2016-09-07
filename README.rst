@@ -1,10 +1,7 @@
-hcibench
-========
+=====
+axopy
+=====
 
-.. image:: https://readthedocs.org/projects/hcibench/badge/?version=latest
-   :target: http://hcibench.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
-
-hcibench aims to provide a simple and flexible environment for creating
-experiments involving human biosignal recording for control of computer
-interfaces.
+Axo-pythonic synapses are those in which an axon synapses upon a Python
+program. axopy aims to facilitate such connections between electrophysiolgical
+signals and machines.

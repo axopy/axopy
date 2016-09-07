@@ -2,5 +2,5 @@
 application
 ===========
 
-.. automodule:: hcibench.application
+.. automodule:: axopy.application
    :members:

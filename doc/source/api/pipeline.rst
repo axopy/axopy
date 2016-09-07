@@ -2,16 +2,16 @@
 pipeline
 ========
 
-.. automodule:: hcibench.pipeline
+.. automodule:: axopy.pipeline
 
 base
 ----
 
-.. automodule:: hcibench.pipeline.base
+.. automodule:: axopy.pipeline.base
    :members:
 
 common
 ------
 
-.. automodule:: hcibench.pipeline.common
+.. automodule:: axopy.pipeline.common
    :members:

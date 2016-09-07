@@ -1,7 +1,7 @@
 import numpy as np
 from unittest import TestCase
 from numpy.testing import assert_equal
-from hcibench.features import MAV, WL, ZC, SSC, RMS
+from axopy.features import MAV, WL, ZC, SSC, RMS
 
 
 class TestMAV(TestCase):

@@ -211,7 +211,7 @@ class Estimator(PipelineBlock):
     An estimator is an object that can be trained with some data (``fit``) and,
     once trained, can output predictions from novel inputs. A common use-case
     for this block is to utilize a scikit-learn pipeline in the context of a
-    hcibench pipeline.
+    axopy pipeline.
 
     Parameters
     ----------

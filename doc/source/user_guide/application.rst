@@ -4,7 +4,7 @@
 User Interface
 ==============
 
-.. currentmodule:: hcibench.application
+.. currentmodule:: axopy.application
 
 Overview
 --------

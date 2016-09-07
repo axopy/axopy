@@ -4,7 +4,7 @@ from scipy import signal
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from hcibench.pipeline import Windower, Filter, FeatureExtractor
+from axopy.pipeline import Windower, Filter, FeatureExtractor
 
 np.random.seed(12345)
 

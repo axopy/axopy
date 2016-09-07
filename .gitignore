@@ -4,7 +4,7 @@ tags
 __pycache__
 build
 /dist
-/hcibench.egg-info
+/axopy.egg-info
 /.venv
 /.tox
 /.cache

@@ -2,5 +2,5 @@
 util
 ====
 
-.. automodule:: hcibench.util
+.. automodule:: axopy.util
    :members:

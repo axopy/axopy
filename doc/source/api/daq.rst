@@ -2,5 +2,5 @@
 daq
 ===
 
-.. automodule:: hcibench.daq
+.. automodule:: axopy.daq
    :members:

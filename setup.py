@@ -6,7 +6,7 @@ def readme():
         return f.read()
 
 setup(
-    name='hcibench',
+    name='axopy',
     version='0.1',
     description='Human-computer interface experimentation library',
     long_description=readme(),
@@ -27,7 +27,7 @@ setup(
     ],
     keywords='human computer interface control electrophysiology',
 
-    url='https://github.com/ucdrascal/hcibench',
+    url='https://github.com/ucdrascal/axopy',
     author='Kenneth Lyons',
     author_email='ixjlyons@gmail.com',
     license='MIT',

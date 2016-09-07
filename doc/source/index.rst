@@ -1,17 +1,17 @@
-========
-hcibench
-========
+=====
+axopy
+=====
 
-hcibench is a system for creating human-computer interface experiments
-involving the use of electrophysiological signals, such as electromyography
-(EMG) or electroencephalography (EEG).
+axopy is a system for creating human-computer interface experiments involving
+the use of electrophysiological signals, such as electromyography (EMG) or
+electroencephalography (EEG).
 
 
 Features
 --------
 
-hcibench aims to provide a framework for quickly and easily implementing ideas
-for human-computer interface experiments. It covers the common facets of
+axopy aims to provide a framework for quickly and easily implementing ideas for
+human-computer interface experiments. It covers the common facets of
 human-computer interface experiments, including:
 
 - data acquisition from one or more devices
@@ -30,7 +30,7 @@ Some terminology is defined here to make the rest of the documentation clear.
 
 - **Experiment**: The top-level implementation of all facets of an experiment
   you would run. This is a self-contained script or package (preferable),
-  separate from hcibench.
+  separate from axopy.
 - **Session**: A single visit of a subject, encompassing all tasks performed.
   An experiment is essentially the implementation of the session(s) that all
   subjects will go through.

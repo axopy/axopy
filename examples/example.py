@@ -1,12 +1,12 @@
 from PyQt5 import QtWidgets, QtGui
 
-from hcibench.application import application, TaskUI
-from hcibench.storage import ExperimentDatabase
-from hcibench.daq import EmulatedDaq
-from hcibench.tasks import Oscilloscope
-from hcibench.pipeline import Pipeline, PipelineBlock, FeatureExtractor, Windower
-from hcibench.features import RMS
-from hcibench.util import ensure_2d
+from axopy.application import application, TaskUI
+from axopy.storage import ExperimentDatabase
+from axopy.daq import EmulatedDaq
+from axopy.tasks import Oscilloscope
+from axopy.pipeline import Pipeline, PipelineBlock, FeatureExtractor, Windower
+from axopy.features import RMS
+from axopy.util import ensure_2d
 
 
 class SomeTask(TaskUI):

@@ -2,22 +2,22 @@
 widgets
 =======
 
-.. automodule:: hcibench.widgets
+.. automodule:: axopy.widgets
 
 cursor
 ------
 
-.. automodule:: hcibench.widgets.cursor
+.. automodule:: axopy.widgets.cursor
    :members:
 
 prompts
 -------
 
-.. automodule:: hcibench.widgets.prompts
+.. automodule:: axopy.widgets.prompts
    :members:
 
 signals
 -------
 
-.. automodule:: hcibench.widgets.signals
+.. automodule:: axopy.widgets.signals
    :members:

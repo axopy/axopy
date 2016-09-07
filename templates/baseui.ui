@@ -14,7 +14,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>HCI Bench</string>
+   <string>axopy</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>

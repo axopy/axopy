@@ -10,7 +10,7 @@ just sets different numbers of channels and ensures the data received is the
 correct shape.
 """
 
-from hcibench import daq
+from axopy import daq
 
 # test single-channel
 dev = daq.TrignoDaq((0, 0), 270)
