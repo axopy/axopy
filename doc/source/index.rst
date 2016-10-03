@@ -42,8 +42,9 @@ Some terminology is defined here to make the rest of the documentation clear.
 
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
 
+   installation
    user_guide
+   tutorials
    api

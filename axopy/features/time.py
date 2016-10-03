@@ -18,8 +18,8 @@ class MAV(Feature):
     information from EMG, especially in gesture classification contexts.
 
     There is an optional windowing function applied to the rectified signal,
-    described as MAV1 and MAV2 in some references (e.g. [2]). A custom
-    window can also be used. The general definition is given as:
+    described as MAV1 and MAV2 in some references. A custom window can also be
+    used. The general definition is given as:
 
     .. math:: \text{MAV} = \frac{1}{N} \sum_{i=1}^{N} w_i |x_i|
 
@@ -70,11 +70,11 @@ class MAV(Feature):
     References
     ----------
     .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
-           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
-           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
+       Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+       Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     .. [2] A. Phinyomark, P. Phukpattaranont, and C. Limsakul, "Feature
-           Reduction and Selection for EMG Signal Classification," Expert
-           Systems with Applications, vol. 39, no. 8, pp. 7420–7431, 2012.
+       Reduction and Selection for EMG Signal Classification," Expert Systems
+       with Applications, vol. 39, no. 8, pp. 7420–7431, 2012.
     """
 
     def __init__(self, weights='mav'):
@@ -129,8 +129,8 @@ class WL(Feature):
     References
     ----------
     .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
-           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
-           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
+       Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+       Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     """
 
     def compute(self, x):
@@ -155,8 +155,8 @@ class ZC(Feature):
     References
     ----------
     .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
-           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
-           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
+       Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+       Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     """
 
     def __init__(self, threshold=0):
@@ -192,8 +192,8 @@ class SSC(Feature):
     References
     ----------
     .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
-           Multifunction Myoelectric Control," IEEE Transactions on Biomedical
-           Engineering, vol. 40, no. 1, pp. 82–94, 1993.
+       Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+       Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     """
 
     def __init__(self, threshold=0):
