@@ -74,7 +74,7 @@ class MAV(Feature):
        Engineering, vol. 40, no. 1, pp. 82–94, 1993.
     .. [2] A. Phinyomark, P. Phukpattaranont, and C. Limsakul, "Feature
        Reduction and Selection for EMG Signal Classification," Expert Systems
-       with Applications, vol. 39, no. 8, pp. 7420–7431, 2012.
+       with Applications, vol. 39, no. 8, pp. 7420-7431, 2012.
     """
 
     def __init__(self, weights='mav'):
