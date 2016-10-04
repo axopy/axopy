@@ -106,6 +106,13 @@ class AnnotatedProgressBar(QtWidgets.QProgressBar):
     base bar. The ticks can be used, for instance, for indicating the number
     of seconds in a trial. The highlight bar can be used to indicate the
     boundaries of some event during the trial.
+
+    Examples
+    --------
+    >>> from axopy.widgets import AnnotatedProgressBar
+    >>> ui = AnnotatedProgressBar()
+    >>> ui.ticks = 5
+    >>> ui.transitions = (2, 4)
     """
 
     def __init__(self, parent=None):
@@ -115,6 +122,9 @@ class AnnotatedProgressBar(QtWidgets.QProgressBar):
         self._ticks = 1
         self._update_tick_labels()
         self._transitions = (0, 1)
+
+        self.setMinimumHeight(40)
+        self.setMinimumWidth(300)
 
         self.palette = QtGui.QPalette()
 

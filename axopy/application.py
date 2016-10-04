@@ -260,12 +260,12 @@ class RecordThread(QtCore.QThread):
     """
     Retrieves data from a data acquisition device in a separate thread.
 
-    Signals
-    -------
-    updated :
+    Attributes
+    ----------
+    updated : pyqtSignal
         Emits the latest data from the data acquisition unit as processed by
         the pipeline.
-    disconnected :
+    disconnected : pyqtSignal
         Emitted when there is a problem with the data acquisition unit.
     """
 

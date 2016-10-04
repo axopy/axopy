@@ -36,7 +36,8 @@ class EmulatedDaq(object):
         Number of samples to generate per :meth:`read()` call. Default is 100.
     """
 
-    def __init__(self, rate=1000, num_channels=1, amplitude=1.0, read_size=100):
+    def __init__(self, rate=1000, num_channels=1, amplitude=1.0,
+                 read_size=100):
         self.rate = rate
         self.num_channels = num_channels
         self.amplitude = amplitude
