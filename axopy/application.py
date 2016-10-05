@@ -79,6 +79,23 @@ class TaskUI(QtWidgets.QWidget):
         return self.__class__.__name__
 
 
+def _participant_requirement_warning(task):
+    """Shows a warning QMessageBox when a participant is required."""
+    QtWidgets.QMessageBox().warning(
+        task,
+        "Warning",
+        "{} requires a participant to be selected.".format(str(task)),
+        QtWidgets.QMessageBox.Ok)
+
+
+class ExperimentTask(TaskUI):
+
+    def showEvent(self, event):
+        if getattr(self, 'participant', None) is None:
+            _participant_requirement_warning(self)
+            self.setDisabled(True)
+
+
 class BaseUI(QtWidgets.QMainWindow):
     """
     The base user interface for running experiments.
@@ -123,6 +140,11 @@ class BaseUI(QtWidgets.QMainWindow):
         # populate participant list from database
         for p in self.database.get_participants():
             self.ui.listWidget.addItem(p)
+        self.ui.listWidget.itemSelectionChanged.connect(
+            self._on_participant_selected)
+
+        self.statusbar_label = QtWidgets.QLabel("no participant selected")
+        self.ui.statusbar.addPermanentWidget(self.statusbar_label)
 
         self.ui.newParticipantButton.clicked.connect(self._on_new_participant)
 
@@ -179,6 +201,11 @@ class BaseUI(QtWidgets.QMainWindow):
             return
 
         self.ui.listWidget.addItem(pid)
+
+    def _on_participant_selected(self):
+        item = self.ui.listWidget.currentItem()
+        pid = item.text()
+        self.statusbar_label.setText("participant: {}".format(pid))
 
     def _on_next_tab(self):
         i = self.ui.tabWidget.currentIndex() + 1
