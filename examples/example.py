@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtGui
 
-from axopy.application import application, ExperimentTask
+from axopy.application import application, ExperimentTask, TaskUI
 from axopy.storage import ExperimentDatabase
 from axopy.daq import EmulatedDaq
 from axopy.tasks import Oscilloscope
@@ -9,7 +9,7 @@ from axopy.features import RMS
 from axopy.util import ensure_2d
 
 
-class SomeTask(ExperimentTask):
+class SomeTask(TaskUI):
 
     def __init__(self):
         super(SomeTask, self).__init__()
@@ -52,6 +52,6 @@ if __name__ == '__main__':
     db.create_participant('p1')
 
     with application(daq, db) as app:
-        app.install_task(Oscilloscope(pipeline=build_pipeline()))
+        # app.install_task(Oscilloscope(pipeline=build_pipeline()))
         app.install_task(SomeTask())
         app.install_task(ExperimentTask())

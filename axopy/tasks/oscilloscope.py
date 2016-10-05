@@ -1,8 +1,8 @@
-from ..application import TaskUI
+from ..application import RealtimeVisualizationTask
 from ..widgets import OscilloscopeWidget
 
 
-class Oscilloscope(TaskUI):
+class Oscilloscope(RealtimeVisualizationTask):
     """
     Simple oscilloscope-like plugin for viewing signals in real-time.
 

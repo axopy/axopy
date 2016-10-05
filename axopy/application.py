@@ -9,10 +9,10 @@ from .templates.baseui import Ui_BaseUI
 @contextmanager
 def application(*args, **kwargs):
     """
-    Convenience context manager for running a BasUI in a QApplication. The
-    application instance is created on entry and executed on exit. The
-    arguments and keyword arguments are passed along to BaseUI, and the BaseUI
-    instance is yielded.
+    Convenience context manager for running a :class:`BaseUI` in a
+    QApplication. The application instance is created on entry and executed on
+    exit. The arguments and keyword arguments are passed along to
+    :class:`BaseUI`, and the :class:`BaseUI` instance is yielded.
 
     Examples
     --------
@@ -20,6 +20,7 @@ def application(*args, **kwargs):
     context manager. A couple custom tasks are installed, and the application
     runs upon exit from the context.
 
+    >>> from axopy.application import application
     >>> with application(daq, db) as app:
     ...     app.install_task(CustomTask())
     ...     app.install_task(AnotherCustomTask())
@@ -32,22 +33,21 @@ def application(*args, **kwargs):
 
 
 class TaskUI(QtWidgets.QWidget):
-    """
-    Base task that does nothing.
+    """Base implementation of a task.
+
+    A task is the core unit of operation in an experiment workflow. Each task
+    is presented as a tab in the :class:`BaseUI`.
 
     Attributes
     ----------
-    base : BaseUI
-        The BaseUI in which this task resides. This allows sub-classes to
-        access the resources shared by all tasks in an experiment.
+    requires_daq : bool
+        True if the task requires a data acquisition device to run.
+    requires_participant : bool
+        True if the task requires a participant to be selected to run.
     """
 
-    def __init__(self, parent=None):
-        super(TaskUI, self).__init__(parent)
-        self.base = None
-
-    def set_recorder(self, recorder):
-        self.recorder = recorder
+    requires_daq = False
+    requires_participant = False
 
     def set_central_widget(self, widget):
         """
@@ -57,43 +57,86 @@ class TaskUI(QtWidgets.QWidget):
         layout.addWidget(widget)
         self.setLayout(layout)
 
-    def setup_recorder(self):
-        """
-        Register recorder callbacks.
-        """
-        pass
-
-    def dispose_recorder(self):
-        """
-        Un-register recorder callbacks.
-        """
-        pass
-
     def showEvent(self, event):
-        self.setup_recorder()
+        """Callback for when the task becomes visible.
 
-    def hideEvent(self, event):
-        self.dispose_recorder()
+        Tasks that become visible check if their requirements are met, and if
+        not, disable themselves.
+        """
+        if self.requires_participant:
+            if getattr(self, 'participant', None) is None:
+                self._participant_requirement_warning()
+                self.setDisabled(True)
+                return
+
+        if self.requires_daq:
+            if getattr(self, 'daq', None) is None:
+                self._daq_requirement_warning()
+                self.setDisabled(True)
+                return
+
+    def _participant_requirement_warning(self):
+        """Shows a warning QMessageBox when a participant is required."""
+        QtWidgets.QMessageBox().warning(
+            self,
+            "Warning",
+            "{} requires a participant to be selected.".format(str(self)),
+            QtWidgets.QMessageBox.Ok)
+
+    def _daq_requirement_warning(self):
+        """Shows a warning QMessageBox when a DAQ is required."""
+        QtWidgets.QMessageBox().warning(
+            self,
+            "Warning",
+            "{} requires a data acquisition device to be present.".format(
+                str(self)),
+            QtWidgets.QMessageBox.Ok)
 
     def __str__(self):
         return self.__class__.__name__
 
 
-def _participant_requirement_warning(task):
-    """Shows a warning QMessageBox when a participant is required."""
-    QtWidgets.QMessageBox().warning(
-        task,
-        "Warning",
-        "{} requires a participant to be selected.".format(str(task)),
-        QtWidgets.QMessageBox.Ok)
+class RealtimeVisualizationTask(TaskUI):
+    """Task type meant for displaying data from a data acquisition device.
+
+    These tasks require a data acquisition device, and while they can
+    implement a processing pipeline before displaying the data, these tasks
+    cannot write the data to storage. See :class:`ExperimentTask` for a task
+    type that handles displaying data from a DAQ and writing data to storage.
+    """
+
+    requires_daq = True
+
+
+class DataVisualizationTask(TaskUI):
+    """Task type meant for displaying data from storage.
+
+    These tasks require access to data storage from another task in order to
+    display it in some way.
+    """
+
+    requires_participant = True
+
+
+class ProcessingTask(TaskUI):
+    """Task type meant for generating new data from another task's output.
+
+    These tasks require access to data storage from another task as well as
+    the ability to write data to storage.
+    """
+
+    requires_participant = True
 
 
 class ExperimentTask(TaskUI):
+    """Task type meant for implementing the full suite of axopy capabilities.
 
-    def showEvent(self, event):
-        if getattr(self, 'participant', None) is None:
-            _participant_requirement_warning(self)
-            self.setDisabled(True)
+    These tasks are endowed with reading data from a data acquisition device,
+    using data output by other tasks, and writing data to storage.
+    """
+
+    requires_daq = True
+    requires_participant = True
 
 
 class BaseUI(QtWidgets.QMainWindow):
@@ -107,6 +150,11 @@ class BaseUI(QtWidgets.QMainWindow):
     participant_dialog : class, optional
         A class derived from NewParticipantDialog. By default, a simple dialog
         is shown which contains a single entry for the participant ID.
+
+    Attributes
+    ----------
+    record_thread : RecordThread
+        Thread running the data acquisition device.
     """
 
     def __init__(self, daq, database, participant_dialog=None, parent=None):
@@ -124,9 +172,6 @@ class BaseUI(QtWidgets.QMainWindow):
 
         self.record_thread = RecordThread(daq)
 
-        self._setup_ui()
-
-    def _setup_ui(self):
         # initialize form class from Qt Designer-generated UI
         self.ui = Ui_BaseUI()
         self.ui.setupUi(self)
@@ -166,7 +211,7 @@ class BaseUI(QtWidgets.QMainWindow):
             Any task extending the base TaskUI class.
         """
         name = str(task)
-        task.set_recorder(self.record_thread)
+        #task.set_recorder(self.record_thread)
         self.tasks[name] = task
         self.ui.tabWidget.addTab(task, name)
 
@@ -207,6 +252,10 @@ class BaseUI(QtWidgets.QMainWindow):
         pid = item.text()
         self.statusbar_label.setText("participant: {}".format(pid))
 
+        for name, task in self.tasks.items():
+            if task.requires_participant:
+                task.participant = pid
+
     def _on_next_tab(self):
         i = self.ui.tabWidget.currentIndex() + 1
         if i == self.ui.tabWidget.count():
@@ -218,14 +267,6 @@ class BaseUI(QtWidgets.QMainWindow):
         if i == -1:
             i = self.ui.tabWidget.count() - 1
         self.ui.tabWidget.setCurrentIndex(i)
-
-    def showEvent(self, event):
-        if not self.record_thread.running:
-            self.record_thread.start()
-
-    def closeEvent(self, event):
-        if self.record_thread is not None:
-            self.record_thread.kill()
 
 
 class NewParticipantDialog(QtWidgets.QDialog):
