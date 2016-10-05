@@ -1,4 +1,5 @@
-from axopy.pipeline import Pipeline, PipelineBlock, PassthroughPipeline
+from axopy.pipeline import (Pipeline, PipelineBlock, PassthroughPipeline,
+                            CallablePipelineBlock)
 
 from unittest import TestCase
 
@@ -219,6 +220,19 @@ class TestHooks(TestCase):
 
     def _hook2(self, out):
         self.assertEqual(out, _f(data))
+
+
+class TestCallablePipelineBlock(TestCase):
+
+    def test_simple_callable(self):
+        """
+        Tests basic operation of a CallablePipelineBlock.
+        """
+        a = CallablePipelineBlock(_f)
+        result = a.process(data)
+
+        self.assertEqual(result, _f(data))
+        self.assertEqual(a.name, '_f')
 
 
 def _f(x):

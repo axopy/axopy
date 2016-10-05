@@ -165,3 +165,34 @@ class PassthroughPipeline(Pipeline):
             return l
         else:
             return data, out
+
+
+class CallablePipelineBlock(PipelineBlock):
+    """A `PipelineBlock` that does not require persistent attributes.
+
+    Many `PipelineBlock` implementations don't require attributes to update
+    on successive calls to the `process` method, but instead are essentially a
+    function that can be called repeatedly. This class is for conveniently
+    creating such a block.
+
+    Parameters
+    ----------
+    processor : callable(data)
+        Function that gets called when the block's `process` method is called.
+        Should take a single input and return output which is compatible with
+        whatever is connected to the block.
+    name : str, optional, default=None
+        Name of the block. By default, the name of the `processor` function is
+        used.
+    hooks : list, optional, default=None
+        List of callables (callbacks) to run when after the block's `process`
+        method is called.
+    """
+
+    def __init__(self, processor, name=None, hooks=None):
+        super(CallablePipelineBlock, self).__init__(
+            name=processor.__name__, hooks=hooks)
+        self.processor = processor
+
+    def process(self, data):
+        return self.processor(data)
