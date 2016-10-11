@@ -3,7 +3,6 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 
 from . import daq
 from . import pipeline
-from .templates.baseui import Ui_BaseUI
 
 
 @contextmanager
@@ -157,49 +156,54 @@ class BaseUI(QtWidgets.QMainWindow):
         Thread running the data acquisition device.
     """
 
-    def __init__(self, daq, database, participant_dialog=None, parent=None):
+    def __init__(self, daq, database, parent=None):
         super(BaseUI, self).__init__(parent)
+        self._setup_ui()
 
         self.daq = daq
         self.database = database
 
-        if participant_dialog is None:
-            self.participant_dialog = NewParticipantDialog
-        else:
-            self.participant_dialog = participant_dialog
+        # populate participant list from database
+        for p in self.database.get_participants():
+            self._particpiant_selector.add_participant(p)
 
         self.tasks = {}
 
         self.record_thread = RecordThread(daq)
 
-        # initialize form class from Qt Designer-generated UI
-        self.ui = Ui_BaseUI()
-        self.ui.setupUi(self)
+    def _setup_ui(self):
+        """Initialize widgets and callbacks."""
+        # layout
+        central_widget = QtWidgets.QWidget(self)
+        main_layout = QtWidgets.QGridLayout(central_widget)
+        self.setCentralWidget(central_widget)
+
+        # tab widget -- each tab holds a task
+        self._tab_widget = QtWidgets.QTabWidget(self)
+        self._tab_widget.setMovable(True)
+        main_layout.addWidget(self._tab_widget)
+
+        # participant selection task
+        self._particpiant_selector = ParticipantSelector()
+        self._particpiant_selector.selected.connect(
+            self._on_participant_selected)
+        self._tab_widget.addTab(self._particpiant_selector, "Participant")
+
+        # status bar shows current participant
+        status_bar = QtWidgets.QStatusBar(self)
+        self.setStatusBar(status_bar)
+        self._statusbar_label = QtWidgets.QLabel("no participant selected")
+        status_bar.addPermanentWidget(self._statusbar_label)
 
         # set up Ctrl+PgUp and Ctrl+PgDown shortcuts for changing tabs
-        nt = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self)
-        nt.activated.connect(self._on_next_tab)
-        pt = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self)
-        pt.activated.connect(self._on_prev_tab)
+        nexttab = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self)
+        nexttab.activated.connect(self._on_ctrl_pgdown)
+        prevtab = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self)
+        prevtab.activated.connect(self._on_ctrl_pgup)
 
-        # populate participant list from database
-        for p in self.database.get_participants():
-            self.ui.listWidget.addItem(p)
-        self.ui.listWidget.itemSelectionChanged.connect(
-            self._on_participant_selected)
-
-        self.statusbar_label = QtWidgets.QLabel("no participant selected")
-        self.ui.statusbar.addPermanentWidget(self.statusbar_label)
-
-        self.ui.newParticipantButton.clicked.connect(self._on_new_participant)
-
-    @property
-    def participant_dialog(self):
-        return self._participant_dialog
-
-    @participant_dialog.setter
-    def participant_dialog(self, dialog):
-        self._participant_dialog = dialog
+    def _on_participant_selected(self, pid):
+        """Callback called when a participant is selected."""
+        self._statusbar_label.setText("participant: {}".format(pid))
 
     def install_task(self, task):
         """
@@ -211,12 +215,55 @@ class BaseUI(QtWidgets.QMainWindow):
             Any task extending the base TaskUI class.
         """
         name = str(task)
-        #task.set_recorder(self.record_thread)
+        # task.set_recorder(self.record_thread)
         self.tasks[name] = task
-        self.ui.tabWidget.addTab(task, name)
+        self._tab_widget.addTab(task, name)
+
+    def _on_ctrl_pgdown(self):
+        """Callback for switching to next tab on Ctrl+PagDown."""
+        i = self._tab_widget.currentIndex() + 1
+        if i == self._tab_widget.count():
+            i = 0
+        self._tab_widget.setCurrentIndex(i)
+
+    def _on_ctrl_pgup(self):
+        """Callback for switching to previous tab on Ctrl+PagDown."""
+        i = self._tab_widget.currentIndex() - 1
+        if i == -1:
+            i = self._tab_widget.count() - 1
+        self._tab_widget.setCurrentIndex(i)
+
+
+class ParticipantSelector(QtWidgets.QWidget):
+
+    selected = QtCore.pyqtSignal(object)
+
+    def __init__(self, parent=None):
+        super(ParticipantSelector, self).__init__(parent=parent)
+        self._setup_ui()
+
+    def add_participant(self, pid):
+        """Add a participant to the list."""
+        self.list_widget.addItem(pid)
+
+    def _setup_ui(self):
+        self.main_layout = QtWidgets.QGridLayout(self)
+
+        self.label = QtWidgets.QLabel(self)
+        self.main_layout.addWidget(self.label, 0, 0, 1, 1)
+
+        self.list_widget = QtWidgets.QListWidget(self)
+        self.list_widget.setAlternatingRowColors(True)
+        self.list_widget.itemSelectionChanged.connect(
+            self._on_participant_selected)
+        self.main_layout.addWidget(self.list_widget, 1, 0, 1, 1)
+
+        self.new_button = QtWidgets.QPushButton("New Participant")
+        self.new_button.clicked.connect(self._on_new_participant)
+        self.main_layout.addWidget(self.new_button, 2, 0, 1, 1)
 
     def _on_new_participant(self):
-        dialog = self.participant_dialog(self)
+        dialog = NewParticipantDialog()
         if not dialog.exec_():
             return
 
@@ -233,11 +280,11 @@ class BaseUI(QtWidgets.QMainWindow):
             return
 
         # make sure the participant ID doesn't already exist
-        found = self.ui.listWidget.findItems(pid, QtCore.Qt.MatchExactly)
+        found = self.list_widget.findItems(pid, QtCore.Qt.MatchExactly)
         if found:
             # participant ID already in database, select and show warning
             match = found[0]
-            self.ui.listWidget.setCurrentItem(match)
+            self.list_widget.setCurrentItem(match)
             QtWidgets.QMessageBox().warning(
                 self,
                 "Warning",
@@ -245,28 +292,12 @@ class BaseUI(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.Ok)
             return
 
-        self.ui.listWidget.addItem(pid)
+        self.add_participant(pid)
 
     def _on_participant_selected(self):
-        item = self.ui.listWidget.currentItem()
+        item = self.list_widget.currentItem()
         pid = item.text()
-        self.statusbar_label.setText("participant: {}".format(pid))
-
-        for name, task in self.tasks.items():
-            if task.requires_participant:
-                task.participant = pid
-
-    def _on_next_tab(self):
-        i = self.ui.tabWidget.currentIndex() + 1
-        if i == self.ui.tabWidget.count():
-            i = 0
-        self.ui.tabWidget.setCurrentIndex(i)
-
-    def _on_prev_tab(self):
-        i = self.ui.tabWidget.currentIndex() - 1
-        if i == -1:
-            i = self.ui.tabWidget.count() - 1
-        self.ui.tabWidget.setCurrentIndex(i)
+        self.selected.emit(pid)
 
 
 class NewParticipantDialog(QtWidgets.QDialog):
