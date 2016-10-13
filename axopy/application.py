@@ -1,8 +1,8 @@
 from contextlib import contextmanager
 from PyQt5 import QtCore, QtWidgets, QtGui
 
-from . import daq
-from . import pipeline
+from axopy import daq
+from axopy import pipeline
 
 
 @contextmanager

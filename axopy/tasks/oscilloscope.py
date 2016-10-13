@@ -1,5 +1,5 @@
-from ..application import RealtimeVisualizationTask
-from ..widgets import OscilloscopeWidget
+from axopy.application import RealtimeVisualizationTask
+from axopy.widgets import OscilloscopeWidget
 
 
 class Oscilloscope(RealtimeVisualizationTask):
