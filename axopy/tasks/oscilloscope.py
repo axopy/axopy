@@ -21,18 +21,21 @@ class Oscilloscope(RealtimeVisualizationTask):
 
         self.pipeline = pipeline
 
-        self.oscope_widget = OscilloscopeWidget()
-        self.set_central_widget(self.oscope_widget)
+        self._oscope_widget = OscilloscopeWidget()
+        self.set_central_widget(self._oscope_widget)
 
-    def setup_recorder(self):
+    def setup_daq(self):
+        self._daq_thread = self.base_ui.daq_thread
         if self.pipeline is None:
-            self.recorder.remove_pipeline()
+            self._daq_thread.remove_pipeline()
         else:
-            self.recorder.pipeline = self.pipeline
-        self.recorder.updated.connect(self.on_recorder_update)
+            self._daq_thread.pipeline = self.pipeline
+        self._daq_thread.updated.connect(self._on_daq_update)
+        self._daq_thread.start()
 
-    def dispose_recorder(self):
-        self.recorder.updated.disconnect(self.on_recorder_update)
+    def shutdown_daq(self):
+        self._daq_thread.updated.disconnect(self._on_daq_update)
+        self._daq_thread.kill()
 
-    def on_recorder_update(self, data):
-        self.oscope_widget.add_window(data)
+    def _on_daq_update(self, data):
+        self._oscope_widget.add_window(data)

@@ -49,12 +49,44 @@ class TaskUI(QtWidgets.QWidget):
     requires_participant = False
 
     def set_central_widget(self, widget):
-        """
-        Convenience function for creating plugins with default QGridLayout.
+        """Convenience method for setting up a single-widget interface.
+
+        The widget is placed in a :class:`QGridLayout`, and the layout is set
+        as the tab's layout.
+
+        Parameters
+        ----------
+        widget : QWidget
+            The widget to use as the interface.
         """
         layout = QtWidgets.QGridLayout()
         layout.addWidget(widget)
         self.setLayout(layout)
+
+    def setup_daq(self):
+        """Initialize the data acquisition thread.
+
+        This method is automatically called when hte task is shown. Subclasses
+        requiring use of a data acquisition device should override this method
+        and perform the following:
+
+            1. set up the thread's processing pipeline
+            2. connect the thread's callbacks to methods for handling data
+            3. start the thread
+        """
+        pass
+
+    def shutdown_daq(self):
+        """Shut down the data acquisition thread.
+
+        This method is automatically called when the task is hidden.
+        Subclasses requiring use of a data acquisition device should override
+        this method and perform the following:
+
+            1. disconnect callbacks connected in `setup_daq`
+            2. kill the thread
+        """
+        pass
 
     def showEvent(self, event):
         """Callback for when the task becomes visible.
@@ -68,11 +100,10 @@ class TaskUI(QtWidgets.QWidget):
                 self.setDisabled(True)
                 return
 
-        if self.requires_daq:
-            if getattr(self, 'daq', None) is None:
-                self._daq_requirement_warning()
-                self.setDisabled(True)
-                return
+        self.setup_daq()
+
+    def hideEvent(self, event):
+        self.shutdown_daq()
 
     def _participant_requirement_warning(self):
         """Shows a warning QMessageBox when a participant is required."""
@@ -152,7 +183,7 @@ class BaseUI(QtWidgets.QMainWindow):
 
     Attributes
     ----------
-    record_thread : RecordThread
+    daq_thread : DaqThread
         Thread running the data acquisition device.
     """
 
@@ -169,7 +200,21 @@ class BaseUI(QtWidgets.QMainWindow):
 
         self.tasks = {}
 
-        self.record_thread = RecordThread(daq)
+        self.daq_thread = DaqThread(daq)
+
+    def install_task(self, task):
+        """
+        Add a task to the UI.
+
+        Parameters
+        ----------
+        task: TaskUI
+            Any task extending the base TaskUI class.
+        """
+        name = str(task)
+        self.tasks[name] = task
+        self._tab_widget.addTab(task, name)
+        task.base_ui = self
 
     def _setup_ui(self):
         """Initialize widgets and callbacks."""
@@ -204,20 +249,6 @@ class BaseUI(QtWidgets.QMainWindow):
     def _on_participant_selected(self, pid):
         """Callback called when a participant is selected."""
         self._statusbar_label.setText("participant: {}".format(pid))
-
-    def install_task(self, task):
-        """
-        Add a task to the UI.
-
-        Parameters
-        ----------
-        task: TaskUI
-            Any task extending the base TaskUI class.
-        """
-        name = str(task)
-        # task.set_recorder(self.record_thread)
-        self.tasks[name] = task
-        self._tab_widget.addTab(task, name)
 
     def _on_ctrl_pgdown(self):
         """Callback for switching to next tab on Ctrl+PagDown."""
@@ -355,7 +386,7 @@ class NewParticipantDialog(QtWidgets.QDialog):
         return {a: str(e.text()) for a, e in self.line_edits.items()}
 
 
-class RecordThread(QtCore.QThread):
+class DaqThread(QtCore.QThread):
     """
     Retrieves data from a data acquisition device in a separate thread.
 
@@ -372,7 +403,7 @@ class RecordThread(QtCore.QThread):
     disconnected = QtCore.pyqtSignal()
 
     def __init__(self, daq, pipeline=None, parent=None):
-        super(RecordThread, self).__init__(parent=parent)
+        super(DaqThread, self).__init__(parent=parent)
         self.daq = daq
 
         self._running = False

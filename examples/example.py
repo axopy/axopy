@@ -52,6 +52,6 @@ if __name__ == '__main__':
     db.create_participant('p1')
 
     with application(daq, db) as app:
-        # app.install_task(Oscilloscope(pipeline=build_pipeline()))
+        app.install_task(Oscilloscope(pipeline=build_pipeline()))
         app.install_task(SomeTask())
         app.install_task(ExperimentTask())
