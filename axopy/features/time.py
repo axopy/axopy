@@ -224,4 +224,4 @@ class RMS(Feature):
 
     def compute(self, x):
         x = ensure_2d(x)
-        return np.sqrt(np.mean(np.square(x), axis=1))
+        return np.sqrt(np.mean(np.square(x), axis=1, keepdims=True))
