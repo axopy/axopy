@@ -66,13 +66,21 @@ class TaskUI(QtWidgets.QWidget):
     def setup_daq(self):
         """Initialize the data acquisition thread.
 
-        This method is automatically called when hte task is shown. Subclasses
+        This method is automatically called when the task is shown. Subclasses
         requiring use of a data acquisition device should override this method
         and perform the following:
 
             1. set up the thread's processing pipeline
             2. connect the thread's callbacks to methods for handling data
             3. start the thread
+        """
+        pass
+
+    def setup_storage(self):
+        """Initialize data storage for the task.
+
+        This method is automatically called when the task is shown. Subclasses
+        requiring use of data storage should override this method.
         """
         pass
 
@@ -95,12 +103,14 @@ class TaskUI(QtWidgets.QWidget):
         not, disable themselves.
         """
         if self.requires_participant:
-            if getattr(self, 'participant', None) is None:
+            if self.base_ui.participant is None:
                 self._participant_requirement_warning()
-                self.setDisabled(True)
+                self.setEnabled(False)
                 return
 
+        self.setEnabled(True)
         self.setup_daq()
+        self.setup_storage()
 
     def hideEvent(self, event):
         self.shutdown_daq()
@@ -185,6 +195,8 @@ class BaseUI(QtWidgets.QMainWindow):
     ----------
     daq_thread : DaqThread
         Thread running the data acquisition device.
+    participant : str
+        Currently selected participant.
     """
 
     def __init__(self, daq, database, parent=None):
@@ -199,7 +211,7 @@ class BaseUI(QtWidgets.QMainWindow):
             self._particpiant_selector.add_participant(p)
 
         self.tasks = {}
-
+        self.participant = None
         self.daq_thread = DaqThread(daq)
 
     def install_task(self, task):
@@ -249,6 +261,7 @@ class BaseUI(QtWidgets.QMainWindow):
     def _on_participant_selected(self, pid):
         """Callback called when a participant is selected."""
         self._statusbar_label.setText("participant: {}".format(pid))
+        self.participant = pid
 
     def _on_ctrl_pgdown(self):
         """Callback for switching to next tab on Ctrl+PagDown."""
