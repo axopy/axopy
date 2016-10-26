@@ -5,7 +5,7 @@ Common processing tasks.
 import numpy as np
 from scipy import signal
 
-from .base import PipelineBlock
+from axopy.pipeline.base import PipelineBlock
 
 
 class Windower(PipelineBlock):

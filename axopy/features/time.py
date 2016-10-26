@@ -7,8 +7,8 @@ Notation:
 """
 
 import numpy as np
-from .base import Feature
-from ..util import ensure_2d, rolling_window
+from axopy.features.base import Feature
+from axopy.util import ensure_2d, rolling_window
 
 
 class MAV(Feature):
