@@ -6,7 +6,7 @@ data processing and implements some common types of processing blocks.
 from axopy.pipeline.base import (PipelineBlock, Pipeline, PassthroughPipeline,
                                  CallablePipelineBlock)
 from axopy.pipeline.common import (Windower, Filter, FeatureExtractor,
-                                   Estimator, Transformer)
+                                   Estimator, Transformer, Ensure2D)
 
 __all__ = ['PipelineBlock',
            'Pipeline',
@@ -16,4 +16,5 @@ __all__ = ['PipelineBlock',
            'Filter',
            'FeatureExtractor',
            'Estimator',
-           'Transformer']
+           'Transformer',
+           'Ensure2D']

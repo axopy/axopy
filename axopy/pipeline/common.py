@@ -5,6 +5,7 @@ Common processing tasks.
 import numpy as np
 from scipy import signal
 
+from axopy.util import ensure_2d
 from axopy.pipeline.base import PipelineBlock
 
 
@@ -150,8 +151,8 @@ class FeatureExtractor(PipelineBlock):
         passed through.
     """
 
-    def __init__(self, features):
-        super(FeatureExtractor, self).__init__()
+    def __init__(self, features, hooks=None):
+        super(FeatureExtractor, self).__init__(hooks=hooks)
         self.features = features
 
         self.feature_indices = {}
@@ -244,11 +245,24 @@ class Transformer(PipelineBlock):
         implementing ``fit`` and ``transform`` methods).
     """
 
-    def __init__(self, transformer):
-        super(Transformer, self).__init__()
+    def __init__(self, transformer, hooks=None):
+        super(Transformer, self).__init__(hooks=None)
         self.transformer = transformer
 
     def process(self, data):
         """Calls the transformer's ``transform`` method and returns the result.
         """
         return self.transformer.transform(data)
+
+
+class Ensure2D(PipelineBlock):
+    """Transforms a array with shape `(n,)` to shape `(n, 1)`.
+
+    See Also
+    --------
+    :func:`axopy.util.ensure_2d`
+    """
+
+    def process(self, data):
+        data = ensure_2d(data)
+        return data.T

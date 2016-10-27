@@ -143,9 +143,39 @@ class RealtimeVisualizationTask(TaskUI):
     implement a processing pipeline before displaying the data, these tasks
     cannot write the data to storage. See :class:`ExperimentTask` for a task
     type that handles displaying data from a DAQ and writing data to storage.
+
+    Attributes
+    ----------
+    pipeline : Pipeline
+        Processing pipeline taking raw data from the data acquisition device
+        and outputting the data to visualize.
     """
 
     requires_daq = True
+    pipeline = None
+
+    def on_daq_update(self, data):
+        """Callback called when the data acquisition device returns new data.
+
+        Override to handle incoming data and display it.
+        """
+        pass
+
+    def setup_daq(self):
+        """Initializes the data acquisition device.
+
+        Sets up the device to call ``on_daq_update`` with each update.
+        """
+        self._daq = self.base_ui.daq_thread
+        self._daq.remove_pipeline()
+        self._daq.pipeline = self.pipeline
+
+        self._daq.updated.connect(self.on_daq_update)
+        self._daq.start()
+
+    def shutdown_daq(self):
+        self._daq.updated.disconnect(self.on_daq_update)
+        self._daq.kill()
 
 
 class DataVisualizationTask(TaskUI):

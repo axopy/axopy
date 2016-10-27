@@ -12,8 +12,8 @@ from axopy.application import (application, ExperimentTask,
 from axopy.storage import ExperimentDatabase, SimpleTrialStorage
 from axopy.daq import EmulatedDaq
 from axopy.tasks import Oscilloscope
-from axopy.pipeline import Pipeline, FeatureExtractor, Windower
-from axopy.features import RMS
+from axopy.pipeline import Pipeline, FeatureExtractor, Windower, Ensure2D
+from axopy.features import RMS, MAV
 
 
 class ExampleExperiment(ExperimentTask):
@@ -110,11 +110,12 @@ if __name__ == '__main__':
     daq = EmulatedDaq(rate=1000, num_channels=2, read_size=100)
 
     # for this example use memory-backed store instead of file
-    db = ExperimentDatabase('file.hdf5')#, driver='core', backing_store=False)
+    db = ExperimentDatabase('file.hdf5', driver='core', backing_store=False)
     db.create_participant('p0')
 
     pipeline = Pipeline([
-        FeatureExtractor([('rms', RMS())]),
+        FeatureExtractor([('rms', RMS()), ('mav', MAV())]),
+        Ensure2D(),
         Windower(100)])
 
     with application(daq, db) as app:
