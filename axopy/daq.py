@@ -191,7 +191,7 @@ class MccDaq(object):
             "AISCAN:HIGHCHAN={0}".format(channel_range[1]))
 
 
-class TrignoDaq(object):
+class _BaseTrignoDaq(object):
     """
     Delsys Trigno wireless EMG system.
 
@@ -201,64 +201,56 @@ class TrignoDaq(object):
 
     Parameters
     ----------
-    channel_range : tuple with 2 ints
-        Sensor channels to use, e.g. (lowchan, highchan) obtains data from
-        channels lowchan through highchan
-    samples_per_read : int
-        Number of samples per channel to read in each read operation
-    addr : str, default='localhost'
+    host : str
         IP address the TCU server is running on.
+    cmd_port : int
+        Port of TCU command messages.
+    data_port : int
+        Port of TCU data access.
+    rate : int
+        Sampling rate of the data source.
+    total_channels : int
+        Total number of channels supported by the device.
 
     Attributes
     ----------
-    RATE : int
-        EMG data sample rate.
-    CMD_PORT : int
-        Port the command server runs on, specified by TCU.
-    EMG_PORT : int
-        Port the EMG server runs on, specified by TCU.
     BYTES_PER_CHANNEL : int
-        Number of bytes per sample per channel.
-    NUM_CHANNELS : int
-        Number of channels in the system.
-    MIN_RECV_SIZE : int
-        Minimum recv size in bytes (16 sensors * 4 bytes/channel).
-    COMM_TERM : str
+        Number of bytes per sample per channel. EMG and accelerometer data
+    CMD_TERM : str
         Command string termination.
-    SCALE : float
-        Scaling factor to apply to output to get a (-1, 1) range.
+    CONNECTION_TIMEOUT : int
+        Timeout for initializing connection to TCU (in seconds).
+
+    Notes
+    -----
+    Implementation details can be found in the Delsys SDK reference:
+    http://www.delsys.com/integration/sdk/
     """
 
-    RATE = 2000
-    CMD_PORT = 50040
-    EMG_PORT = 50041
     BYTES_PER_CHANNEL = 4
-    NUM_CHANNELS = 16
-    MIN_RECV_SIZE = NUM_CHANNELS * BYTES_PER_CHANNEL
-    COMM_TERM = '\r\n\r\n'
-    SCALE = 1 / 0.011
+    CMD_TERM = '\r\n\r\n'
+    CONNECTION_TIMEOUT = 2
 
-    def __init__(self, channel_range, samples_per_read, addr='localhost'):
-        self.channel_range = channel_range
-        self.samples_per_read = samples_per_read
-        self.addr = addr
+    def __init__(self, host, cmd_port, data_port, total_channels):
+        self.host = host
+        self.cmd_port = cmd_port
+        self.data_port = data_port
+        self.total_channels = total_channels
 
-        self.input_range = 1
-        self.rate = self.RATE
+        self._min_recv_size = self.total_channels * self.BYTES_PER_CHANNEL
 
         self._initialize()
 
     def _initialize(self):
-        self.set_channel_range(self.channel_range)
 
         # create command socket and consume the servers initial response
-        self.comm_socket = socket.create_connection(
-            (self.addr, self.CMD_PORT), 2)
-        self.comm_socket.recv(1024)
+        self._comm_socket = socket.create_connection(
+            (self.host, self.cmd_port), 2)
+        self._comm_socket.recv(1024)
 
-        # create the EMG data socket
-        self.emg_socket = socket.create_connection(
-            (self.addr, self.EMG_PORT), 2)
+        # create the data socket
+        self._data_socket = socket.create_connection(
+            (self.host, self.data_port), 2)
 
     def start(self):
         """
@@ -269,19 +261,30 @@ class TrignoDaq(object):
         """
         self._send_cmd('START')
 
-    def read(self):
+    def read(self, num_samples):
         """
         Request a sample of data from the device.
 
         This is a blocking method, meaning it returns only once the requested
         number of samples are available.
+
+        Parameters
+        ----------
+        num_samples : int
+            Number of samples to read per channel.
+
+        Returns
+        -------
+        data : ndarray, shape=(total_channels, num_samples)
+            Data read from the device. Each channel is a row and each column
+            is a point in time.
         """
-        l_des = self.samples_per_read * self.MIN_RECV_SIZE
+        l_des = num_samples * self._min_recv_size
         l = 0
         packet = bytes()
         while l < l_des:
             try:
-                packet += self.emg_socket.recv(l_des - l)
+                packet += self._data_socket.recv(l_des - l)
             except socket.timeout:
                 l = len(packet)
                 packet += b'\x00' * (l_des - l)
@@ -289,11 +292,9 @@ class TrignoDaq(object):
             l = len(packet)
 
         data = np.asarray(
-            struct.unpack(
-                '<'+'f'*self.NUM_CHANNELS*self.samples_per_read, packet))
-        data = np.transpose(data.reshape((-1, self.NUM_CHANNELS)))
-        data = data[self.channel_range[0]:self.channel_range[1]+1, :]
-        data *= self.SCALE
+            struct.unpack('<'+'f'*self.total_channels*num_samples, packet))
+        data = np.transpose(data.reshape((-1, self.total_channels)))
+
         return data
 
     def stop(self):
@@ -306,29 +307,178 @@ class TrignoDaq(object):
 
     def __del__(self):
         try:
-            self.comm_socket.close()
+            self._comm_socket.close()
         except:
             pass
 
-    def set_channel_range(self, channel_range):
-        self.channel_range = channel_range
-        self.num_channels = channel_range[1] - channel_range[0] + 1
-
     def _send_cmd(self, command):
-        self.comm_socket.send(self._cmd(command))
-        resp = self.comm_socket.recv(128)
+        self._comm_socket.send(self._cmd(command))
+        resp = self._comm_socket.recv(128)
         self._validate(resp)
 
     @staticmethod
     def _cmd(command):
-        return bytes("{}{}".format(
-            command, TrignoDaq.COMM_TERM), encoding='ascii')
+        return bytes("{}{}".format(command, _BaseTrignoDaq.CMD_TERM),
+                     encoding='ascii')
 
     @staticmethod
     def _validate(response):
         s = str(response)
         if 'OK' not in s:
             print("warning: TrignoDaq command failed: {}".format(s))
+
+
+class TrignoEMG(_BaseTrignoDaq):
+    """
+    Delsys Trigno wireless EMG system EMG data.
+
+    Requires the Trigno Control Utility to be running.
+
+    For more information, refer to the :ref:`User Guide <trigno_daq>`.
+
+    Parameters
+    ----------
+    channel_range : tuple with 2 ints
+        Sensor channels to use, e.g. (lowchan, highchan) obtains data from
+        channels lowchan through highchan. Each sensor has a single EMG
+        channel.
+    samples_per_read : int
+        Number of samples per channel to read in each read operation.
+    units : {'V', 'mV', 'normalized'}, optional
+        Units in which to return data. If 'V', the data is returned in its
+        un-scaled form (volts). If 'mV', the data is scaled to millivolt level.
+        If 'normalized', the data is scaled by its maximum level so that its
+        range is [-1, 1].
+    host : str, optional
+        IP address the TCU server is running on. By default, the device is
+        assumed to be attached to the local machine.
+    cmd_port : int, optional
+        Port of TCU command messages.
+    data_port : int, optional
+        Port of TCU EMG data access. By default, 50041 is used, but it is
+        configurable through the TCU graphical user interface.
+
+    Attributes
+    ----------
+    rate : int
+        Sampling rate in Hz.
+    scaler : float
+        Multiplicative scaling factor to convert the signals to the desired
+        units.
+    """
+
+    def __init__(self, channel_range, samples_per_read, units='V',
+                 host='localhost', cmd_port=50040, data_port=50041):
+        super(TrignoEMG, self).__init__(
+            host=host, cmd_port=cmd_port, data_port=data_port,
+            total_channels=16)
+
+        self.channel_range = channel_range
+        self.samples_per_read = samples_per_read
+
+        self.rate = 2000
+
+        self.scaler = 1.
+        if units == 'mV':
+            self.scaler = 1000.
+        elif units == 'normalized':
+            # max range of EMG data is 11 mV
+            self.scaler = 1 / 0.011
+
+    def set_channel_range(self, channel_range):
+        """
+        Sets the number of channels to read from the device.
+
+        Parameters
+        ----------
+        channel_range : tuple
+            Sensor channels to use (lowchan, highchan).
+        """
+        self.channel_range = channel_range
+        self.num_channels = channel_range[1] - channel_range[0] + 1
+
+    def read(self):
+        """
+        Request a sample of data from the device.
+
+        This is a blocking method, meaning it returns only once the requested
+        number of samples are available.
+
+        Returns
+        -------
+        data : ndarray, shape=(num_channels, num_samples)
+            Data read from the device. Each channel is a row and each column
+            is a point in time.
+        """
+        data = super(TrignoEMG, self).read(self.samples_per_read)
+        data = data[self.channel_range[0]:self.channel_range[1]+1, :]
+        return self.scaler * data
+
+
+class TrignoAccel(_BaseTrignoDaq):
+    """
+    Delsys Trigno wireless EMG system accelerometer data.
+
+    Requires the Trigno Control Utility to be running.
+
+    For more information, refer to the :ref:`User Guide <trigno_daq>`.
+
+    Parameters
+    ----------
+    channel_range : tuple with 2 ints
+        Sensor channels to use, e.g. (lowchan, highchan) obtains data from
+        channels lowchan through highchan. Each sensor has three accelerometer
+        channels.
+    samples_per_read : int
+        Number of samples per channel to read in each read operation.
+    host : str, optional
+        IP address the TCU server is running on. By default, the device is
+        assumed to be attached to the local machine.
+    cmd_port : int, optional
+        Port of TCU command messages.
+    data_port : int, optional
+        Port of TCU accelerometer data access. By default, 50042 is used, but
+        it is configurable through the TCU graphical user interface.
+    """
+    def __init__(self, channel_range, samples_per_read, host='localhost',
+                 cmd_port=50040, data_port=50042):
+        super(TrignoAccel, self).__init__(
+            host=host, cmd_port=cmd_port, data_port=data_port,
+            total_channels=48)
+
+        self.channel_range = channel_range
+        self.samples_per_read = samples_per_read
+
+        self.rate = 148.1
+
+    def set_channel_range(self, channel_range):
+        """
+        Sets the number of channels to read from the device.
+
+        Parameters
+        ----------
+        channel_range : tuple
+            Sensor channels to use (lowchan, highchan).
+        """
+        self.channel_range = channel_range
+        self.num_channels = channel_range[1] - channel_range[0] + 1
+
+    def read(self):
+        """
+        Request a sample of data from the device.
+
+        This is a blocking method, meaning it returns only once the requested
+        number of samples are available.
+
+        Returns
+        -------
+        data : ndarray, shape=(num_channels, num_samples)
+            Data read from the device. Each channel is a row and each column
+            is a point in time.
+        """
+        data = super(TrignoAccel, self).read(self.samples_per_read)
+        data = data[self.channel_range[0]:self.channel_range[1]+1, :]
+        return data
 
 
 class DisconnectException(Exception):

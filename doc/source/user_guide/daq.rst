@@ -69,15 +69,20 @@ errors occur, the device should be set up correctly.
 Trigno Wireless EMG System
 --------------------------
 
-:class:`TrignoDaq` provides access to data served by Trigno Control Utility for
-the Delsys Trigno wireless EMG system. TCU is Windows-only, but this class can
-be used to stream data from it on another machine. TCU runs a TCP/IP server,
-with EMG data from the sensors on one port and accelerometer data on another.
-Only EMG data retrieval is currently implemented. The TCU must be running
-before a TrignoDaq object can be instantiated. The signal range of the Trigno
-wireless sensors is 11 mV (according to the user's guide), so scaling is
-performed on the signal to achieve an output ranging from -1 to 1.
+:class:`TrignoEMG` and :class:`TrignoAccel` provide access to data served by
+Trigno Control Utility for the Delsys Trigno wireless EMG system. TCU is
+Windows-only, but this class can be used to stream data from it on another
+machine. TCU works by running a TCP/IP server, with EMG data from the sensors
+on one port, accelerometer data on another, and commands/responses on yet
+another. These ports are configurable in the TCU GUI. The TCU program must be
+running before a :class:`TrignoEMG` or :class:`TrignoAccel` object is created.
 
-You can test operation of the device by running `examples/test_trigno.py` to
+EMG data is sampled at 2000 Hz and is in volts (by default) with a range of
+±0.011 V. This can be converted to millivolts or normalized by the max range to
+get a range of ±11 mV or ±1 (unitless), respectively.
+
+Accelerometer data is sampled at 148.1 Hz and is in g.
+
+You can test operation of the device by running `examples/check_trigno.py` to
 see if things are set up correctly -- if no errors occur, it should be ready to
 go.
