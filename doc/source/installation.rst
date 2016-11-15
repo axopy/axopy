@@ -4,7 +4,7 @@
 Installation
 ============
 
-Here are the main ways to get started with axopy. Once the project is more
+Here are the main ways to get started with AxoPy. Once the project is more
 mature, it should be much easier through installing directly with pip and/or
 conda.
 
@@ -13,7 +13,7 @@ Miniconda
 ---------
 
 Install miniconda_, create an environment with the dependencies, then install
-axopy.
+AxoPy.
 
 ::
 
@@ -26,8 +26,8 @@ axopy.
 venv
 ----
 
-Here's how you can set up a virtual environment and install axopy using venv_.
-This installation will allow you to use most of axopy's features. Exceptions
+Here's how you can set up a virtual environment and install AxoPy using venv_.
+This installation will allow you to use most of AxoPy's features. Exceptions
 include interacting with some data acquisition devices (see the :ref:`User
 Guide <daq>` for details).
 
@@ -44,7 +44,7 @@ tox
 ---
 
 Testing is done with tox_. There is also a tox directive for creating a
-virtualenv that should have everything needed for developing and testing axopy.
+virtualenv that should have everything needed for developing and testing AxoPy.
 
 ::
 

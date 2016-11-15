@@ -7,11 +7,11 @@ Data Acquisition
 .. currentmodule:: axopy.daq
 
 Traditionally, a data acquisition (DAQ) refers to the process of capturing and
-conditioning signals for recording by a computer. In axopy, sources of data
+conditioning signals for recording by a computer. In AxoPy, any source of data
 generated or influenced by the subject of the experiment is referred to as
 a DAQ.
 
-axopy assumes a fairly simple model for collecting data, based on polling.
+AxoPy assumes a fairly simple model for collecting data, based on polling.
 First, the interface is set up -- this might involve initializing a USB
 interface, connecting to a TCP server, setting up initial parameters, etc.
 Next, data acquisition is started. Some devices don't require an explicit start
@@ -38,7 +38,7 @@ Here, you'll want to ensure that the ``process_data()`` function does not take
 longer than 100 ms to complete, or data acquisition will fall behind the rate
 at which it is generated.
 
-Some DAQs are built in to axopy, but of course not all of them can be.
+Some DAQs are built in to AxoPy, but of course not all of them can be.
 
 .. _mcc_daq:
 

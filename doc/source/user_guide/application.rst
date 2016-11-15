@@ -7,7 +7,7 @@ User Interface
 .. currentmodule:: axopy.application
 
 This is currently a sort of design document describing some musings on the
-design of the "application" portion of axopy.
+design of the "application" portion of AxoPy.
 
 
 Overview
@@ -36,7 +36,7 @@ All tasks should deal with the following events:
 - paused
 - complete
 
-axopy should handle much of the lifecycle based on a user-designed task
+AxoPy should handle much of the lifecycle based on a user-designed task
 inheriting from one of a few task base classes. The behavior can of course be
 overridden.
 

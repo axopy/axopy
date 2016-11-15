@@ -5,7 +5,7 @@ Experiment data is stored in HDF5_ files using h5py_. HDF5 is a relatively
 simple storage format to understand, and it can mostly be thought of as
 identical to a file system. There are groups (analogous to folders) and
 datasets (analogous to files). So, groups contain other groups and datasets,
-and datasets contain data. In axopy, a basic structure is imposed to make the
+and datasets contain data. In AxoPy, a basic structure is imposed to make the
 library capable of inspecting and visualizing experiment files.
 
 ::
