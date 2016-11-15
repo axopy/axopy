@@ -5,7 +5,6 @@ User Guide
 ==========
 
 .. toctree::
-   :numbered:
 
    user_guide/application
    user_guide/daq

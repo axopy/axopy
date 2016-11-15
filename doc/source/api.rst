@@ -4,6 +4,8 @@
 API
 ===
 
+These are the modules/subpackages which constitute AxoPy.
+
 .. toctree::
 
    api/application
