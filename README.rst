@@ -1,6 +1,4 @@
-=====
-axopy
-=====
+.. image:: doc/source/_static/axopy.png
 
 .. image:: https://readthedocs.org/projects/axopy/badge/?version=latest
    :target: http://axopy.readthedocs.io/en/latest/?badge=latest
