@@ -11,55 +11,95 @@ class ExperimentDatabase(h5py.File):
     """
 
     def create_participant(self, pid):
+        """Create a group in the file to hold all of a participant's data.
+
+        Parameters
+        ----------
+        pid : str
+            Participant identifier. Used as the group name.
+        """
         return self.create_group(participant_path(pid))
 
     def get_participant(self, pid):
+        """Retrive the group in the file holding all of a participant's data.
+
+        Parameters
+        ----------
+        pid : str
+            Participant identifier.
+        """
         return self.get(participant_path(pid))
 
     def require_participant(self, pid):
+        """Retrieve the group in the file holding all of the participant's data.
+
+        If the participant is not already registered in the file, a group is
+        created.
+
+        Parameters
+        ----------
+        pid : str
+            Participant identifier.
+        """
         return self.require_group(participant_path(pid))
 
     def create_task(self, pid, name):
-        return self.create_group(task_path(pid, name))
+        """Instantiate a task for a participant.
+
+        If the task (by name) has been installed into the experiment storage
+        file, an object of that task storage class is returned. Otherwise, a
+        :class:`BaseTaskStorage` object is returned.
+
+        Parameters
+        ----------
+        pid : str
+            Participant ID to creae the task for.
+        name : str
+            Name of the task.
+        """
+        return TaskStorage(self.create_group(task_path(pid, name)))
 
     def get_task(self, pid, name):
-        return self.get(task_path(pid, name))
+        """Retrieves a task storage group for a participant.
+
+        If the task (by name) has been installed into the experiment storage
+        file, an object of that task storage class is returned. Otherwise, a
+        :class:`BaseTaskStorage` object is returned.
+
+        Parameters
+        ----------
+        pid : str
+            Participant ID to creae the task for.
+        name : str
+            Name of the task.
+        """
+        return TaskStorage(self.get(task_path(pid, name)))
 
     def require_task(self, pid, name):
-        return self.require_group(task_path(pid, name))
+        """Retrieves a task storage group for a participant.
+
+        If the task group is not already registered in the file, a group is
+        created.
+
+        If the task (by name) has been installed into the experiment storage
+        file, an object of that task storage class is returned. Otherwise, a
+        :class:`BaseTaskStorage` object is returned.
+
+        Parameters
+        ----------
+        pid : str
+            Participant ID to creae the task for.
+        name : str
+            Name of the task.
+        """
+        return TaskStorage(self.require_group(task_path(pid, name)))
 
     def get_participants(self):
         return list(self.keys())
 
 
-class _BaseTaskStorage(object):
 
-    def __init__(self, group):
-        self.group = group
-        self.current_session = None
-
-    def get_session(self, name):
-        session = self.group.get(name)
-        self.current_session = session
-        return self.current_session
-
-    def create_session(self, name):
-        session = self.group.create_group(name)
-        session.attrs['date'] = dt()[0]
-        self.current_session = session
-        return self.current_session
-
-    def _get_session(self, session=None):
-        if session is None:
-            session = self.current_session
-
-        if isinstance(session, str):
-            session = self.get_session(session)
-
-        return session
-
-
-class SimpleTrialStorage(_BaseTaskStorage):
+class TaskStorage(object):
     """A simple storage scheme suitable for many tasks.
 
     Each session gets its own group, and each trial of the session consists of
@@ -85,36 +125,56 @@ class SimpleTrialStorage(_BaseTaskStorage):
         mode, the most recently retrieved session is used.
     """
 
-    def create_trial(self, name, session=None, shape=None, dtype=None,
-                     data=None):
-        """Create a trial dataset.
+    def __init__(self, group, trial_cls=None):
+        self.group = group
+        self.current_session = None
 
-        Parameters
-        ----------
-        name : str
-            Name of the trial to create.
-        session : h5py.Group or str, optional
-            The session to create the trial in. If ``None`` (default), the
-            task's `current_trial` is used. Can be either the Group object
-            corresponding to the session or the name.
-        shape : tuple, optional
-            The shape of the dataset array. One of `shape` or `data` must be
-            provided.
-        dtype : str, optional
-            Data type for the array.
-        data : array, optional
-            The data for the trial.
-        """
+    def get_session(self, name):
+        session = self.group.get(name)
+        self.current_session = session
+        return self.current_session
+
+    def create_session(self, name):
+        session = self.group.create_group(name)
+        session.attrs['date'] = dt()[0]
+        self.current_session = session
+        return self.current_session
+
+    def _get_session(self, session=None):
+        if session is None:
+            session = self.current_session
+
+        if isinstance(session, str):
+            session = self.get_session(session)
+
+        return session
+
+    def create_trial(self, name, session=None):
         session = self._get_session(session)
-        trial = session.create_dataset(name, shape=shape, dtype=dtype,
-                                       data=data)
-        trial.attrs['time'] = dt()[1]
-        return trial
+        trial = session.create_group(name)
+        return TrialStorage(trial)
 
     def get_trial(self, name, session=None):
         session = self._get_session(session)
         trial = session.get(name)
         return trial
+
+
+class TrialStorage(dict):
+
+    def __init__(self, group):
+        self.group = group
+
+    def __getitem__(self, key):
+        return self.group.attrs[key]
+
+    def __setitem__(self, key, val):
+        self.group.attrs[key] = val
+
+    def create_dataset(self, name, data, attrs=None):
+        ds = self.group.create_dataset(name, data=data)
+        for key, val in attrs.items():
+            ds.attrs[key] = val
 
 
 def participant_path(pid):
