@@ -1,8 +1,8 @@
 from contextlib import contextmanager
 from PyQt5 import QtCore, QtWidgets, QtGui
+import copper
 
 from axopy import daq
-from axopy import pipeline
 
 
 @contextmanager
@@ -509,4 +509,4 @@ class DaqThread(QtCore.QThread):
         self.wait()
 
     def _default_pipeline(self):
-        return pipeline.Pipeline(pipeline.PipelineBlock())
+        return copper.Pipeline(copper.PipelineBlock())

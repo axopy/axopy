@@ -13,3 +13,4 @@ dependencies:
     - sphinx_rtd_theme
     - pip:
         - pyqtgraph>=0.10
+        - git+https://github.com/ucdrascal/copper.git
