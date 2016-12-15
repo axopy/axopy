@@ -10,7 +10,6 @@ These are the modules/subpackages which constitute AxoPy.
 
    api/application
    api/daq
-   api/features
    api/storage
    api/tasks
    api/widgets
