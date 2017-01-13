@@ -39,29 +39,50 @@ class TrainGestureModel(BaseTask, RequiredParticipantMixin):
 
 
 class RealTimeControlToTarget(BaseTask, RequiredParticipantMixin):
-    # require traingesturemodel completed. maybe don't need mixin?
+    # require traingesturemodel completed. maybe don't need requiredparticipant?
     
     # blocks are just defined in class? then when instantiated, fill in data
-    daq = DaqBlock()
+    daq = DaqBlock() 
+    # either get the reference to control the daq as an __init__ arg OR
+    # when this class is defined by __new__, figure out my parent and get the
+    # daq from them
+
+    # QT signal/slot-like definitions, which are actually plugged in later
     emgfilter = EMGFilterBlock(listen_to=daq)
     gesture = GesturePredictionBlock(listen_to=emgfilter)
-    gesture_to_velocity = GestureToVelocityBlock(listen_to=gesture)
-    velocity_controller = VelocityCntrollerBlock(listen_to=gesture_to_velocity)
-    cursor_target = CursorTargetBlock(listen_to=())
+    gesture_to_velocity = GestureToVelocityBlock(gesture_input=gesture)
+
+    velocity_controller = VelocityCntrollerBlock(
+        velocity_input=gesture_to_velocity)
+    cursor_target = CursorTargetBlock(cursor_input=velocity_controller,
+        target_position=None)
+
+    def prepare_trial(self):
+        trial_parameters = self.trial_parameters.next() 
+        # this should actually be done in a higher level
 
 
-if __name__ == '__main__':
-    # a daq block
+        cursor_target.set_target_xy(trial_parameters['target_pos'])
+
+        # other things automatically listen to a prepare_trial signal?
+
+    def cleanup_trial(self):
+        db.save_data(trial_parameters['filename'], cursor_target.time_to_target)
+
+
+class RealTimeControlExperiment(BaseExperiment):
+    # define persistent-ish classes, which somehow 
+    db = ExperimentDatabase('file.hdf5', driver='core', backing_store=False)
     daq = EmulatedDaq(rate=1000, num_channels=2, read_size=100)
     gesture_block = GestureModel(filename_format='')
 
-    # for this example use memory-backed store instead of file
-    # a file storage block
-    db = ExperimentDatabase('file.hdf5', driver='core', backing_store=False)
+    tasks = [
+        SelectParticipant,
+        Oscilloscope(daqblock=daq),
+        CollectGestureTrainngData(repeat_gesture=2),
+        RealTimeControlToTarget(dof=2,timout=10,max_distance=30,)
+    ]
 
-    with application(daq, db) as app:
-        app.install_task(SelectParticipant)
-        app.install_task(Oscilloscope(daqblock=daq))
-        app.install_task(CollectGestureTrainngData(repeat_gesture=2))
-        app.install_task(RealTimeControlToTarget(dof=2,timout=10,max_distance=30,))
-        
+
+if __name__ == '__main__':
+    RealTimeControlExperiment.run()
