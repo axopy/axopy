@@ -22,7 +22,8 @@ class GesturePredictor(BaseBlock):
     data = db.get(r'//')
     
     def __init__(self,filename_Format='%%pid%%_gesture_data'):
-        # filename_format determines how to save/load the data in DB
+        # filename_format determines how to create new rows in the DB or
+        # files in the filesystem 
 
 
     def prepare_reciever(self):
