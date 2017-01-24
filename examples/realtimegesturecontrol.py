@@ -71,7 +71,15 @@ class RealTimeControlToTarget(BaseTask, RequiredParticipantMixin):
         db.save_data(trial_parameters['filename'], cursor_target.time_to_target)
 
 
-class RealTimeControlExperiment(BaseExperiment):
+class QTDisplayRecordings(Task):
+    file_select = QTFileDialogBlock(r'a\specification\for\what\files\are\eligible')
+    loaded_data = FileStream.load(file_select)
+   display = QTPlotter(loaded_data)
+
+   
+
+
+class RealTimeControlExperiment(QTExperiment):
     # define persistent-ish classes, which somehow 
     db = ExperimentDatabase('file.hdf5', driver='core', backing_store=False)
     daq = EmulatedDaq(rate=1000, num_channels=2, read_size=100)

@@ -9,4 +9,6 @@ class ExperimentBase(type):
         setattr(cls, name, value)
 
 class Experiment(object, metaclass=ExperimentBase):
-    pass
+    def __init__(self, *args, **kwargs):
+        for stream in self.__class__.streams:
+            stream_val = kwargs.pop(stream)

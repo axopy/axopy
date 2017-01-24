@@ -1,7 +1,5 @@
-
-
 class StreamBase(type):
     pass
 
-class Stream(object, metaclass=Streambase):
+class Stream(object, metaclass=StreamBase):
     pass
