@@ -7,11 +7,11 @@ from axopy import daq
 
 @contextmanager
 def application(*args, **kwargs):
-    """
-    Convenience context manager for running a :class:`BaseUI` in a
-    QApplication. The application instance is created on entry and executed on
-    exit. The arguments and keyword arguments are passed along to
-    :class:`BaseUI`, and the :class:`BaseUI` instance is yielded.
+    """Convenience context manager for running an AxoPy application.
+
+    The application instance is created on entry and executed on exit. The
+    arguments and keyword arguments are passed along to :class:`BaseUI`, and
+    the :class:`BaseUI` instance is yielded.
 
     Examples
     --------
@@ -31,39 +31,31 @@ def application(*args, **kwargs):
     app.exec_()
 
 
-class TaskUI(QtWidgets.QWidget):
+class Task(QtWidgets.QWidget):
     """Base implementation of a task.
 
     A task is the core unit of operation in an experiment workflow. Each task
     is presented as a tab in the :class:`BaseUI`.
-
-    Attributes
-    ----------
-    requires_daq : bool
-        True if the task requires a data acquisition device to run.
-    requires_participant : bool
-        True if the task requires a participant to be selected to run.
     """
 
-    requires_daq = False
     requires_participant = False
 
-    def set_central_widget(self, widget):
-        """Convenience method for setting up a single-widget interface.
-
-        The widget is placed in a :class:`QGridLayout`, and the layout is set
-        as the tab's layout.
+    def setup_ui(self, parent):
+        """Initializes the ``QWidget`` for the task and returns it.
 
         Parameters
         ----------
-        widget : QWidget
-            The widget to use as the interface.
-        """
-        layout = QtWidgets.QGridLayout()
-        layout.addWidget(widget)
-        self.setLayout(layout)
+        parent : QWidget
+            Parent widget of the task.
 
-    def setup_daq(self):
+        Returns
+        -------
+        widget : QWidget
+            The task user interface widget.
+        """
+        pass
+
+    def setup_daq(self, daq):
         """Initialize the data acquisition thread.
 
         This method is automatically called when the task is shown. Subclasses
@@ -76,11 +68,19 @@ class TaskUI(QtWidgets.QWidget):
         """
         pass
 
-    def setup_storage(self):
+    def setup_storage(self, task_storage, dependencies=None):
         """Initialize data storage for the task.
 
         This method is automatically called when the task is shown. Subclasses
         requiring use of data storage should override this method.
+
+        Parameters
+        ----------
+        task_storage : TaskStorage
+            Storage belonging to the task.
+        dependencies : dict, optional
+            Dictionary of :class:`Storage` objects the task depends on,
+            accessed by installed name.
         """
         pass
 
@@ -136,82 +136,8 @@ class TaskUI(QtWidgets.QWidget):
         return self.__class__.__name__
 
 
-class RealtimeVisualizationTask(TaskUI):
-    """Task type meant for displaying data from a data acquisition device.
-
-    These tasks require a data acquisition device, and while they can
-    implement a processing pipeline before displaying the data, these tasks
-    cannot write the data to storage. See :class:`ExperimentTask` for a task
-    type that handles displaying data from a DAQ and writing data to storage.
-
-    Attributes
-    ----------
-    pipeline : Pipeline
-        Processing pipeline taking raw data from the data acquisition device
-        and outputting the data to visualize.
-    """
-
-    requires_daq = True
-    pipeline = None
-
-    def on_daq_update(self, data):
-        """Callback called when the data acquisition device returns new data.
-
-        Override to handle incoming data and display it.
-        """
-        pass
-
-    def setup_daq(self):
-        """Initializes the data acquisition device.
-
-        Sets up the device to call ``on_daq_update`` with each update.
-        """
-        self._daq = self.base_ui.daq_thread
-        self._daq.remove_pipeline()
-        self._daq.pipeline = self.pipeline
-
-        self._daq.updated.connect(self.on_daq_update)
-        self._daq.start()
-
-    def shutdown_daq(self):
-        self._daq.updated.disconnect(self.on_daq_update)
-        self._daq.kill()
-
-
-class DataVisualizationTask(TaskUI):
-    """Task type meant for displaying data from storage.
-
-    These tasks require access to data storage from another task in order to
-    display it in some way.
-    """
-
-    requires_participant = True
-
-
-class ProcessingTask(TaskUI):
-    """Task type meant for generating new data from another task's output.
-
-    These tasks require access to data storage from another task as well as
-    the ability to write data to storage.
-    """
-
-    requires_participant = True
-
-
-class ExperimentTask(TaskUI):
-    """Task type meant for implementing the full suite of axopy capabilities.
-
-    These tasks are endowed with reading data from a data acquisition device,
-    using data output by other tasks, and writing data to storage.
-    """
-
-    requires_daq = True
-    requires_participant = True
-
-
 class BaseUI(QtWidgets.QMainWindow):
-    """
-    The base user interface for running experiments.
+    """The base user interface for running experiments.
 
     Parameters
     ----------
@@ -237,36 +163,40 @@ class BaseUI(QtWidgets.QMainWindow):
         self.database = database
 
         # populate participant list from database
-        for p in self.database.get_participants():
-            self._particpiant_selector.add_participant(p)
+        #for p in self.database.get_participants():
+        #    self._particpiant_selector.add_participant(p)
 
         self.tasks = {}
         self.participant = None
-        self.daq_thread = DaqThread(daq)
+        #self.daq_thread = DaqThread(daq)
 
-    def install_task(self, task):
-        """
-        Add a task to the UI.
+    def install_task(self, task, name=None):
+        """Add a task to the UI.
 
         Parameters
         ----------
-        task: TaskUI
+        task: Task
             Any task extending the base TaskUI class.
+        name : str, optional
+            Name of the task. Used as the tab label and in the data storage
+            hierarchy. By default, the Task's ``str`` is used.
         """
-        name = str(task)
+        if name is None:
+            name = str(task)
+
+        widget = task.setup_ui()
         self.tasks[name] = task
-        self._tab_widget.addTab(task, name)
-        task.base_ui = self
+        self._tab_widget.addTab(widget, name)
 
     def _setup_ui(self):
         """Initialize widgets and callbacks."""
         # layout
         central_widget = QtWidgets.QWidget(self)
-        main_layout = QtWidgets.QGridLayout(central_widget)
+        main_layout = QtWidgets.QVBoxLayout(central_widget)
         self.setCentralWidget(central_widget)
 
         # tab widget -- each tab holds a task
-        self._tab_widget = QtWidgets.QTabWidget(self)
+        self._tab_widget = QtWidgets.QTabWidget(central_widget)
         self._tab_widget.setMovable(True)
         main_layout.addWidget(self._tab_widget)
 
@@ -276,39 +206,68 @@ class BaseUI(QtWidgets.QMainWindow):
             self._on_participant_selected)
         self._tab_widget.addTab(self._particpiant_selector, "Participant")
 
+        # button box for controlling tasks
+        self._buttons = _ButtonControls()
+        self._buttons.start_clicked.connect(self._on_start_clicked)
+        self._buttons.stop_clicked.connect(self._on_stop_clicked)
+        main_layout.addWidget(self._buttons)
+        self._buttons.setEnabled(False)
+
         # status bar shows current participant
         status_bar = QtWidgets.QStatusBar(self)
         self.setStatusBar(status_bar)
         self._statusbar_label = QtWidgets.QLabel("no participant selected")
         status_bar.addPermanentWidget(self._statusbar_label)
 
-        # set up Ctrl+PgUp and Ctrl+PgDown shortcuts for changing tabs
-        nexttab = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgDown"), self)
-        nexttab.activated.connect(self._on_ctrl_pgdown)
-        prevtab = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+PgUp"), self)
-        prevtab.activated.connect(self._on_ctrl_pgup)
-
     def _on_participant_selected(self, pid):
         """Callback called when a participant is selected."""
         self._statusbar_label.setText("participant: {}".format(pid))
         self.participant = pid
 
-    def _on_ctrl_pgdown(self):
-        """Callback for switching to next tab on Ctrl+PagDown."""
-        i = self._tab_widget.currentIndex() + 1
-        if i == self._tab_widget.count():
-            i = 0
-        self._tab_widget.setCurrentIndex(i)
+        # enable tabs in the tabwidget for tasks requiring a participant
 
-    def _on_ctrl_pgup(self):
-        """Callback for switching to previous tab on Ctrl+PagDown."""
-        i = self._tab_widget.currentIndex() - 1
-        if i == -1:
-            i = self._tab_widget.count() - 1
-        self._tab_widget.setCurrentIndex(i)
+    def _on_start_clicked(self):
+        print("start")
+
+    def _on_stop_clicked(self):
+        print("stop")
+
+
+class _ButtonControls(QtWidgets.QWidget):
+
+    start_clicked = QtCore.pyqtSignal()
+    stop_clicked = QtCore.pyqtSignal()
+
+    def __init__(self, parent=None):
+        super(_ButtonControls, self).__init__(parent)
+
+        layout = QtWidgets.QHBoxLayout(self)
+
+        start_button = QtWidgets.QPushButton("Start")
+        start_button.setIcon(
+            self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
+        start_button.clicked.connect(self.start_clicked)
+        layout.addWidget(start_button)
+
+        stop_button = QtWidgets.QPushButton("Stop")
+        stop_button.setIcon(
+            self.style().standardIcon(QtWidgets.QStyle.SP_MediaStop))
+        stop_button.clicked.connect(self.stop_clicked)
+        layout.addWidget(stop_button)
 
 
 class ParticipantSelector(QtWidgets.QWidget):
+    """A composite QWidget for creating and selecting participants.
+
+    The layout consists of a QListWidget with each item representing a
+    participant (text is the participant ID) and a button to create a new
+    participant with a modal dialog.
+
+    Attributes
+    ----------
+    selected : pyqtSignal
+        Signal emitted when a participant is selected from the list.
+    """
 
     selected = QtCore.pyqtSignal(object)
 
@@ -337,7 +296,7 @@ class ParticipantSelector(QtWidgets.QWidget):
         self.main_layout.addWidget(self.new_button, 2, 0, 1, 1)
 
     def _on_new_participant(self):
-        dialog = NewParticipantDialog()
+        dialog = NewParticipantDialog(extra_attrs=[('hand', 'Handedness')])
         if not dialog.exec_():
             return
 
@@ -375,28 +334,34 @@ class ParticipantSelector(QtWidgets.QWidget):
 
 
 class NewParticipantDialog(QtWidgets.QDialog):
+    """A very simple QDialog for getting a participant ID from the researcher.
+
+    By default, the dialog just shows a QLabel with the text "Participant ID"
+    and a QLineEdit next to it to retrieve the ID from the researcher. Ok and
+    Cancel buttons are below to accept or cancel the input. Additional
+    attributes can be added via the ``extra_attrs`` argument.
+
+    In normal usage, the dialog is shown, the researcher enters the information
+    and accepts it by clicking the Ok button, then the data can be retrieved
+    with the ``get_data`` method.
+
+    Parameters
+    ----------
+    extra_attrs : list, optional
+        Additional participant attributes for the researcher to fill in. Each
+        attribute should be a tuple ``('id', 'label')``, where the id is used
+        as a key in the returned data and the label is the text shown next to
+        the attribute's input box in the dialog.
+    parent : QWidget, optional
+        Parent widget of the dialog.
     """
-    A very simple QDialog for getting a participant ID from the operator.
 
-    This class is intentionally easy to extend so experiments can specify
-    additional participant attributes to input. Define a class which inherits
-    from this one and specify the class attribute ``extra_attributes``, which
-    should be a list of tuples ``('attribute_id', 'Attribute Label')``.  The
-    attribute ID is used as the key to retrieving the input once the dialog is
-    accepted, and the attribute label is what's shown in the dialog.
-
-    Examples
-    --------
-    >>> from axopy.base import NewParticipantDialog
-    >>> class CustomDialog(NewParticipantDialog):
-    ...     extra_attributes = [('handedness', 'Handedness'),
-    ...                         ('gender', 'Gender')]
-    """
-
-    extra_attributes = []
-
-    def __init__(self, parent=None):
+    def __init__(self, extra_attrs=None, parent=None):
         super(NewParticipantDialog, self).__init__(parent=parent)
+
+        if extra_attrs is None:
+            extra_attrs = []
+        self.extra_attrs = extra_attrs
 
         self._init_ui()
 
@@ -404,7 +369,7 @@ class NewParticipantDialog(QtWidgets.QDialog):
         self.form_layout = QtWidgets.QFormLayout()
         self.line_edits = {}
 
-        attrs = list(self.extra_attributes)
+        attrs = list(self.extra_attrs)
         attrs.insert(0, ('pid', 'Participant ID'))
         for attr, label in attrs:
             edit = QtWidgets.QLineEdit()
@@ -426,12 +391,19 @@ class NewParticipantDialog(QtWidgets.QDialog):
         button_box.rejected.connect(self.reject)
 
     def get_data(self):
+        """Retrieves the data entered in the dialog's fields.
+
+        Returns
+        -------
+        data : dict
+            Dictionary of attributes with the attribute ``id``s as keys and the
+            entered text as values.
+        """
         return {a: str(e.text()) for a, e in self.line_edits.items()}
 
 
 class DaqThread(QtCore.QThread):
-    """
-    Retrieves data from a data acquisition device in a separate thread.
+    """A QThread for polling data from a data acquisition device.
 
     Attributes
     ----------

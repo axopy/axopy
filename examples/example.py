@@ -9,8 +9,8 @@ from numpy import zeros
 
 from axopy.application import (application, ExperimentTask,
                                DataVisualizationTask)
-from axopy.storage import ExperimentDatabase, SimpleTrialStorage
-from axopy.daq import EmulatedDaq
+from axopy.storage import ExperimentDatabase, TaskGroup
+from axopy.daq import EmulatedDaq, TrignoEMG, TrignoAccel
 from axopy.tasks import Oscilloscope
 from axopy.pipeline import Pipeline, FeatureExtractor, Windower, Ensure2D
 from axopy.features import RMS, MAV
@@ -45,7 +45,7 @@ class ExampleExperiment(ExperimentTask):
     def setup_storage(self):
         task = self.base_ui.database.require_task(
             self.base_ui.participant, self.__class__.__name__)
-        self.db = SimpleTrialStorage(task)
+        self.db = TaskGroup(task)
         self.db.create_session('0')
 
     def _setup_ui(self):
@@ -107,18 +107,35 @@ class ExampleViewer(DataVisualizationTask):
 
 
 if __name__ == '__main__':
-    daq = EmulatedDaq(rate=1000, num_channels=2, read_size=100)
+    daq = TrignoAccel(channel_range=(0, 5), samples_per_read=10,
+                      host='192.168.1.142')
 
     # for this example use memory-backed store instead of file
     db = ExperimentDatabase('file.hdf5', driver='core', backing_store=False)
-    db.create_participant('p0')
 
     pipeline = Pipeline([
-        FeatureExtractor([('rms', RMS()), ('mav', MAV())]),
+        FeatureExtractor([('rms', RMS())]),
         Ensure2D(),
-        Windower(100)])
+        Windower(10000),
+        FileSaver()])
 
     with application(daq, db) as app:
         app.install_task(Oscilloscope(pipeline=pipeline))
         app.install_task(ExampleExperiment())
         app.install_task(ExampleViewer())
+
+
+class SomeTask(Task, HomogeneousTrial):
+
+    def setup_ui(self):
+
+    # start_task
+    # start_trial
+    # stop_trial
+    # stop_task
+    def data_callback(self, data):
+        x, y = data
+        _update_cursor_position(x, y)
+
+    def _update_cursor_position(self, x, y):
+        self.ui.cursor.set_x(x)
