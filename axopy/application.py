@@ -199,45 +199,38 @@ class ParticipantSelector(QtWidgets.QWidget):
         self.selected.emit(pid)
 
 
-class NewParticipantDialog(QtWidgets.QDialog):
-    """A very simple QDialog for getting a participant ID from the researcher.
+class FormDialog(QtWidgets.QDialog):
+    """A simple form dialog for entering information.
 
-    By default, the dialog just shows a QLabel with the text "Participant ID"
-    and a QLineEdit next to it to retrieve the ID from the researcher. Ok and
-    Cancel buttons are below to accept or cancel the input. Additional
-    attributes can be added via the ``extra_attrs`` argument.
+    The dialog just contains a set of rows with a `QLabel` and a `QLineEdit`
+    in each row. Ok and Cancel buttons are below to accept or cancel the input.
 
     In normal usage, the dialog is shown, the researcher enters the information
     and accepts it by clicking the Ok button, then the data can be retrieved
-    with the ``get_data`` method.
+    with the `get_data` method.
 
     Parameters
     ----------
-    extra_attrs : list, optional
-        Additional participant attributes for the researcher to fill in. Each
-        attribute should be a tuple ``('id', 'label')``, where the id is used
-        as a key in the returned data and the label is the text shown next to
-        the attribute's input box in the dialog.
+    attrs : list
+        Form elements for the researcher to fill in. Each attribute should be a
+        tuple `('id', 'label')`, where the id is used as a key in the returned
+        data and the label is the text shown next to the attribute's input box
+        in the dialog.
     parent : QWidget, optional
         Parent widget of the dialog.
     """
 
-    def __init__(self, extra_attrs=None, parent=None):
-        super(NewParticipantDialog, self).__init__(parent=parent)
-
-        if extra_attrs is None:
-            extra_attrs = []
-        self.extra_attrs = extra_attrs
-
+    def __init__(self, attrs, parent=None):
+        super(FormDialog, self).__init__(parent=parent)
+        self.attrs = attrs
         self._init_ui()
 
     def _init_ui(self):
+        """Construct widgets in the form layout."""
         self.form_layout = QtWidgets.QFormLayout()
         self.line_edits = {}
 
-        attrs = list(self.extra_attrs)
-        attrs.insert(0, ('pid', 'Participant ID'))
-        for attr, label in attrs:
+        for attr, label in self.attrs:
             edit = QtWidgets.QLineEdit()
             self.line_edits[attr] = edit
             self.form_layout.addRow(label, edit)
@@ -262,7 +255,7 @@ class NewParticipantDialog(QtWidgets.QDialog):
         Returns
         -------
         data : dict
-            Dictionary of attributes with the attribute ``id``s as keys and the
+            Dictionary of attributes with the attribute `id`s as keys and the
             entered text as values.
         """
         return {a: str(e.text()) for a, e in self.line_edits.items()}
