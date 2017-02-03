@@ -36,16 +36,20 @@ class QtExperimentBackend(QtWidgets.QMainWindow):
 
         self.show()
 
-    def add_task(self, task_ui, name):
+    def add_task(self, task_ui, name=None):
         """Add a task to the UI.
 
         Parameters
         ----------
         task_ui: QWidget
             Any widget representing a tasks interface.
-        name : str
-            Name of the task. Used as the tab label.
+        name : str, optional
+            Name of the task. Used as the tab label. By default, the class name
+            of `task_ui` is used.
         """
+        if name is None:
+            name = task_ui.__class__.__name__
+
         self.tasks[name] = task_ui
         self._tab_widget.addTab(task_ui, name)
 
@@ -94,6 +98,7 @@ class QtExperimentBackend(QtWidgets.QMainWindow):
 
 
 class _ButtonControls(QtWidgets.QWidget):
+    """Start and stop buttons in a horizontal layout used by the main UI."""
 
     start_clicked = QtCore.pyqtSignal()
     stop_clicked = QtCore.pyqtSignal()
@@ -119,9 +124,24 @@ class _ButtonControls(QtWidgets.QWidget):
 class ParticipantSelector(QtWidgets.QWidget):
     """A composite QWidget for creating and selecting participants.
 
-    The layout consists of a QListWidget with each item representing a
+    The layout consists of a `QListWidget` with each item representing a
     participant (text is the participant ID) and a button to create a new
-    participant with a modal dialog.
+    participant with a modal dialog. The modal dialog is populated with
+    customizable fields (see `extra_args`).
+
+    When a participant is selected from the list, a dictionary is emitted
+    via the `selected` signal. The dictionary always contains a 'pid' item and
+    any other items added via the `extra_args` list.
+
+    Parameters
+    ----------
+    extra_attrs : list, optional
+        Additional participant attributes for the researcher to fill in. Each
+        attribute should be a tuple `('id', 'label')`, where the id is used as
+        a key in the returned data and the label is the text shown next to the
+        attribute's input box in the dialog.
+    parent : QObject, optional
+        Qt parent object.
 
     Attributes
     ----------
@@ -129,40 +149,59 @@ class ParticipantSelector(QtWidgets.QWidget):
         Signal emitted when a participant is selected from the list.
     """
 
-    selected = QtCore.pyqtSignal(object)
+    selected = QtCore.pyqtSignal(dict)
 
-    def __init__(self, parent=None):
+    def __init__(self, extra_attrs=None, parent=None):
         super(ParticipantSelector, self).__init__(parent=parent)
         self._setup_ui()
 
-    def add_participant(self, pid):
-        """Add a participant to the list."""
-        self.list_widget.addItem(pid)
+        self.participant_attrs = [('pid', "Participant ID")]
+        if extra_attrs is not None:
+            self.participant_attrs.extend(extra_attrs)
+
+        self.participants = {}
+
+    def add_participant(self, participant):
+        """Add a participant to the list.
+
+        Parameters
+        ----------
+        participant : str or dict
+            Participant data. If just a string is used, it is assumed to be the
+            participant's ID. If a dictionary is used, it may include
+            additional attributes (e.g. handedness, age, etc.), but it must
+            include a 'pid' item.
+        """
+        if isinstance(participant, str):
+            participant = {'pid': participant}
+
+        self.participants[participant['pid']] = participant
+        self.list_widget.addItem(participant['pid'])
 
     def _setup_ui(self):
-        self.main_layout = QtWidgets.QGridLayout(self)
+        """User interface setup for __init__ cleanliness."""
+        self.main_layout = QtWidgets.QVBoxLayout(self)
 
         self.label = QtWidgets.QLabel(self)
-        self.main_layout.addWidget(self.label, 0, 0, 1, 1)
+        self.main_layout.addWidget(self.label)
 
         self.list_widget = QtWidgets.QListWidget(self)
         self.list_widget.setAlternatingRowColors(True)
         self.list_widget.itemSelectionChanged.connect(
             self._on_participant_selected)
-        self.main_layout.addWidget(self.list_widget, 1, 0, 1, 1)
+        self.main_layout.addWidget(self.list_widget)
 
         self.new_button = QtWidgets.QPushButton("New Participant")
         self.new_button.clicked.connect(self._on_new_participant)
-        self.main_layout.addWidget(self.new_button, 2, 0, 1, 1)
-
-        self._buttons = _ButtonControls()
-        self._buttons.start_clicked.connect(self._on_start_clicked)
-        self._buttons.stop_clicked.connect(self._on_stop_clicked)
-        main_layout.addWidget(self._buttons)
-        self._buttons.setEnabled(False)
+        self.main_layout.addWidget(self.new_button)
 
     def _on_new_participant(self):
-        dialog = NewParticipantDialog(extra_attrs=[('hand', 'Handedness')])
+        """Callback for when the "New Participant" button is pressed.
+
+        Opens up a FormDialog to enter informaiton, then does some checking to
+        make sure the entered information makes sense.
+        """
+        dialog = FormDialog(self.participant_attrs)
         if not dialog.exec_():
             return
 
@@ -181,22 +220,24 @@ class ParticipantSelector(QtWidgets.QWidget):
         # make sure the participant ID doesn't already exist
         found = self.list_widget.findItems(pid, QtCore.Qt.MatchExactly)
         if found:
-            # participant ID already in database, select and show warning
+            # participant ID already in the list, select and show warning
             match = found[0]
             self.list_widget.setCurrentItem(match)
             QtWidgets.QMessageBox().warning(
                 self,
                 "Warning",
-                "Participant '{}' already exists in data file.".format(pid),
+                "Participant '{}' already exists.".format(pid),
                 QtWidgets.QMessageBox.Ok)
             return
 
-        self.add_participant(pid)
+        self.add_participant(data)
 
     def _on_participant_selected(self):
+        """Callback for when an item in the list is selected."""
         item = self.list_widget.currentItem()
         pid = item.text()
-        self.selected.emit(pid)
+        participant = self.participants[pid]
+        self.selected.emit(participant)
 
 
 class FormDialog(QtWidgets.QDialog):
@@ -261,7 +302,26 @@ class FormDialog(QtWidgets.QDialog):
         return {a: str(e.text()) for a, e in self.line_edits.items()}
 
 
+class TestExperiment(object):
+
+    def __init__(self):
+        get_qtapp()
+        self.backend = QtExperimentBackend()
+
+        selector = ParticipantSelector(extra_attrs=[('hand', "Handedness")])
+        selector.add_participant('p0')
+        selector.add_participant('s4')
+        self.backend.add_task(selector, name='Select Participant')
+
+        selector.selected.connect(self.participant_selected)
+
+    def run(self):
+        get_qtapp().exec_()
+
+    def participant_selected(self, participant):
+        print(participant)
+
+
 if __name__ == '__main__':
-    app = get_qtapp()
-    exp = QtExperimentBackend()
-    app.exec_()
+    exp = TestExperiment()
+    exp.run()
