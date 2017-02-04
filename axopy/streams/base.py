@@ -288,7 +288,7 @@ class _BaseTrignoDaq(object):
             except socket.timeout:
                 l = len(packet)
                 packet += b'\x00' * (l_des - l)
-                raise DisconnectException
+                raise IOError("Device disconnected.")
             l = len(packet)
 
         data = np.asarray(
@@ -479,7 +479,3 @@ class TrignoAccel(_BaseTrignoDaq):
         data = super(TrignoAccel, self).read(self.samples_per_read)
         data = data[self.channel_range[0]:self.channel_range[1]+1, :]
         return data
-
-
-class DisconnectException(Exception):
-    pass

@@ -21,7 +21,7 @@ def get_qtapp():
     return qtapp
 
 
-class QtExperimentBackend(QtWidgets.QMainWindow):
+class ExperimentBackend(QtWidgets.QMainWindow):
     """The Qt-backed implementation of an experiment.
 
     Provides a QMainWindow with a tab widget, where each task gets its own tab
@@ -29,7 +29,8 @@ class QtExperimentBackend(QtWidgets.QMainWindow):
     """
 
     def __init__(self):
-        super(QtExperimentBackend, self).__init__()
+        get_qtapp()
+        super(ExperimentBackend, self).__init__()
 
         self._setup_ui()
         self.tasks = {}
@@ -65,6 +66,9 @@ class QtExperimentBackend(QtWidgets.QMainWindow):
             Message to display in the status bar.
         """
         self._statusbar_label.setText(message)
+
+    def run(self):
+        get_qtapp().exec_()
 
     def _setup_ui(self):
         """Initialize widgets and callbacks."""
@@ -300,28 +304,3 @@ class FormDialog(QtWidgets.QDialog):
             entered text as values.
         """
         return {a: str(e.text()) for a, e in self.line_edits.items()}
-
-
-class TestExperiment(object):
-
-    def __init__(self):
-        get_qtapp()
-        self.backend = QtExperimentBackend()
-
-        selector = ParticipantSelector(extra_attrs=[('hand', "Handedness")])
-        selector.add_participant('p0')
-        selector.add_participant('s4')
-        self.backend.add_task(selector, name='Select Participant')
-
-        selector.selected.connect(self.participant_selected)
-
-    def run(self):
-        get_qtapp().exec_()
-
-    def participant_selected(self, participant):
-        print(participant)
-
-
-if __name__ == '__main__':
-    exp = TestExperiment()
-    exp.run()
