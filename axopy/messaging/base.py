@@ -1,55 +1,41 @@
-"""Proof of concept for Qt-backed signal/slot messaging.
+class emitter(object):
+    def __init__(self, **data_format):
+        self.data_format = data_format
 
-The base `Block` class shouldn't care about the fact that `pyqtSignal`s only
-work with classes inheriting from `QObject`. Use a metaclass callable to hook
-in and inject `QObject` as a base class. Note that a metaclass inheriting from
-`type` and doing the same thing as `block_meta` in `__new__` doesn't seem to
-work. It results in::
+    def __call__(self, function):
+        self.function = function
 
-    TypeError: metaclass conflict: the metaclass of a derived class must be a
-    (non-strict) subclass of the metaclasses of all its bases
+        if backend == 'qt':
+            # does emitter need to change inheritance based on backend?
+            # or do we need to contribute the signal object to the class  
+            # that has the emitter??
+            self.signal = (**self.data_format)
+            def qt_function(*args, **kwargs):
+                self.signal.emit(self.function(*args,**kwargs))
 
-I think it is because `QObject` doesn't derive from `type` but `sip.wrapper`,
-but I don't fully understand the error nor SIP itself.
-"""
+            return qt_function
+        else:
+            raise ValueError("Current backend not supported")
 
-from PyQt5.QtCore import pyqtSignal, QObject
-
-# Just make an alias for Qt-backed signal/slot messaging for simplicity. In
-# the real implementation, this would be change depending on backend and could
-# have a different syntax for connecting things up.
-signal = pyqtSignal
-backend = 'qt'
-
-
-def block_meta(name, bases, attrs):
-    global backend
-    if backend == 'qt':
-        # swap out the base class (`object`) with `QObject`
-        bases = (QObject,)
-    return type(name, bases, attrs)
+    def connect(self,receiver):
+        if backend == 'qt':
+            self.signal.connect(receiver)
 
 
-class Block(metaclass=block_meta):
-    pass
+class receiver(object):
+    def __init__(self, function):
+        print("init reciever")
+        print(function.__dir__())
+        print(function.__module__,function.__qualname__)
+        self.function = function
+
+    def __call__(self, *args, **kwargs):
+        return self.function(*args, **kwargs)
+
+    def connect(self, emitter):
+        if backend == 'qt':
+            emitter.connect(self)
 
 
-# user code, implementing a custom block
-class CustomBlock(Block):
-
-    some_signal = signal(str)
-
-    def trigger(self, data):
-        print("emitting: {}".format(data))
-        self.some_signal.emit(data)
 
 
-# more user code, here using a function as a slot
-def receiver(data):
-    print("recieved: {}".format(data))
-
-
-if __name__ == '__main__':
-    block = CustomBlock()
-    block.some_signal.connect(receiver)
-    block.trigger('hey')
