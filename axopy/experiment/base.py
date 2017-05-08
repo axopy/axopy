@@ -2,7 +2,8 @@ import importlib
 
 
 # default to Qt backend
-_backend = 'qt'
+gui_backend = 'qt'
+
 
 
 class Experiment(object):
