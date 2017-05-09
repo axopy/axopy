@@ -1,3 +1,4 @@
+import pytest
 from axopy.messaging import emitter, receiver
 
 class FakeBlock1(object):
@@ -28,13 +29,23 @@ class FakeBlock2(object):
         return number
 
 
+@emitter(plusthree=float)
+def emit_func(num):
+    return num + 3.0
+
+
+@receiver
+def recv_func(result):
+    print("recv_func received: {}".format(result))
+
+
 if __name__ == '__main__':
     print("in main, init blocks")
     block1 = FakeBlock1()
     block2 = FakeBlock2()
 
     print("connecting")
-    # block1.fake_emitter.connect(block2.fake_receiver)
+    #block1.emitter1.connect(block2.receiver1)
     block2.receiver1.connect(block1.emitter1)
     block2.emitter2.connect(block1.receiver2)
 
@@ -44,3 +55,9 @@ if __name__ == '__main__':
 
     print("calling emitter from main")
     block1.emitter1("sending some stuff")
+
+    block1.emitter1.disconnect(block2.receiver1)
+    block1.emitter1("sending more stuff")
+
+    emit_func.connect(recv_func)
+    emit_func(3.2)
