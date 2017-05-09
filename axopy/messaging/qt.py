@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 class _QtEmitterBase(BaseEmitter, QObject):
 
-    def connect(self,receiver):
+    def connect(self, receiver):
         self.signal.connect(receiver)
 
     def disconnect(self, receiver):
