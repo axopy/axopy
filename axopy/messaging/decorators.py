@@ -1,6 +1,4 @@
-import axopy.settings
-
-backend = axopy.settings.messaging_backend
+from axopy import settings
 
 
 class emitter(object):
@@ -8,8 +6,7 @@ class emitter(object):
         self.data_format = data_format
 
     def __call__(self, function):
-        cls = backend.emitter(*self.data_format.values())
-        return cls(function, self.data_format)
+        return settings.messaging_backend(function, self.data_format)
 
 
 class receiver(object):
@@ -29,9 +26,6 @@ class receiver(object):
         return result
 
     def connect(self, emitter):
-        # I think connect and disconnect can be generic like this because
-        # emitter is our emitter object, not necessarily a pyqtSignal, and we
-        # know emitters have this interface
         emitter.connect(self)
 
     def disconnect(self, emitter):

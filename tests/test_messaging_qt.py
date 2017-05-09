@@ -1,63 +1,103 @@
 import pytest
+
+from axopy.messaging import qt
+from axopy import settings
+settings.messaging_backend = qt.emitter
+
 from axopy.messaging import emitter, receiver
 
-class FakeBlock1(object):
-    @emitter(data=str) # I don't think this is enforced anywhere
-    def emitter1(self, data):
-        print("emitting1: {}".format(data))
-        return data
 
-    @receiver
-    def receiver2(self, data):
-        print("recieved2: {}".format(data))
-        
+class MemoryBlock(object):
+    """Just remembers the last thing received."""
 
-class FakeBlock2(object):
     def __init__(self):
-        self.number_called = 0
+        self.last_received = None
 
     @receiver
-    def receiver1(self, data):
-        print("recieved1: {}".format(data))
-        self.number_called += 1
-        self.emitter2(self.number_called)
-        
+    def remember(self, data):
+        self.last_received = data
 
-    @emitter(number=int) # I don't think this is enforced anywhere
-    def emitter2(self, number):
-        print("emitting2: {}".format(number))
+@pytest.fixture
+def memblock():
+    return MemoryBlock()
+
+
+class RelayBlock(object):
+    """Just emits the data its emitter is called with."""
+
+    @emitter(number=int)
+    def relay(self, number):
         return number
 
+@pytest.fixture
+def relayblock():
+    return RelayBlock()
 
-@emitter(plusthree=float)
-def emit_func(num):
-    return num + 3.0
 
+class ComplicatedBlock(object):
+    """Block with a more complicated emitter signature."""
+
+    def __init__(self):
+        self.coords = None
+
+    @emitter(index=int, coords=tuple, height=float)
+    def emitter(self, i, c, h):
+        return i, c, h
+
+    @receiver
+    def receiver(self, i, c, h):
+        self.coords = c
+
+@pytest.fixture
+def complicatedblock():
+    return ComplicatedBlock()
+
+
+def test_emitter_connect(memblock, relayblock):
+    # Ensure emitters support `connect` and disconnect
+    relayblock.relay.connect(memblock.remember)
+    relayblock.relay(4)
+    assert memblock.last_received == 4
+
+    relayblock.relay(8)
+    assert memblock.last_received == 8
+
+    relayblock.relay.disconnect(memblock.remember)
+    relayblock.relay(9.0)
+    assert memblock.last_received == 8
+
+
+def test_receiver_connect(memblock, relayblock):
+    # Ensure receivers support `connect` and `disconnect`
+    memblock.remember.connect(relayblock.relay)
+    relayblock.relay(2)
+    assert memblock.last_received == 2
+
+    memblock.remember.disconnect(relayblock.relay)
+    relayblock.relay(9)
+    assert memblock.last_received == 2
+
+
+@pytest.mark.skip(reason="Need to think more about this...")
+def test_multidata(complicatedblock):
+    # Ensure multiple things can be emitted at once
+    complicatedblock.emitter.connect(complicatedblock.receiver)
+    complicatedblock.emitter(4, (4.2, 2.8), 9.8)
+
+
+message_with_suffix = None
+
+@emitter(msg=str)
+def emit_func():
+    return 'message'
 
 @receiver
-def recv_func(result):
-    print("recv_func received: {}".format(result))
+def recv_func(msg):
+    global message_with_suffix
+    message_with_suffix = msg + 'suffix'
 
-
-if __name__ == '__main__':
-    print("in main, init blocks")
-    block1 = FakeBlock1()
-    block2 = FakeBlock2()
-
-    print("connecting")
-    #block1.emitter1.connect(block2.receiver1)
-    block2.receiver1.connect(block1.emitter1)
-    block2.emitter2.connect(block1.receiver2)
-
-    print("block1:",block1.emitter1.data_format)
-    print("block2:",block2.emitter2.data_format)
-    
-
-    print("calling emitter from main")
-    block1.emitter1("sending some stuff")
-
-    block1.emitter1.disconnect(block2.receiver1)
-    block1.emitter1("sending more stuff")
-
+def test_emitter_receiver_functions():
+    # Use functions (as opposed to methods) as emitters and receivers
     emit_func.connect(recv_func)
-    emit_func(3.2)
+    assert emit_func() == 'message'
+    assert message_with_suffix == 'messagesuffix'
