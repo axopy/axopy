@@ -15,5 +15,10 @@ class BaseEmitter(object):
             result = self.function(self.inst, *args, **kwargs)
         else:
             result = self.function(*args, **kwargs)
-        self.emit(result)
+
+        if len(self.data_format) > 1:
+            self.emit(*result)
+        else:
+            self.emit(result)
+
         return result

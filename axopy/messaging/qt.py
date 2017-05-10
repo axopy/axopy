@@ -10,8 +10,8 @@ class _QtEmitterBase(BaseEmitter, QObject):
     def disconnect(self, receiver):
         self.signal.disconnect(receiver)
 
-    def emit(self, data):
-        self.signal.emit(data)
+    def emit(self, *data):
+        self.signal.emit(*data)
 
 
 def emitter(receiver, data_format):

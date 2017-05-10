@@ -78,11 +78,12 @@ def test_receiver_connect(memblock, relayblock):
     assert memblock.last_received == 2
 
 
-@pytest.mark.skip(reason="Need to think more about this...")
+#@pytest.mark.skip(reason="Need to think more about this...")
 def test_multidata(complicatedblock):
     # Ensure multiple things can be emitted at once
     complicatedblock.emitter.connect(complicatedblock.receiver)
     complicatedblock.emitter(4, (4.2, 2.8), 9.8)
+    assert complicatedblock.coords == (4.2, 2.8)
 
 
 message_with_suffix = None
