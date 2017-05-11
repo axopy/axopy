@@ -14,7 +14,6 @@ class PyEmitter(BaseEmitter):
         self._receiver_funcs.pop(self._receiver_funcs.index(receiver))
 
     def emit(self, *data):
-        print("emitting")
         for c in self._receiver_funcs:
             c(*data)
 
