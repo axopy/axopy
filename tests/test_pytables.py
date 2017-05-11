@@ -15,12 +15,12 @@ def newfile(tmpdir):
 
 def test_sink(newfile):
     # mixture of regular Python and numpy dtypes
-    data_format = [
-        ('timestamp', float),
-        ('trialnum', int),
-        ('float32', numpy.float32),
-        ('array', numpy.dtype((numpy.float32, (2,))))
-    ]
+    data_format = {
+        'timestamp': float,
+        'trialnum': int,
+        'float32': numpy.float32,
+        'array': numpy.dtype((numpy.float32, (2,)))
+    }
 
     sink = PyTablesSink(newfile, 'mytable', data_format)
     # ensure a table was created upon creation of the sink

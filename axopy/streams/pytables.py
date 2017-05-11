@@ -14,7 +14,7 @@ class PyTablesSink(object):
 
     def __call__(self, *args):
         row = self.table.row
-        for arg, (colname, coltype) in zip(args, self.data_format):
+        for arg, (colname, coltype) in zip(args, self.data_format.items()):
             row[colname] = arg
         row.append()
         self.table.flush()
@@ -23,7 +23,7 @@ class PyTablesSink(object):
 def format_to_description(data_format):
     """Converts a data format specification to a PyTables description.
 
-    The data format is a list of `(var_name, var_dtype)` tuples, where
+    The data format is a dictionary of `var_name: var_dtype` pairs, where
     `var_name` is a string and `var_dtype` is the data type for the column. If
     `var_dtype` is a regular Python type (e.g. `float`, `int`, etc.), it is
     converted to a numpy dtype via `numpy.dtype`. If it is a numpy dtype, it is
@@ -33,7 +33,7 @@ def format_to_description(data_format):
     table.
     """
     desc = {}
-    for i, (colname, coltype) in enumerate(data_format):
+    for i, (colname, coltype) in enumerate(data_format.items()):
         if isinstance(coltype, numpy.dtype):
             dtype = coltype
         else:
