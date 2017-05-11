@@ -25,7 +25,7 @@ def memblock():
 class RelayBlock(object):
     """Just emits the data its emitter is called with."""
 
-    @emitter(number=int)
+    @emitter(('number', int))
     def relay(self, number):
         return number
 
@@ -40,7 +40,7 @@ class ComplicatedBlock(object):
     def __init__(self):
         self.coords = None
 
-    @emitter(index=int, coords=tuple, height=float)
+    @emitter(('index', int), ('coords', tuple), ('height', float))
     def emitter(self, i, c, h):
         return i, c, h
 
@@ -88,7 +88,7 @@ def test_multidata(complicatedblock):
 
 message_with_suffix = None
 
-@emitter(msg=str)
+@emitter(('msg', str))
 def emit_func():
     return 'message'
 

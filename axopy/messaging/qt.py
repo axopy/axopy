@@ -15,6 +15,7 @@ class _QtEmitterBase(BaseEmitter, QObject):
 
 
 def emitter(receiver, data_format):
+    datatypes = [t[1] for t in data_format]
     cls = type('QtEmitter_{}'.format(id(data_format)), (_QtEmitterBase,),
-               dict(signal=pyqtSignal(*data_format.values())))
+               dict(signal=pyqtSignal(*datatypes)))
     return cls(receiver, data_format)

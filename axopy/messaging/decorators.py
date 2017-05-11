@@ -2,7 +2,7 @@ from axopy import settings
 
 
 class emitter(object):
-    def __init__(self, **data_format):
+    def __init__(self, *data_format):
         self.data_format = data_format
 
     def __call__(self, function):
