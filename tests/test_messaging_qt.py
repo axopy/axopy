@@ -1,8 +1,7 @@
 import pytest
 
-from axopy.messaging import qt
 from axopy import settings
-settings.messaging_backend = qt.emitter
+settings.messaging_backend = 'qt'
 
 from axopy.messaging import emitter, receiver
 

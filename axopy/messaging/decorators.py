@@ -1,5 +1,10 @@
+import importlib
 from axopy import settings
 
+if isinstance(settings.messaging_backend, str):
+    mod = importlib.import_module(
+        'axopy.messaging.{}'.format(settings.messaging_backend.lower()))
+    settings.messaging_backend = mod.emitter
 
 class emitter(object):
     def __init__(self, **data_format):
