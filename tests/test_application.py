@@ -1,5 +1,5 @@
 import pytest
-from axopy.application import FormDialog
+from axopy.experiment.qt import FormDialog
 
 
 def test_form_dialog(qtbot):
