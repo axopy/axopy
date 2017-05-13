@@ -20,17 +20,25 @@ class RelayBlock(object):
 
 
 class ComplicatedBlock(object):
-    """Block with a more complicated emitter signature."""
+    """Block with more complicated emitter signatures."""
 
     def __init__(self):
         self.coords = None
 
     @emitter(index=int, coords=tuple, height=float)
-    def emitter(self, i, c, h):
+    def dict_emitter(self, i, c, h):
+        return i, c, h
+
+    @emitter(('index', int), ('coords', tuple), ('height', float))
+    def tuple_emitter(self, i, c, h):
+        return i, c, h
+
+    @emitter(('index', int), coords=tuple, height=float)
+    def mixed_emitter(self, i, c, h):
         return i, c, h
 
     @receiver
-    def receiver(self, i, c, h):
+    def set_coords(self, i, c, h):
         self.coords = c
 
 
