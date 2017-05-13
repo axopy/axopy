@@ -7,8 +7,9 @@ if isinstance(settings.messaging_backend, str):
     settings.messaging_backend = mod.emitter
 
 class emitter(object):
-    def __init__(self, **data_format):
-        self.data_format = data_format
+    def __init__(self, *args, **kwargs):
+        self.data_format = list(args)
+        self.data_format.extend(kwargs.items())
 
     def __call__(self, function):
         return settings.messaging_backend(function, self.data_format)

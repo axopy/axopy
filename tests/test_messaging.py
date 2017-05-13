@@ -1,3 +1,4 @@
+import sys
 import importlib
 import pytest
 
@@ -64,9 +65,26 @@ def test_receiver_connect(memblock, relayblock):
 
 def test_multidata(complicatedblock):
     """Ensure multiple things can be emitted at once."""
-    complicatedblock.emitter.connect(complicatedblock.receiver)
-    complicatedblock.emitter(4, (4.2, 2.8), 9.8)
+    # emitter data format specified as tuples
+    complicatedblock.tuple_emitter.connect(complicatedblock.set_coords)
+    complicatedblock.tuple_emitter(4, (2.1, 6.2), 42.1)
+    assert complicatedblock.coords == (2.1, 6.2)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 6),
+                    reason="kwarg emitter format requires Python 3.6+")
+def test_emitter_formats(complicatedblock):
+    """Ensure newer data formats work for Python 3.6+."""
+    # emitter data format specified as multiple kwargs
+    complicatedblock.dict_emitter.connect(complicatedblock.set_coords)
+    complicatedblock.dict_emitter(4, (4.2, 2.8), 9.8)
     assert complicatedblock.coords == (4.2, 2.8)
+
+    # emitter data format specified with mixture of args and kwargs
+    complicatedblock.mixed_emitter.connect(complicatedblock.set_coords)
+    complicatedblock.mixed_emitter(1, (7.1, 2.4), 59.1)
+    assert complicatedblock.coords == (7.1, 2.4)
+
 
 
 def test_emitter_receiver_functions(blocks):
