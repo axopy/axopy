@@ -42,6 +42,23 @@ class ComplicatedBlock(object):
         self.coords = c
 
 
+class ChainedEmittersBlock(object):
+    """Block with stacked emitter and receiver decorators."""
+
+    @emitter(msg=str)
+    def start(self, msg):
+        return msg + "touchedonce"
+
+    @emitter(msg=str)
+    @receiver
+    def intermediate(self, msg):
+        return msg + "touchedtwice"
+
+    @receiver
+    def finish(self, msg):
+        self.message = msg
+
+
 message_with_suffix = None
 
 @emitter(msg=str)

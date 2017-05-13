@@ -38,6 +38,11 @@ def complicatedblock(blocks):
     return blocks.ComplicatedBlock()
 
 
+@pytest.fixture
+def chainedemitters(blocks):
+    return blocks.ChainedEmittersBlock()
+
+
 def test_emitter_connect(memblock, relayblock):
     """Ensure emitters support `connect` and disconnect."""
     relayblock.relay.connect(memblock.remember)
@@ -86,9 +91,16 @@ def test_emitter_formats(complicatedblock):
     assert complicatedblock.coords == (7.1, 2.4)
 
 
-
 def test_emitter_receiver_functions(blocks):
     """Use functions (as opposed to methods) as emitters and receivers."""
     blocks.emit_func.connect(blocks.recv_func)
     assert blocks.emit_func() == 'message'
     assert blocks.message_with_suffix == 'messagesuffix'
+
+
+def test_chained_emitters(chainedemitters):
+    """Chain emitters together, call the first, then check the end result."""
+    chainedemitters.start.connect(chainedemitters.intermediate)
+    chainedemitters.intermediate.connect(chainedemitters.finish)
+    chainedemitters.start("hey")
+    assert chainedemitters.message == "heytouchedoncetouchedtwice"
