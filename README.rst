@@ -3,6 +3,10 @@
 
 |
 
+.. image:: https://travis-ci.org/ucdrascal/axopy.svg?branch=master
+    :target: https://travis-ci.org/ucdrascal/axopy
+    :alt: Travis CI Status
+
 .. image:: https://readthedocs.org/projects/axopy/badge/?version=latest
    :target: http://axopy.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
