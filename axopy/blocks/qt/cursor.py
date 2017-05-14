@@ -164,5 +164,3 @@ class PositionAnimation(QtCore.QPropertyAnimation):
 
     def running(self):
         return self.state() == QtCore.QAbstractAnimation.Running
-
-

@@ -6,6 +6,7 @@ if isinstance(settings.messaging_backend, str):
         'axopy.messaging.{}'.format(settings.messaging_backend.lower()))
     settings.messaging_backend = mod.emitter
 
+
 class emitter(object):
     def __init__(self, *args, **kwargs):
         self.data_format = list(args)

@@ -1,3 +1,6 @@
+from PyQt5 import QtCore
+
+
 class InputStreamBackend(QtCore.QThread):
     """QThread backend for an `InputStream`.
 
@@ -25,7 +28,7 @@ class InputStreamBackend(QtCore.QThread):
     disconnected = QtCore.pyqtSignal()
 
     def __init__(self, device):
-        super(DaqThread, self).__init__()
+        super(InputStreamBackend, self).__init__()
         self.device = device
 
         self._running = False

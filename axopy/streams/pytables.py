@@ -10,7 +10,8 @@ class PyTablesSink(object):
         self.data_format = data_format
 
         self.description = format_to_description(self.data_format)
-        self.table = self.f.create_table('/', self.table_name, self.description)
+        self.table = self.f.create_table('/', self.table_name,
+                                         self.description)
 
     def __call__(self, *args):
         row = self.table.row

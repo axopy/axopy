@@ -5,7 +5,6 @@ import importlib
 gui_backend = 'qt'
 
 
-
 class Experiment(object):
 
     def __init__(self):

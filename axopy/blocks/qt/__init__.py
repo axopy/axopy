@@ -5,7 +5,8 @@ from axopy.qt.signals import OscilloscopeWidget
 from axopy.qt.cursor import (CursorInterface, CircleItem,
                              PositionAnimation)
 
-__all__ = ['ImagePrompt',
+__all__ = ['WidgetBlock',
+           'ImagePrompt',
            'AnnotatedProgressBar',
            'ImageDeck',
            'LabelDeck',

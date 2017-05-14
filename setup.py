@@ -5,6 +5,7 @@ def readme():
     with open('README.rst') as f:
         return f.read()
 
+
 setup(
     name='axopy',
     version='0.1',
