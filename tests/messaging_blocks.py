@@ -59,6 +59,18 @@ class ChainedEmittersBlock(object):
         self.message = msg
 
 
+class EventEmitterBlock(object):
+    """Block with a blank emitter."""
+
+    @emitter()
+    def trigger(self):
+        return
+
+    @receiver
+    def on_event(self):
+        self.event_occurred = True
+
+
 message_with_suffix = None
 
 @emitter(msg=str)

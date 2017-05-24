@@ -43,6 +43,11 @@ def chainedemitters(blocks):
     return blocks.ChainedEmittersBlock()
 
 
+@pytest.fixture
+def eventemitter(blocks):
+    return blocks.EventEmitterBlock()
+
+
 def test_emitter_connect(memblock, relayblock):
     """Ensure emitters support `connect` and disconnect."""
     relayblock.relay.connect(memblock.remember)
@@ -104,3 +109,9 @@ def test_chained_emitters(chainedemitters):
     chainedemitters.intermediate.connect(chainedemitters.finish)
     chainedemitters.start("hey")
     assert chainedemitters.message == "heytouchedoncetouchedtwice"
+
+
+def test_empty_emitter(eventemitter):
+    assert not hasattr(eventemitter, 'event_occurred')
+    eventemitter.trigger()
+    assert hasattr(eventemitter, 'event_occurred')
