@@ -112,6 +112,7 @@ def test_chained_emitters(chainedemitters):
 
 
 def test_empty_emitter(eventemitter):
+    eventemitter.trigger.connect(eventemitter.on_event)
     assert not hasattr(eventemitter, 'event_occurred')
     eventemitter.trigger()
     assert hasattr(eventemitter, 'event_occurred')
