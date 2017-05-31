@@ -1,4 +1,4 @@
-from axopy.messaging import emitter, receiver
+from axopy.messaging import transmitter, receiver
 
 class MemoryBlock(object):
     """Just remembers the last thing received."""
@@ -12,29 +12,29 @@ class MemoryBlock(object):
 
 
 class RelayBlock(object):
-    """Just emits the data its emitter is called with."""
+    """Just transmits the data its transmitter is called with."""
 
-    @emitter(number=int)
+    @transmitter(number=int)
     def relay(self, number):
         return number
 
 
 class ComplicatedBlock(object):
-    """Block with more complicated emitter signatures."""
+    """Block with more complicated transmitter signatures."""
 
     def __init__(self):
         self.coords = None
 
-    @emitter(index=int, coords=tuple, height=float)
-    def dict_emitter(self, i, c, h):
+    @transmitter(index=int, coords=tuple, height=float)
+    def dict_transmitter(self, i, c, h):
         return i, c, h
 
-    @emitter(('index', int), ('coords', tuple), ('height', float))
-    def tuple_emitter(self, i, c, h):
+    @transmitter(('index', int), ('coords', tuple), ('height', float))
+    def tuple_transmitter(self, i, c, h):
         return i, c, h
 
-    @emitter(('index', int), coords=tuple, height=float)
-    def mixed_emitter(self, i, c, h):
+    @transmitter(('index', int), coords=tuple, height=float)
+    def mixed_transmitter(self, i, c, h):
         return i, c, h
 
     @receiver
@@ -42,14 +42,14 @@ class ComplicatedBlock(object):
         self.coords = c
 
 
-class ChainedEmittersBlock(object):
-    """Block with stacked emitter and receiver decorators."""
+class ChainedTransmittersBlock(object):
+    """Block with stacked transmitter and receiver decorators."""
 
-    @emitter(msg=str)
+    @transmitter(msg=str)
     def start(self, msg):
         return msg + "touchedonce"
 
-    @emitter(msg=str)
+    @transmitter(msg=str)
     @receiver
     def intermediate(self, msg):
         return msg + "touchedtwice"
@@ -59,10 +59,10 @@ class ChainedEmittersBlock(object):
         self.message = msg
 
 
-class EventEmitterBlock(object):
-    """Block with a blank emitter."""
+class EventTransmitterBlock(object):
+    """Block with a blank transmitter."""
 
-    @emitter()
+    @transmitter()
     def trigger(self):
         return
 
@@ -73,8 +73,8 @@ class EventEmitterBlock(object):
 
 message_with_suffix = None
 
-@emitter(msg=str)
-def emit_func():
+@transmitter(msg=str)
+def transmit_func():
     return 'message'
 
 @receiver

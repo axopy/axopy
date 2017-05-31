@@ -1,10 +1,10 @@
-from axopy.messaging.base import BaseEmitter
+from axopy.messaging.base import BaseTransmitter
 
 
-class PyEmitter(BaseEmitter):
+class PyTransmitter(BaseTransmitter):
 
     def __init__(self, function, data_format):
-        super(PyEmitter, self).__init__(function, data_format)
+        super(PyTransmitter, self).__init__(function, data_format)
         self._receiver_funcs = []
 
     def connect(self, receiver):
@@ -13,10 +13,10 @@ class PyEmitter(BaseEmitter):
     def disconnect(self, receiver):
         self._receiver_funcs.pop(self._receiver_funcs.index(receiver))
 
-    def emit(self, *data):
+    def transmit(self, *data):
         for c in self._receiver_funcs:
             c(*data)
 
 
-def emitter(function, data_format):
-    return PyEmitter(function, data_format)
+def transmitter(function, data_format):
+    return PyTransmitter(function, data_format)

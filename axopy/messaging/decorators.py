@@ -4,10 +4,10 @@ from axopy import settings
 if isinstance(settings.messaging_backend, str):
     mod = importlib.import_module(
         'axopy.messaging.{}'.format(settings.messaging_backend.lower()))
-    settings.messaging_backend = mod.emitter
+    settings.messaging_backend = mod.transmitter
 
 
-class emitter(object):
+class transmitter(object):
     def __init__(self, *args, **kwargs):
         self.data_format = list(args)
         self.data_format.extend(kwargs.items())
@@ -32,8 +32,8 @@ class receiver(object):
             result = self.function(*args, **kwargs)
         return result
 
-    def connect(self, emitter):
-        emitter.connect(self)
+    def connect(self, transmitter):
+        transmitter.connect(self)
 
-    def disconnect(self, emitter):
-        emitter.disconnect(self)
+    def disconnect(self, transmitter):
+        transmitter.disconnect(self)

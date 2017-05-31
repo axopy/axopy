@@ -1,7 +1,7 @@
-class BaseEmitter(object):
+class BaseTransmitter(object):
 
     def __init__(self, function, data_format):
-        super(BaseEmitter, self).__init__()
+        super(BaseTransmitter, self).__init__()
         self.data_format = data_format
         self.function = function
 
@@ -17,10 +17,10 @@ class BaseEmitter(object):
             result = self.function(*args, **kwargs)
 
         if len(self.data_format) == 0:
-            self.emit()
+            self.transmit()
         elif len(self.data_format) == 1:
-            self.emit(result)
+            self.transmit(result)
         else:
-            self.emit(*result)
+            self.transmit(*result)
 
         return result

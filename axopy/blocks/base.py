@@ -40,8 +40,8 @@ class CustomBlock(Block):
     some_signal = signal(str)
 
     def trigger(self, data):
-        print("emitting: {}".format(data))
-        self.some_signal.emit(data)
+        print("transmitting: {}".format(data))
+        self.some_signal.transmit(data)
 
 
 # more user code, here using a function as a slot

@@ -1,3 +1,3 @@
-from .decorators import emitter, receiver
+from .decorators import transmitter, receiver
 
-__all__ = ['emitter', 'receiver']
+__all__ = ['transmitter', 'receiver']
