@@ -5,7 +5,7 @@ Widgets for plotting multi-channel signals.
 import pyqtgraph
 
 
-class OscilloscopeWidget(pyqtgraph.GraphicsLayoutWidget):
+class Oscilloscope(pyqtgraph.GraphicsLayoutWidget):
     """
     Scrolling oscilloscope-like widget for displaying real-time signals.
 
@@ -13,8 +13,8 @@ class OscilloscopeWidget(pyqtgraph.GraphicsLayoutWidget):
     widget, and all channels share y-axis zoom.
     """
 
-    def __init__(self, parent=None):
-        super(OscilloscopeWidget, self).__init__(parent=parent)
+    def __init__(self):
+        super().__init__()
 
         self.plot_items = []
         self.plot_data_items = []
@@ -23,7 +23,7 @@ class OscilloscopeWidget(pyqtgraph.GraphicsLayoutWidget):
 
         self.setBackground(None)
 
-    def add_window(self, data):
+    def plot(self, data):
         """
         Adds a window of data to the widget.
 

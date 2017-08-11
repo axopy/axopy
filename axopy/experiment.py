@@ -1,42 +1,125 @@
-import importlib
+import numpy
+from axopy import util
+from axopy.messaging import transmitter
+from axopy.task.base import Task
+from axopy.gui.main import MainWindow
+from axopy.gui.canvas import Canvas
+from axopy.gui.signals import Oscilloscope
 
 
-# default to Qt backend
-gui_backend = 'qt'
+class CanvasTask(Task):
 
+    step = 1
 
-class Experiment(object):
+    def __init__(self, text):
+        super().__init__()
+        self.text = text
+        self.key_map = {
+            util.key_w: (0, -self.step),
+            util.key_a: (-self.step, 0),
+            util.key_s: (0, self.step),
+            util.key_d: (self.step, 0)
+        }
 
-    def __init__(self):
-        b = get_backend()
-        mod = importlib.import_module('axopy.experiment.{}'.format(b))
-        self.ui_backend = mod.ExperimentBackend()
+    def prepare(self):
+        self.ui = Canvas()
+        self.text_item = self.ui.scene().addText(self.text)
 
     def run(self):
-        self.ui_backend.run()
+        pass
+
+    def key_press(self, key):
+        if key == util.key_space:
+            self.finish()
+
+        try:
+            move = self.key_map[key]
+        except KeyError:
+            return
+
+        self.text_item.moveBy(*move)
 
 
-def set_backend(name):
-    """Set the graphical backend of the Experiment.
+class OscilloscopeTask(Task):
 
-    Parameters
-    ----------
-    name : str
-        Name of the backend to use. Available values are 'qt'.
-    """
-    global _backend
-    lname = name.lower()
+    def prepare(self):
+        self.ui = Oscilloscope()
 
-    # add names to the tuple to support them
-    # implement backends by adding a module with the same name
-    if lname in ('qt'):
-        _backend = lname
-    else:
-        raise ValueError("Experiment backend \'{}\' is not"
-                         " supported".format(lname))
+    def run(self):
+        self.plot()
+
+    def plot(self):
+        self.ui.plot(numpy.random.randn(4, 1000))
+
+    def key_press(self, key):
+        if key == util.key_space:
+            self.finish()
+        elif key == util.key_d:
+            self.plot()
 
 
-def get_backend():
-    """Retrieve the graphical backend currently in use (or to be used)."""
-    global _backend
-    return _backend
+class TaskManager(object):
+
+    def __init__(self, tasks):
+        super().__init__()
+        self.tasks = tasks
+        self.task_iter = iter(tasks)
+
+        self.receive_keys = False
+
+        self.screen = MainWindow()
+        self.screen.key_pressed.connect(self.key_press)
+
+        self.confirm_task = Canvas(draw_border=False)
+        self.confirm_task.scene().addText("Ready")
+
+        self.task_finished()
+
+    def run(self):
+        self.screen.run()
+
+    def next_task(self):
+        self.receive_keys = False
+
+        try:
+            self.current_task = next(self.task_iter)
+        except StopIteration:
+            self.screen.quit()
+
+        self.run_task()
+
+    def run_task(self):
+        self.current_task.finish.connect(self.task_finished)
+        self.key_pressed.connect(self.current_task.key_press)
+        self.current_task.prepare()
+        self.screen.set_view(self.current_task.ui)
+        self.current_task.run()
+
+    def task_finished(self):
+        try:
+            self.current_task.finish.disconnect(self.task_finished)
+            self.key_pressed.disconnect(self.current_task.key_press)
+        except:
+            pass
+        self.screen.set_view(self.confirm_task)
+        self.receive_keys = True
+
+    def key_press(self, key):
+        if self.receive_keys:
+            if key == util.key_escape:
+                self.screen.quit()
+            elif key == util.key_return:
+                self.next_task()
+        else:
+            self.key_pressed(key)
+
+    @transmitter(('key', str))
+    def key_pressed(self, key):
+        return key
+
+
+if __name__ == '__main__':
+    tm = TaskManager([CanvasTask('hey'),
+                      CanvasTask('there'),
+                      OscilloscopeTask()])
+    tm.run()

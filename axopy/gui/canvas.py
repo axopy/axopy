@@ -1,37 +1,28 @@
-"""
-Cursor control interface based on QGraphicsView.
-"""
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class CursorInterface(QtWidgets.QGraphicsView):
-    """
-    A 2D cursor control interface implemented using a QGraphicsView.
+class Canvas(QtWidgets.QGraphicsView):
+    """A 2D canvas interface implemented using a QGraphicsView.
 
     This view essentially just holds a QGraphicsScene that grows to fit the
     size of the view, keeping the aspect ratio square. The scene is displayed
     with a gray border.
     """
 
-    initleft = -200
-    initbottom = initleft
-    initwidth = -initleft*2
-    initheight = -initleft*2
-
+    rect = (-100, -100, 200, 200) # x, y, w, h
     border_color = '#444444'
+    border_width = 1
 
-    def __init__(self, parent=None):
-        super(CursorInterface, self).__init__(parent)
+    def __init__(self, draw_border=True, parent=None):
+        super().__init__(parent=parent)
 
         self._init_scene()
-        self._init_border()
+        if draw_border:
+            self._init_border()
 
     def _init_scene(self):
         scene = QtWidgets.QGraphicsScene()
-        scene.setSceneRect(self.initleft, self.initbottom,
-                           self.initwidth, self.initheight)
-        scene.setItemIndexMethod(QtWidgets.QGraphicsScene.NoIndex)
+        scene.setSceneRect(*self.rect)
 
         self.setScene(scene)
         self.setRenderHint(QtGui.QPainter.Antialiasing)
@@ -40,7 +31,7 @@ class CursorInterface(QtWidgets.QGraphicsView):
 
     def _init_border(self):
         rect = self.scene().sceneRect()
-        pen = QtGui.QPen(QtGui.QColor(self.border_color))
+        pen = QtGui.QPen(QtGui.QColor(self.border_color), self.border_width)
         lines = [
             QtCore.QLineF(rect.topLeft(), rect.topRight()),
             QtCore.QLineF(rect.topLeft(), rect.bottomLeft()),

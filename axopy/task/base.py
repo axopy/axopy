@@ -1,4 +1,4 @@
-from axopy.messaging import transmitter, receiver
+from axopy.messaging import transmitter
 
 
 class TaskIter(object):
@@ -39,7 +39,10 @@ class TaskIter(object):
         attributes that specify all parameters of the trial.
     """
 
-    def __init__(self, design):
+    def __init__(self, design=None):
+        if design is None:
+            design = [[]]
+
         self.design = design
         self.block_iter = iter(design)
 
@@ -78,7 +81,7 @@ class Task(object):
     This base class handles iteration through the trials of the task in blocks.
     """
 
-    def __init__(self, design):
+    def __init__(self, design=None):
         self.iter = TaskIter(design)
 
     def run(self):
@@ -141,12 +144,14 @@ class Task(object):
         """
         self.next_block()
 
+    @transmitter()
     def finish(self):
         """Called after the last trial of the last block has run.
 
-        This method does nothing by default. Override to do cleanup if needed.
+        This method simply transmits an event. Override to do cleanup if
+        needed, but make sure to keep it as a transmitter.
         """
-        pass
+        return
 
 
 class CustomTask(Task):
