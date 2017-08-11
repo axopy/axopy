@@ -3,7 +3,7 @@ from axopy import util
 from axopy.messaging import transmitter
 from axopy.task.base import Task
 from axopy.gui.main import MainWindow
-from axopy.gui.canvas import Canvas
+from axopy.gui.canvas import Canvas, Circle
 from axopy.gui.signals import Oscilloscope
 
 
@@ -23,7 +23,8 @@ class CanvasTask(Task):
 
     def prepare(self):
         self.ui = Canvas()
-        self.text_item = self.ui.scene().addText(self.text)
+        self.cursor = Circle(10)
+        self.ui.add_item(self.cursor)
 
     def run(self):
         pass
@@ -37,7 +38,7 @@ class CanvasTask(Task):
         except KeyError:
             return
 
-        self.text_item.moveBy(*move)
+        self.cursor.moveBy(*move)
 
 
 class OscilloscopeTask(Task):
