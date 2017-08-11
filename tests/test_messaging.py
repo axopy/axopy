@@ -1,51 +1,116 @@
 import sys
-import importlib
 import pytest
-
-# need to import these initially so they can be reloaded in the blocks fixture
-import messaging_blocks
-import axopy.messaging.decorators
+from axopy.messaging import transmitter, receiver
 
 
-@pytest.fixture(params=['py', 'qt'])
-def blocks(request):
-    """Sets each messaging backends and yields the messaging_blocks module.
+class MemoryBlock(object):
+    """Just remembers the last thing received."""
 
-    The messaging_blocks module must be reloaded each time the backend is set
-    so the @transmitter and @receiver decorators work properly.
-    """
-    from axopy import settings
-    settings.messaging_backend = request.param
+    def __init__(self):
+        self.last_received = None
 
-    # need to reload to actually see the backend change
-    importlib.reload(axopy.messaging.decorators)
-    importlib.reload(messaging_blocks)
-    yield messaging_blocks
+    @receiver
+    def remember(self, data):
+        self.last_received = data
+
+
+class RelayBlock(object):
+    """Just transmits the data its transmitter is called with."""
+
+    @transmitter(number=int)
+    def relay(self, number):
+        return number
+
+
+class ComplicatedBlock(object):
+    """Block with more complicated transmitter signatures."""
+
+    def __init__(self):
+        self.coords = None
+
+    @transmitter(index=int, coords=tuple, height=float)
+    def dict_transmitter(self, i, c, h):
+        return i, c, h
+
+    @transmitter(('index', int), ('coords', tuple), ('height', float))
+    def tuple_transmitter(self, i, c, h):
+        return i, c, h
+
+    @transmitter(('index', int), coords=tuple, height=float)
+    def mixed_transmitter(self, i, c, h):
+        return i, c, h
+
+    @receiver
+    def set_coords(self, i, c, h):
+        self.coords = c
+
+
+class ChainedTransmittersBlock(object):
+    """Block with stacked transmitter and receiver decorators."""
+
+    @transmitter(msg=str)
+    def start(self, msg):
+        return msg + "touchedonce"
+
+    @transmitter(msg=str)
+    @receiver
+    def intermediate(self, msg):
+        return msg + "touchedtwice"
+
+    @receiver
+    def finish(self, msg):
+        self.message = msg
+
+
+class EventTransmitterBlock(object):
+    """Block with a blank transmitter."""
+
+    @transmitter()
+    def trigger(self):
+        return
+
+    @receiver
+    def on_event(self):
+        self.event_occurred = True
+
+
+message_with_suffix = None
+
+
+@transmitter(msg=str)
+def transmit_func():
+    return 'message'
+
+
+@receiver
+def recv_func(msg):
+    global message_with_suffix
+    message_with_suffix = msg + 'suffix'
 
 
 @pytest.fixture
-def memblock(blocks):
-    return blocks.MemoryBlock()
+def memblock():
+    return MemoryBlock()
 
 
 @pytest.fixture
-def relayblock(blocks):
-    return blocks.RelayBlock()
+def relayblock():
+    return RelayBlock()
 
 
 @pytest.fixture
-def complicatedblock(blocks):
-    return blocks.ComplicatedBlock()
+def complicatedblock():
+    return ComplicatedBlock()
 
 
 @pytest.fixture
-def chainedtransmitters(blocks):
-    return blocks.ChainedTransmittersBlock()
+def chainedtransmitters():
+    return ChainedTransmittersBlock()
 
 
 @pytest.fixture
-def eventtransmitter(blocks):
-    return blocks.EventTransmitterBlock()
+def eventtransmitter():
+    return EventTransmitterBlock()
 
 
 def test_transmitter_connect(memblock, relayblock):
@@ -96,15 +161,15 @@ def test_transmitter_formats(complicatedblock):
     assert complicatedblock.coords == (7.1, 2.4)
 
 
-def test_transmitter_receiver_functions(blocks):
+def test_transmitter_receiver_functions():
     """Use functions (as opposed to methods) as transmitters and receivers."""
-    blocks.transmit_func.connect(blocks.recv_func)
-    assert blocks.transmit_func() == 'message'
-    assert blocks.message_with_suffix == 'messagesuffix'
+    transmit_func.connect(recv_func)
+    assert transmit_func() == 'message'
+    assert message_with_suffix == 'messagesuffix'
 
 
 def test_chained_transmitters(chainedtransmitters):
-    """Chain transmitters together, call the first, then check the end result."""
+    """Chain transmitters together, call the first, then check the result."""
     chainedtransmitters.start.connect(chainedtransmitters.intermediate)
     chainedtransmitters.intermediate.connect(chainedtransmitters.finish)
     chainedtransmitters.start("hey")
