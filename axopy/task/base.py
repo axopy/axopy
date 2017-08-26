@@ -79,16 +79,32 @@ class Task(object):
     """Base class for tasks.
 
     This base class handles iteration through the trials of the task in blocks.
+
+    Most task implementations will want to override the `prepare` and
+    `run_trial` methods, while the rest can be left to default behavior.
     """
 
     def __init__(self, design=None):
         self.iter = TaskIter(design)
 
+    def prepare(self):
+        """Initialize graphical elements and messaging connections.
+
+        This method should be overridden if the task uses any graphics (which
+        most do). It is important to defer initializing any graphical elements
+        until this method is called so that the graphical backend has a chance
+        to start. This method is called automatically if the task is added to
+        a :class:`TaskManager`.
+        """
+        pass
+
     def run(self):
         """Starts running the task.
 
         Simply calls `next_block` to start running trials in the first block.
-        You shouldn't normally need to override this method.
+        This method is called automatically if the task is added to a
+        :class:`TaskManager`. You shouldn't normally need to override this
+        method.
         """
         self.next_block()
 
@@ -107,6 +123,7 @@ class Task(object):
 
         # TODO: (optionally) wait for confirmation to start
 
+        self.block = block
         self.next_trial()
 
     def next_trial(self):
@@ -120,6 +137,7 @@ class Task(object):
             self.finish_block()
             return
 
+        self.trial = trial
         self.run_trial(trial)
 
     def run_trial(self, trial):

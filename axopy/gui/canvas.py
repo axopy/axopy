@@ -60,9 +60,48 @@ class Canvas(QtWidgets.QGraphicsView):
         self.fitInView(self.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
 
-class Circle(QtWidgets.QGraphicsEllipseItem):
+class GraphicsItemWrapper(object):
+
+    def move_to(self, x, y):
+        self.move(x, y)
+
+    def move_by(self, dx, dy):
+        self.moveBy(dx, dy)
+
+
+class Circle(QtWidgets.QGraphicsEllipseItem, GraphicsItemWrapper):
 
     def __init__(self, size, color='#333333'):
         self.size = size
-        super().__init__(0, 0, size, size)
+        super().__init__(-size/2, -size/2, size, size)
         self.setBrush(QtGui.QColor(color))
+        pen = QtGui.QPen(QtGui.QBrush(), 0)
+        self.setPen(pen)
+
+
+class Cross(QtWidgets.QGraphicsItemGroup, GraphicsItemWrapper):
+
+    default_size = 5
+
+    def __init__(self, size=None, color='#333333'):
+        super().__init__()
+        if size is None:
+            size = self.default_size
+        self.size = size
+
+        # horizontal line
+        self.addToGroup(Line(-size/2, 0, size/2, 0))
+        # vertical line
+        self.addToGroup(Line(0, -size/2, 0, size/2))
+
+
+class Line(QtWidgets.QGraphicsLineItem):
+
+    def __init__(self, x1, y1, x2, y2, color='#333333'):
+        super().__init__(x1, y1, x2, y2)
+        self.width = 1
+
+        pen = QtGui.QPen(QtGui.QBrush(QtGui.QColor(color)),
+                         self.width,
+                         cap=QtCore.Qt.FlatCap)
+        self.setPen(pen)

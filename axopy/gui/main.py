@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from axopy import util
 from axopy.messaging import transmitter
 
@@ -73,7 +73,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._layout = QtWidgets.QStackedLayout(self._central_widget)
         self.setCentralWidget(self._central_widget)
 
-        # status bar shows current participant
         status_bar = QtWidgets.QStatusBar(self)
         self.setStatusBar(status_bar)
         self._statusbar_label = QtWidgets.QLabel("status")
@@ -84,11 +83,16 @@ class MainWindow(QtWidgets.QMainWindow):
     def run(self):
         get_qtapp().exec_()
 
-    def set_view(self, view):
-        if self._layout.indexOf(view) == -1:
-            self._layout.addWidget(view)
+    def new_container(self):
+        c = Container()
+        self._layout.addWidget(c)
+        self._layout.setCurrentWidget(c)
+        return c
 
-        self._layout.setCurrentWidget(view)
+    def set_container(self, container):
+        if self._layout.indexOf(container) == -1:
+            self._layout.addWidget(container)
+        self._layout.setCurrentWidget(container)
 
     def set_status(self, message):
         """Adds a status message to the status bar.
@@ -103,7 +107,15 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self._statusbar_label.setText(message)
 
+    def quit(self):
+        get_qtapp().quit()
+
     def keyPressEvent(self, event):
+        """Callback for key presses.
+
+        This overrides the `QMainWindow` method. It does not need to be called
+        directly.
+        """
         try:
             key = key_map[event.key()]
         except KeyError:
@@ -115,6 +127,13 @@ class MainWindow(QtWidgets.QMainWindow):
     def key_pressed(self, key):
         return key
 
-    def quit(self):
-        get_qtapp().quit()
 
+class Container(QtWidgets.QWidget):
+
+    def __init__(self, parent=None):
+        super(Container, self).__init__(parent=parent)
+
+    def set_view(self, view):
+        self.layout = QtWidgets.QGridLayout()
+        self.setLayout(self.layout)
+        self.layout.addWidget(view, 0, 0)

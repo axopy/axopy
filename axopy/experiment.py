@@ -3,7 +3,7 @@ from axopy import util
 from axopy.messaging import transmitter
 from axopy.task.base import Task
 from axopy.gui.main import MainWindow
-from axopy.gui.canvas import Canvas, Circle
+from axopy.gui.canvas import Canvas, Circle, Cross
 from axopy.gui.signals import Oscilloscope
 
 
@@ -21,10 +21,13 @@ class CanvasTask(Task):
             util.key_d: (self.step, 0)
         }
 
-    def prepare(self):
+    def prepare(self, container):
         self.ui = Canvas()
-        self.cursor = Circle(10)
+        self.cursor = Circle(5, color='#aa1212')
         self.ui.add_item(self.cursor)
+        self.ui.add_item(Cross())
+
+        container.set_view(self.ui)
 
     def run(self):
         pass
@@ -38,13 +41,14 @@ class CanvasTask(Task):
         except KeyError:
             return
 
-        self.cursor.moveBy(*move)
+        self.cursor.move_by(*move)
 
 
 class OscilloscopeTask(Task):
 
-    def prepare(self):
+    def prepare(self, container):
         self.ui = Oscilloscope()
+        container.set_view(self.ui)
 
     def run(self):
         self.plot()
@@ -59,11 +63,24 @@ class OscilloscopeTask(Task):
             self.plot()
 
 
+class ConfirmStartTask(Task):
+
+    def __init__(self, text="Ready", key=util.key_return):
+        super().__init__()
+        self.text = text
+        self.key = key
+
+    def key_press(self, key):
+        if key == self.key:
+            self.finish()
+
+
 class TaskManager(object):
 
-    def __init__(self, tasks):
+    def __init__(self, tasks, device=None):
         super().__init__()
         self.tasks = tasks
+        self.device = device
         self.task_iter = iter(tasks)
 
         self.receive_keys = False
@@ -71,29 +88,27 @@ class TaskManager(object):
         self.screen = MainWindow()
         self.screen.key_pressed.connect(self.key_press)
 
-        self.confirm_task = Canvas(draw_border=False)
-        self.confirm_task.scene().addText("Ready")
+        self.confirm_screen = Canvas(draw_border=False)
+        self.confirm_screen.scene().addText("Ready")
 
         self.task_finished()
 
     def run(self):
         self.screen.run()
 
-    def next_task(self):
+    def run_task(self):
         self.receive_keys = False
 
-        try:
-            self.current_task = next(self.task_iter)
-        except StopIteration:
-            self.screen.quit()
-
-        self.run_task()
-
-    def run_task(self):
+        # wait for task to finish
         self.current_task.finish.connect(self.task_finished)
+        # forward key presses to the task
         self.key_pressed.connect(self.current_task.key_press)
-        self.current_task.prepare()
-        self.screen.set_view(self.current_task.ui)
+
+        # add a task view
+        con = self.screen.new_container()
+
+        self.current_task.prepare(con)
+        # self.screen.set_view(self.current_task.ui)
         self.current_task.run()
 
     def task_finished(self):
@@ -101,8 +116,15 @@ class TaskManager(object):
             self.current_task.finish.disconnect(self.task_finished)
             self.key_pressed.disconnect(self.current_task.key_press)
         except:
+            # either there is no current task or it wasn't connected
             pass
-        self.screen.set_view(self.confirm_task)
+
+        try:
+            self.current_task = next(self.task_iter)
+        except StopIteration:
+            self.screen.quit()
+
+        self.screen.set_container(self.confirm_screen)
         self.receive_keys = True
 
     def key_press(self, key):
@@ -110,7 +132,7 @@ class TaskManager(object):
             if key == util.key_escape:
                 self.screen.quit()
             elif key == util.key_return:
-                self.next_task()
+                self.run_task()
         else:
             self.key_pressed(key)
 
