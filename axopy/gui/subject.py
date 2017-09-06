@@ -1,4 +1,4 @@
-from PyQt5 import Qtcore, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 
 class ParticipantSelector(QtWidgets.QWidget):
@@ -35,11 +35,13 @@ class ParticipantSelector(QtWidgets.QWidget):
         super(ParticipantSelector, self).__init__(parent=parent)
         self._setup_ui()
 
-        self.participant_attrs = [('pid', "Participant ID")]
+        self.participant_attrs = ['id']
         if extra_attrs is not None:
             self.participant_attrs.extend(extra_attrs)
 
         self.participants = {}
+
+        self.current_selection = None
 
     def add_participant(self, participant):
         """Add a participant to the list.
@@ -53,10 +55,14 @@ class ParticipantSelector(QtWidgets.QWidget):
             include a 'pid' item.
         """
         if isinstance(participant, str):
-            participant = {'pid': participant}
+            participant = {'id': participant}
 
-        self.participants[participant['pid']] = participant
-        self.list_widget.addItem(participant['pid'])
+        self.participants[participant['id']] = participant
+        self.list_widget.addItem(participant['id'])
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Return:
+            self._select_participant()
 
     def _setup_ui(self):
         """User interface setup for __init__ cleanliness."""
@@ -67,8 +73,6 @@ class ParticipantSelector(QtWidgets.QWidget):
 
         self.list_widget = QtWidgets.QListWidget(self)
         self.list_widget.setAlternatingRowColors(True)
-        self.list_widget.itemSelectionChanged.connect(
-            self._on_participant_selected)
         self.main_layout.addWidget(self.list_widget)
 
         self.new_button = QtWidgets.QPushButton("New Participant")
@@ -81,12 +85,13 @@ class ParticipantSelector(QtWidgets.QWidget):
         Opens up a FormDialog to enter informaiton, then does some checking to
         make sure the entered information makes sense.
         """
-        dialog = FormDialog(self.participant_attrs)
+        attrs = [(a, a) for a in self.participant_attrs]
+        dialog = FormDialog(attrs)
         if not dialog.exec_():
             return
 
         data = dialog.get_data()
-        pid = data['pid']
+        pid = data['id']
 
         # make sure a participant ID was entered
         if pid == '':
@@ -112,9 +117,11 @@ class ParticipantSelector(QtWidgets.QWidget):
 
         self.add_participant(data)
 
-    def _on_participant_selected(self):
+    def _select_participant(self):
         """Callback for when an item in the list is selected."""
         item = self.list_widget.currentItem()
+        if item is None:
+            return
         pid = item.text()
         participant = self.participants[pid]
         self.selected.emit(participant)

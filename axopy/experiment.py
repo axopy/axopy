@@ -3,8 +3,32 @@ from axopy import util
 from axopy.messaging import transmitter
 from axopy.task.base import Task
 from axopy.gui.main import MainWindow
+from axopy.gui.subject import ParticipantSelector
 from axopy.gui.canvas import Canvas, Circle, Cross
 from axopy.gui.signals import Oscilloscope
+
+
+class SubjectSelection(Task):
+
+    def __init__(self, extra_params=None):
+        super().__init__()
+        self.extra_params = extra_params
+
+    def prepare(self, container):
+        self.ui = ParticipantSelector(extra_attrs=self.extra_params)
+        self.ui.selected.connect(self._on_subject_selected)
+        container.set_view(self.ui)
+
+    def run(self):
+        pass
+
+    def _on_subject_selected(self, subject):
+        self.select(subject)
+        self.finish()
+
+    @transmitter(('subject', dict))
+    def select(self, subject):
+        return subject
 
 
 class CanvasTask(Task):
@@ -63,24 +87,13 @@ class OscilloscopeTask(Task):
             self.plot()
 
 
-class ConfirmStartTask(Task):
-
-    def __init__(self, text="Ready", key=util.key_return):
-        super().__init__()
-        self.text = text
-        self.key = key
-
-    def key_press(self, key):
-        if key == self.key:
-            self.finish()
-
-
 class TaskManager(object):
 
     def __init__(self, tasks, device=None):
         super().__init__()
         self.tasks = tasks
         self.device = device
+
         self.task_iter = iter(tasks)
 
         self.receive_keys = False
@@ -94,6 +107,7 @@ class TaskManager(object):
         self.task_finished()
 
     def run(self):
+        """Start the experiment."""
         self.screen.run()
 
     def run_task(self):
@@ -108,8 +122,10 @@ class TaskManager(object):
         con = self.screen.new_container()
 
         self.current_task.prepare(con)
-        # self.screen.set_view(self.current_task.ui)
         self.current_task.run()
+
+    def set_subject(self, subject):
+        print(subject)
 
     def task_finished(self):
         try:
@@ -142,7 +158,11 @@ class TaskManager(object):
 
 
 if __name__ == '__main__':
-    tm = TaskManager([CanvasTask('hey'),
-                      CanvasTask('there'),
-                      OscilloscopeTask()])
+    tm = TaskManager(
+        [
+            SubjectSelection(extra_params=['hand']),
+            OscilloscopeTask(),
+            CanvasTask()
+        ]
+    )
     tm.run()

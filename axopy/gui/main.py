@@ -3,6 +3,8 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from axopy import util
 from axopy.messaging import transmitter
 
+# This mapping from key names in the Qt namespace to axopy key names just
+# allows users to write code without any Qt stuff in it
 key_map = {
     QtCore.Qt.Key_A: util.key_a,
     QtCore.Qt.Key_B: util.key_b,
@@ -49,9 +51,9 @@ qtapp = None
 
 
 def get_qtapp():
-    """Gets a `QApplication` instance running.
+    """Get a `QApplication` instance running.
 
-    Returns the current QApplication instance if it exists and creates it
+    Returns the current `QApplication` instance if it exists and creates it
     otherwise.
     """
     global qtapp
@@ -64,10 +66,18 @@ def get_qtapp():
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    """The window containing all graphical content of the application.
+
+    It is a very simple GUI implemented as a `QMainWindow` with a
+    `QStackedLayout` holding a list of :class:`Container` objects. The
+    containers, which in turn house all of the interesting graphical content.
+    """
 
     def __init__(self):
-        get_qtapp()
-        super().__init__()
+        app = get_qtapp()
+        super(MainWindow, self).__init__()
+
+        app.installEventFilter(self)
 
         self._central_widget = QtWidgets.QWidget(self)
         self._layout = QtWidgets.QStackedLayout(self._central_widget)
@@ -81,24 +91,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def run(self):
+        """Start the application."""
         get_qtapp().exec_()
 
     def new_container(self):
+        """Add a new container to the stack and give it back.
+
+        Returns
+        -------
+        container : Container
+            The newly added container.
+        """
         c = Container()
         self._layout.addWidget(c)
         self._layout.setCurrentWidget(c)
         return c
 
     def set_container(self, container):
+        """Make the given container visible.
+
+        If the container is already somewhere in the stack, it is just made
+        visible, otherwise it is added to the stack.
+        """
+        # FIXME find out if there's a variable in Qt to use instead of -1 here
         if self._layout.indexOf(container) == -1:
             self._layout.addWidget(container)
         self._layout.setCurrentWidget(container)
 
     def set_status(self, message):
-        """Adds a status message to the status bar.
-
-        This is typically used for showing the current subject and session
-        information.
+        """Set the status bar message.
 
         Parameters
         ----------
@@ -108,13 +129,27 @@ class MainWindow(QtWidgets.QMainWindow):
         self._statusbar_label.setText(message)
 
     def quit(self):
+        """Quit the application."""
         get_qtapp().quit()
 
+    #def eventFilter(self, obj, event):
+    #    if event.type() == QtCore.QEvent.KeyPress:
+    #        try:
+    #            key = key_map[event.key()]
+    #        except KeyError:
+    #            return False
+
+    #        self.key_pressed(key)
+    #        return True
+    #    else:
+    #        return False
+
     def keyPressEvent(self, event):
-        """Callback for key presses.
+        """Qt callback for key presses.
 
         This overrides the `QMainWindow` method. It does not need to be called
-        directly.
+        directly and it doesn't need to be overriden. Connect to the
+        :meth:`key_pressed` transmitter to handle key press events.
         """
         try:
             key = key_map[event.key()]
@@ -125,6 +160,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @transmitter(('key', str))
     def key_pressed(self, key):
+        """Signal that a key has been pressed.
+
+        Key names are found in :mod:`axopy.util`.
+
+        Returns
+        -------
+        key : str
+            The key name.
+        """
         return key
 
 

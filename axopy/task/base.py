@@ -1,4 +1,4 @@
-from axopy.messaging import transmitter
+from axopy.messaging import transmitter, receiver
 
 
 class TaskIter(object):
@@ -7,7 +7,7 @@ class TaskIter(object):
     A task design is a sequence of sequences: a sequence of blocks which are
     themselves sequences of trials. The `TaskIter` iterates over blocks,
     returning the block data when a new block is available. Nested in the
-    blocks are trials, which the `TaskIter` further iterates over, returning 
+    blocks are trials, which the `TaskIter` further iterates over, returning
     them when available.
 
     Here is more graphical depiction of the flow through a design::
@@ -99,17 +99,19 @@ class Task(object):
         pass
 
     def run(self):
-        """Starts running the task.
+        """Start running the task.
 
         Simply calls `next_block` to start running trials in the first block.
         This method is called automatically if the task is added to a
-        :class:`TaskManager`. You shouldn't normally need to override this
-        method.
+        :class:`TaskManager`. Tasks that have a block design shouldn't normally
+        need to override this method. Tasks that are "free-running" for
+        experimenter interaction (e.g. a plot visualization task that the
+        experimenter controls) should override and do nothing.
         """
         self.next_block()
 
     def next_block(self):
-        """Gets the next block of trials and starts running them.
+        """Get the next block of trials and starts running them.
 
         Before starting the block, a prompt is shown to verify that the user is
         ready to proceed. If there are no more blocks to run, the `finish`
@@ -127,7 +129,7 @@ class Task(object):
         self.next_trial()
 
     def next_trial(self):
-        """Gets the next trial in the block and starts running it.
+        """Get the next trial in the block and starts running it.
 
         If there are no more trials in the block, the `finish_block` method is
         called.
@@ -141,7 +143,7 @@ class Task(object):
         self.run_trial(trial)
 
     def run_trial(self, trial):
-        """Initiates a trial.
+        """Initiate a trial.
 
         By default, this method does nothing. Override to implement what
         happens in a trial. When a trial is complete, use `next_trial` to
@@ -164,12 +166,21 @@ class Task(object):
 
     @transmitter()
     def finish(self):
-        """Called after the last trial of the last block has run.
+        """Signal that the last trial of the last block has run.
 
         This method simply transmits an event. Override to do cleanup if
         needed, but make sure to keep it as a transmitter.
         """
         return
+
+    @receiver
+    def key_press(self, key):
+        """Handle key press events.
+
+        Override this method to receive key press events. Available keys can be
+        found in :mod:`axopy.util` (named `key_<keyname>`, e.g. `key_k`).
+        """
+        pass
 
 
 class CustomTask(Task):
