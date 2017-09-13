@@ -63,7 +63,7 @@ class Canvas(QtWidgets.QGraphicsView):
 class GraphicsItemWrapper(object):
 
     def move_to(self, x, y):
-        self.move(x, y)
+        self.setPos(x, y)
 
     def move_by(self, dx, dy):
         self.moveBy(dx, dy)
@@ -77,6 +77,9 @@ class Circle(QtWidgets.QGraphicsEllipseItem, GraphicsItemWrapper):
         self.setBrush(QtGui.QColor(color))
         pen = QtGui.QPen(QtGui.QBrush(), 0)
         self.setPen(pen)
+
+    def set_color(self, color):
+        self.setBrush(QtGui.QColor(color))
 
 
 class Cross(QtWidgets.QGraphicsItemGroup, GraphicsItemWrapper):

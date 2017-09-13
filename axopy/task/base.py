@@ -87,7 +87,10 @@ class Task(object):
     def __init__(self, design=None):
         self.iter = TaskIter(design)
 
-    def prepare(self):
+    def design(self, trials):
+        self.iter = TaskIter(trials)
+
+    def prepare_view(self, view):
         """Initialize graphical elements and messaging connections.
 
         This method should be overridden if the task uses any graphics (which
@@ -95,7 +98,15 @@ class Task(object):
         until this method is called so that the graphical backend has a chance
         to start. This method is called automatically if the task is added to
         a :class:`TaskManager`.
+
+        Parameters
+        ----------
+        view : Container
+            The graphical container you can add objects to.
         """
+        pass
+
+    def prepare_input_stream(self, input_stream):
         pass
 
     def run(self):

@@ -1,96 +1,12 @@
-import numpy
 from axopy import util
 from axopy.messaging import transmitter
-from axopy.task.base import Task
 from axopy.gui.main import MainWindow
-from axopy.gui.subject import ParticipantSelector
-from axopy.gui.canvas import Canvas, Circle, Cross
-from axopy.gui.signals import Oscilloscope
+from axopy.gui.canvas import Canvas
 
 
-class SubjectSelection(Task):
-
-    def __init__(self, extra_params=None):
-        super().__init__()
-        self.extra_params = extra_params
-
-    def prepare(self, container):
-        self.ui = ParticipantSelector(extra_attrs=self.extra_params)
-        self.ui.selected.connect(self._on_subject_selected)
-        container.set_view(self.ui)
-
-    def run(self):
-        pass
-
-    def _on_subject_selected(self, subject):
-        self.select(subject)
-        self.finish()
-
-    @transmitter(('subject', dict))
-    def select(self, subject):
-        return subject
-
-
-class CanvasTask(Task):
-
-    step = 1
-
-    def __init__(self, text):
-        super().__init__()
-        self.text = text
-        self.key_map = {
-            util.key_w: (0, -self.step),
-            util.key_a: (-self.step, 0),
-            util.key_s: (0, self.step),
-            util.key_d: (self.step, 0)
-        }
-
-    def prepare(self, container):
-        self.ui = Canvas()
-        self.cursor = Circle(5, color='#aa1212')
-        self.ui.add_item(self.cursor)
-        self.ui.add_item(Cross())
-
-        container.set_view(self.ui)
-
-    def run(self):
-        pass
-
-    def key_press(self, key):
-        if key == util.key_space:
-            self.finish()
-
-        try:
-            move = self.key_map[key]
-        except KeyError:
-            return
-
-        self.cursor.move_by(*move)
-
-
-class OscilloscopeTask(Task):
-
-    def prepare(self, container):
-        self.ui = Oscilloscope()
-        container.set_view(self.ui)
-
-    def run(self):
-        self.plot()
-
-    def plot(self):
-        self.ui.plot(numpy.random.randn(4, 1000))
-
-    def key_press(self, key):
-        if key == util.key_space:
-            self.finish()
-        elif key == util.key_d:
-            self.plot()
-
-
-class TaskManager(object):
+class Experiment(object):
 
     def __init__(self, tasks, device=None):
-        super().__init__()
         self.tasks = tasks
         self.device = device
 
@@ -121,7 +37,8 @@ class TaskManager(object):
         # add a task view
         con = self.screen.new_container()
 
-        self.current_task.prepare(con)
+        self.current_task.prepare_view(con)
+        self.current_task.prepare_input_stream(self.device)
         self.current_task.run()
 
     def set_subject(self, subject):
@@ -155,14 +72,3 @@ class TaskManager(object):
     @transmitter(('key', str))
     def key_pressed(self, key):
         return key
-
-
-if __name__ == '__main__':
-    tm = TaskManager(
-        [
-            SubjectSelection(extra_params=['hand']),
-            OscilloscopeTask(),
-            CanvasTask()
-        ]
-    )
-    tm.run()
