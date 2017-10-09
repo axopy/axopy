@@ -2,6 +2,7 @@ import os
 import h5py
 import numpy
 import pandas
+import zipfile
 
 
 data_root = 'data'
@@ -81,7 +82,7 @@ class ArrayBuffer(object):
         self.orientation = orientation
         self.data = None
 
-    def add(self, data):
+    def stack(self, data):
         if self.data is None:
             self.data = data
         else:
@@ -102,8 +103,8 @@ class ArrayWriter(object):
 
         self.buffer = ArrayBuffer(orientation=orientation)
 
-    def add(self, data):
-        self.buffer.add(data)
+    def stack(self, data):
+        self.buffer.stack(data)
 
     def write(self, subject, block, trial):
         filename = self._gen_filename(subject, block, trial)
@@ -111,6 +112,10 @@ class ArrayWriter(object):
         write_hdf5(filepath, self.buffer.data)
         self.clear()
         return filepath
+
+    @property
+    def data(self):
+        return self.buffer.data
 
     def clear(self):
         self.buffer.clear()
@@ -144,6 +149,9 @@ class TaskStorage(object):
         self.task_name = task_name
         self.subject = subject
         self.root = root
+        if columns is None:
+            columns = []
+        self.columns = columns
         self._init_dirs()
         self.counter = TaskCounter(subject)
         self.arrays = {}
@@ -166,10 +174,79 @@ class TaskStorage(object):
         self.arrays[name] = array
         return array
 
-    def write_trial(self, data):
+    def write_trial(self, **data):
         for name, arr in self.arrays.items():
             arr.write(*self.counter.params)
+
+        for col in self.columns:
+            pass
+
         self.counter.next_trial()
 
     def next_block(self):
         self.counter.next_block()
+
+
+class Storage(object):
+    """Top-level storage object."""
+
+    # TODO handle subject, session, etc.
+
+    def __init__(self, root='.'):
+        self.root = root
+
+    def create_task(self, name, columns=None):
+        task = TaskWriter(name)
+        return task
+
+
+class TaskWriter(object):
+
+    def __init__(self, name, columns=None):
+        self.trial_data = TrialWriter()
+        self.arrays = {}
+
+    def create_array(self, name):
+        self.arrays[name] = ArrayWriter()
+
+
+class Storage(object):
+
+    def __init__(self, root='data', mode='a'):
+        pass
+
+
+def storage_to_zip(path, outfile=None):
+    """Create a ZIP archive from a data storage hierarchy.
+
+    The contents of the data storage hierarchy are all placed in the archive,
+    with the top-level folder in the archive being the data storage root folder
+    itself. That is, all paths within the ZIP file are relative to the dataset
+    root folder.
+
+    Parameters
+    ----------
+    path : str
+        Path to the root of the dataset.
+    outfile : str, optional
+        Name of the ZIP file to create. If not specified, the file is created
+        in the same directory as the data root with the same name as the
+        dataset root directory (with ".zip" added).
+
+    Returns
+    -------
+    outfile : str
+        The name of the ZIP file created.
+    """
+    datapath, datadir = os.path.split(path)
+    if outfile is None:
+        # absolute path to parent of data root + dataset name + .zip
+        outfile = os.path.join(datapath, datadir + '.zip')
+
+    with zipfile.ZipFile(outfile, 'w') as zipf:
+        for root, dirs, files in os.walk(path):
+            for f in files:
+                # write as *relative* path from data root
+                zipf.write(os.path.join(root, f),
+                           arcname=os.path.join(datadir, f))
+    return outfile

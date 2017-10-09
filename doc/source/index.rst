@@ -4,7 +4,8 @@ AxoPy
 
 AxoPy is a system for creating human-computer interface experiments involving
 the use of electrophysiological signals, such as electromyography (EMG) or
-electroencephalography (EEG).
+electroencephalography (EEG). It is intended to provide an infrastructure for
+rapidly developing simple experiments while allowing for more complex designs.
 
 
 Features

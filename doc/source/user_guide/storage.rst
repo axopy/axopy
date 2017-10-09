@@ -1,31 +1,66 @@
+.. _storage:
+
+============
 Data Storage
 ============
 
-Experiment data is stored in HDF5_ files using h5py_. HDF5 is a relatively
-simple storage format to understand, and it can mostly be thought of as
-identical to a file system. There are groups (analogous to folders) and
-datasets (analogous to files). So, groups contain other groups and datasets,
-and datasets contain data. In AxoPy, a basic structure is imposed to make the
-library capable of inspecting and visualizing experiment files.
+.. _currentmodule:: axopy.storage
 
-::
-
-    /participants/
-        <particpiant_id>/
-            <task_name>/
-                <run_name>/
-                    dataset(s) specified by the task implementation
-                <run_name>/
-                    dataset(s) specified by the task implementation
-            <task_name>/
-                <run_name>/
-                    dataset(s) specified by the task implementation
-                <run_name>/
-                    dataset(s) specified by the task implementation
+The top-level :class:`StorageWriter` is intended for use when running an
+experiment. It is designed to be initialized multiple times (essentially once
+per subject) and the data storage hierarchy is built for each subject. 
 
 
+.. _task-storage
+
+Task Storage
+------------
+
+Task storage is designed to make implementing a task's data reading and writing
+as simple as possible, while being flexible enough to accommodate different
+kinds of experimental design. If you are interested in processing data after an
+experiment has been run, see the :ref:`data-consolidation` documentation.
 
 
+.. _data-consolidation
 
-.. _hdf5: https://www.hdfgroup.org/
-.. _h5py: http://www.h5py.org/
+Data Consolidation
+------------------
+
+Most of the data reading and writing functionality implemented in AxoPy is
+designed to make implementing an experiment as easy as possible, but there are
+some convenience functions for compiling an experiment's dataset into something
+more amenable to post-processing and analysis.
+
+Archiving Raw Data
+^^^^^^^^^^^^^^^^^^
+
+In most cases, you'll want to archive your entire untouched dataset once an
+experiment is complete, or maybe even periodically as an experiment is
+performed. For this purpose, there is  the :func:`storage_to_zip` function,
+which creates a ZIP archive of the data contained in the root storage
+directory. It's usage is fairly simple, since it does a simple task. You pass
+it the path to your data storage root directory, which can be relative to the
+directory you run the function from. Let's say you have some data in a folder
+called ``experiment01_data``::
+
+    >>> from axopy.storage import storage_to_zip
+    >>> storage_to_zip('experiment01_data')
+
+There should now be a file called ``experiment01_data.zip`` in the current
+directory, containing a copy of the whole dataset hierarchy. You can also
+specify an output file if you don't like the default::
+
+    >>> from axopy.storage import storage_to_zip
+    >>> storage_to_zip('experiment01_data', outfile='dataset.zip')
+
+Working Dataset
+^^^^^^^^^^^^^^^
+
+In addition to archiving raw data, you'll probably want what I'll call
+a "working dataset," one in which you can read from, do some processing, write
+back to, etc. The main purpose here is to compactly and neatly store an entire
+dataset while allowing for more saved analysis to be done once the experiment
+is complete. The primary routine is :func:`storage_to_hdf5`, which traverses
+the data contained in the root storage directory and consolidates everything
+into a single HDF5 file.
