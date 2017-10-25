@@ -10,3 +10,4 @@ User Guide
    user_guide/daq
    user_guide/processing_data
    user_guide/storage
+   user_guide/messaging

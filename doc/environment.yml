@@ -8,6 +8,7 @@ dependencies:
     - h5py
     - numpy
     - scipy
+    - pandas
     - pyqt>=5
     - sphinx
     - sphinx_rtd_theme

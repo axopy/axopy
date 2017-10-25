@@ -16,10 +16,15 @@ def test_incremental_timer():
     recv = TimeoutReceiver()
     timer.timeout.connect(recv.rx)
 
+    assert timer.count == 0
+
     timer.increment()
-    assert recv.received == False
+    assert not recv.received
+    assert timer.count == 1
+    assert timer.progress == 0.5
     timer.increment()
-    assert recv.received == True
+    assert recv.received
+    assert timer.count == 0
 
     with pytest.raises(ValueError):
         IncrementalTimer(-1)
@@ -32,7 +37,18 @@ def test_incremental_timer_float():
     timer.timeout.connect(recv.rx)
 
     timer.increment()
-    assert recv.received == False
+    assert not recv.received
     timer.increment()
     timer.increment()
-    assert recv.received == True
+    assert recv.received
+
+
+def test_incremental_timer_noreset():
+    timer = IncrementalTimer(2, reset_on_timeout=False)
+
+    assert timer.count == 0
+    timer.increment()
+    timer.increment()
+    assert timer.count == 2
+    timer.reset()
+    assert timer.count == 0

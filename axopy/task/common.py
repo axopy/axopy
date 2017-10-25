@@ -1,3 +1,5 @@
+"""Some generic task implementations."""
+
 from axopy.task import Task
 from axopy import util
 from axopy.messaging import transmitter

@@ -1,4 +1,5 @@
 numpy
 scipy
+pandas
 pyqtgraph>=0.10
 git+https://github.com/ucdrascal/copper.git

@@ -1,3 +1,5 @@
+"""Base task implementation."""
+
 from axopy.messaging import transmitter, receiver
 
 

@@ -8,9 +8,10 @@ These are the modules/subpackages which constitute AxoPy.
 
 .. toctree::
 
-   api/application
-   api/daq
+   api/experiment
+   api/task
+   api/messaging
    api/storage
-   api/tasks
-   api/widgets
+   api/stream
+   api/timing
    api/util

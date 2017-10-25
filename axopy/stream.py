@@ -1,5 +1,8 @@
+"""Threaded interfaces for input and output devices."""
+
 import time
 import numpy
+from axopy.messaging import transmitter
 from PyQt5 import QtCore
 
 
@@ -26,7 +29,6 @@ class InputStream(QtCore.QThread):
         Emitted when there is a problem with the data acquisition unit.
     """
 
-    # TODO: wrap these in messaging abstraction
     updated = QtCore.pyqtSignal(object)
     disconnected = QtCore.pyqtSignal()
     finished = QtCore.pyqtSignal()
@@ -66,6 +68,26 @@ class InputStream(QtCore.QThread):
         self._running = False
         if wait:
             self.wait()
+
+    @transmitter(data=object)
+    def updated(self, data):
+        """Transmitted when the latest chunk of data is available.
+
+        Returns
+        -------
+        data : object
+            Data from the underlying device. See the device's documentation for
+            the ``read`` method.
+        """
+        return data
+
+    @transmitter()
+    def disconnected(self):
+        return
+
+    @transmitter()
+    def finished(self):
+        return
 
 
 class EmulatedDaq(object):

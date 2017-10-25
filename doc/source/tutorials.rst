@@ -4,7 +4,11 @@
 Tutorials
 =========
 
-To be written. How can I teach you to use something that doesn't even work yet?
+Here are some explicit examples written up with prose explanations to provide
+some experiment implementation ideas and details.
 
 .. toctree::
    :numbered:
+   :maxdepth: 1
+
+   tutorials/myo_cursor_control

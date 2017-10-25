@@ -1,3 +1,5 @@
+"""Experiment workflow and design."""
+
 from axopy import util
 from axopy.messaging import transmitter
 from axopy.gui.main import MainWindow
@@ -72,3 +74,36 @@ class Experiment(object):
     @transmitter(('key', str))
     def key_pressed(self, key):
         return key
+
+
+class ExperimentDesign(object):
+
+    def __init__(self):
+        self.design_dict = {}
+
+    def add_condition(self, condition):
+        self.design_dict[condition.name] = condition
+
+    def to_json(self):
+        pass
+
+    @classmethod
+    def from_dict(self, d):
+        pass
+
+    @classmethod
+    def from_json(self, s):
+        pass
+
+
+class Condition(object):
+
+    def __init__(self):
+        self.tasks = []
+
+    @classmethod
+    def from_list(self, l):
+        pass
+
+    def add_task(self, name, cls, params):
+        self.tasks.append((name, cls, params))

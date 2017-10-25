@@ -1,27 +1,13 @@
+"""Experiment data storage."""
+
 import os
 import h5py
 import numpy
 import pandas
 import zipfile
-
+from axopy.util import makedirs
 
 data_root = 'data'
-
-
-def ensure_dir(path):
-    """Ensure a directory exists. If it doesn't, create it.
-
-    Also creates all intermediate directories if necessary.
-
-    Parameters
-    ----------
-    path : str
-        Path to directory to create.
-    """
-    try:
-        os.makedirs(path)
-    except OSError:
-        pass
 
 
 def read_hdf5(filepath):
@@ -99,7 +85,7 @@ class ArrayWriter(object):
 
     def __init__(self, path, orientation='horizontal'):
         self.path = path
-        ensure_dir(self.path)
+        makedirs(self.path, exist_ok=True)
 
         self.buffer = ArrayBuffer(orientation=orientation)
 
@@ -163,10 +149,10 @@ class TaskStorage(object):
         subdirectory in data storage. Call just before running an experiment.
         """
         self.path = os.path.join(self.root, self.task_name)
-        ensure_dir(self.path)
+        makedirs(self.path, exist_ok=True)
 
         self.trials_path = os.path.join(self.path, 'trials')
-        ensure_dir(self.trials_path)
+        makedirs(self.trials_path, exist_ok=True)
 
     def new_array(self, name, orientation='horizontal'):
         path = os.path.join(self.path, name)

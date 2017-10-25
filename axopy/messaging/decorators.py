@@ -1,7 +1,12 @@
+import functools
 from axopy.messaging.qt import transmitter as transmitter_backend
 
 
 class transmitter(object):
+    """Transmitter of events.
+
+    Transmitters are the source of events, and they can send arbitrary data.
+    """
     def __init__(self, *args, **kwargs):
         self.data_format = list(args)
         self.data_format.extend(kwargs.items())
@@ -11,8 +16,19 @@ class transmitter(object):
 
 
 class receiver(object):
+    """Receivers of events.
+
+    Notes
+    -----
+    Any Python callbable is a valid receiver, even without the decorator. This
+    decorator can be useful for explicitly declaring that a function or method
+    is intended to be used as a receiver (i.e. connected to a transmitter
+    rather than called directly), and it can be used if you want to connect a
+    receiver *to a transmitter* rather than the other way around.
+    """
     def __init__(self, function):
         self.function = function
+        functools.update_wrapper(self, function)
 
     def __get__(self, inst, cls):
         self.inst = inst
