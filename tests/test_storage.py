@@ -1,7 +1,65 @@
 import pytest
 import os
 import numpy
-from axopy.storage import TaskStorage, storage_to_zip
+from axopy.storage import Storage, TaskStorage, storage_to_zip
+
+
+@pytest.fixture
+def storage_filestruct(tmpdir):
+    """Generates the following data filestructure::
+
+        data/
+            p0/
+                task1/
+                task2/
+            p1/
+                task1/
+            p2/
+
+    """
+    root = os.path.join(tmpdir.dirpath(), 'data')
+
+    folders = {'p0': ['task1', 'task2'], 'p1': ['task1'], 'p2': []}
+
+    for subj_id, tasknames in folders.items():
+        os.makedirs(os.path.join(root, subj_id))
+        for name in tasknames:
+            os.makedirs(os.path.join(root, subj_id, name))
+
+    return root, folders
+
+
+def test_storage_directories(storage_filestruct):
+    """Test that Storage can find and create the right directories."""
+    root, folders = storage_filestruct
+
+    storage = Storage(root)
+
+    assert list(storage.subject_ids) == sorted(folders.keys())
+    assert list(storage.task_names) == []
+
+    # make sure everything matches the structure built by the fixture
+    for subj_id, tasknames in folders.items():
+        storage.subject_id = subj_id
+        assert list(storage.task_names) == tasknames
+
+    # try a non-existing subject
+    storage.subject_id = 'other_subject'
+    assert list(storage.task_names) == []
+
+    # create a new task
+    storage.create_task('task1')
+    assert os.path.exists(os.path.join(root, storage.subject_id, 'task1'))
+    assert list(storage.task_names) == ['task1']
+    # ensure you can't overwrite existing task
+    with pytest.raises(ValueError):
+        storage.create_task('task1')
+
+    # require an existing task
+    storage.require_task('task1')
+    # fail if you require a non-existing task
+    with pytest.raises(ValueError):
+        storage.require_task('task2')
 
 
 #def test_task_storage(tmpdir):

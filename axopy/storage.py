@@ -7,7 +7,105 @@ import pandas
 import zipfile
 from axopy.util import makedirs
 
-data_root = 'data'
+
+class Storage(object):
+    """Top-level data storage maintainer.
+
+    See the :ref:`user guide <storage>` for more information.
+
+    Parameters
+    ----------
+    root : str, optional
+        Path to the root of the data storage filestructure. By default, 'data'
+        is used. If the directory doesn't exist, it is created.
+    """
+
+    def __init__(self, root='data'):
+        self.root = root
+        makedirs(root, exist_ok=True)
+        self._subject_id = None
+
+    @property
+    def subject_ids(self):
+        """Generate subject IDs found in storage sorted in alphabetical order.
+
+        Returns
+        -------
+        subject_id : str
+            ID of the subject found.
+        """
+        ls = os.listdir(self.root)
+        for name in sorted(ls):
+            path = os.path.join(self.root, name)
+            if os.path.isdir(path):
+                yield name
+
+    @property
+    def subject_id(self):
+        """The current subject ID.
+
+        When setting the subject ID for a new subject (i.e. one that doesn't
+        exist already), storage for that subject is created.
+        """
+        return self._subject_id
+
+    @subject_id.setter
+    def subject_id(self, val):
+        makedirs(os.path.join(self.root, val), exist_ok=True)
+        self._subject_id = val
+
+    @property
+    def task_names(self):
+        """Generate names of tasks found for the current subject.
+
+        Note that there may be no tasks found if the `subject_id` has not been
+        set or if the subject hasn't started any tasks. In this case, nothing
+        is yielded.
+        """
+        if self.subject_id is None:
+            return
+
+        subj_path = os.path.join(self.root, self.subject_id)
+        ls = os.listdir(subj_path)
+        for name in sorted(ls):
+            path = os.path.join(subj_path, name)
+            if os.path.isdir(path):
+                yield name
+
+    def create_task(self, name):
+        """Creates a task for the current subject."""
+        path = os.path.join(self.root, self.subject_id, name)
+        try:
+            makedirs(path)
+        except FileExistsError:
+            raise ValueError(
+                "Subject {} has already started \"{}\". Only unique task "
+                "names are allowed.".format(self.subject_id, name))
+        # TODO create and return TaskWriter
+
+    def require_task(self, name):
+        if name not in self.task_names:
+            raise ValueError(
+                "Subject {} has not started \"{}\" yet. Use `create_task` to "
+                "create it first.".format(self.subject_id, name))
+
+        path = os.path.join(self.root, self.subject_id, name)
+        # TODO create and return TaskReader
+
+    def to_zip(self, outfile):
+        """Create a ZIP archive from a data storage hierarchy.
+
+        For more information, see :func:`storage_to_zip`.
+        """
+        storage_to_zip(self.root, outfile)
+
+    def to_hdf5(self, outfile):
+        """Create a HDF5 file from the data storage hierarchy.
+
+        Unlike :meth:`to_zip`, this method reorganizes the data to a more
+        compact form.
+        """
+        pass
 
 
 def read_hdf5(filepath):
@@ -173,19 +271,6 @@ class TaskStorage(object):
         self.counter.next_block()
 
 
-class Storage(object):
-    """Top-level storage object."""
-
-    # TODO handle subject, session, etc.
-
-    def __init__(self, root='.'):
-        self.root = root
-
-    def create_task(self, name, columns=None):
-        task = TaskWriter(name)
-        return task
-
-
 class TaskWriter(object):
 
     def __init__(self, name, columns=None):
@@ -194,12 +279,6 @@ class TaskWriter(object):
 
     def create_array(self, name):
         self.arrays[name] = ArrayWriter()
-
-
-class Storage(object):
-
-    def __init__(self, root='data', mode='a'):
-        pass
 
 
 def storage_to_zip(path, outfile=None):

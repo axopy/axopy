@@ -6,9 +6,9 @@ Data Storage
 
 .. currentmodule:: axopy.storage
 
-The top-level :class:`StorageWriter` is intended for use when running an
-experiment. It is designed to be initialized multiple times (essentially once
-per subject) and the data storage hierarchy is built for each subject.
+The top-level :class:`Storage` is intended for use when running an experiment.
+It is designed to be initialized multiple times (essentially once per subject)
+and the data storage hierarchy is built for each subject.
 
 Data is stored in two types of files: comma separated value (CSV) files for
 trial data (one row per trial) and HDF5 files for array data (one or more files
@@ -26,7 +26,8 @@ Here's the file structure in abstract terms::
                     ...
 
 
-
+When you write a task implementation, you interact with a :class:`Storage`
+object to retrieve :class:`TaskWriter` and :class:`TaskReader` objects.
 
 .. _task-storage:
 
