@@ -1,4 +1,4 @@
-.. image:: doc/source/_static/axopy.png
+.. image:: docs/_static/axopy.png
    :alt: AxoPy Logo
 
 |
