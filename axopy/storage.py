@@ -1,5 +1,18 @@
 """Experiment data storage."""
 
+# TODO implement trials.csv
+# TODO come up with TaskStorage API
+# TODO implement TaskStorage
+# TODO write tests for TaskStorage
+# TODO write tests for ArrayWriter
+# TODO come up with ArrayReader API
+# TODO implement ArrayReader
+# TODO write tests for ArrayReader
+# TODO come up with to_hdf5 functionality
+# TODO implement to_hdf5
+# TODO test to_hdf5
+# TODO decide on supporting array attributes (e.g. channel names)
+
 import os
 import h5py
 import numpy
@@ -55,7 +68,7 @@ class Storage(object):
         self._subject_id = val
 
     @property
-    def task_names(self):
+    def task_ids(self):
         """Generate names of tasks found for the current subject.
 
         Note that there may be no tasks found if the `subject_id` has not been
@@ -72,25 +85,59 @@ class Storage(object):
             if os.path.isdir(path):
                 yield name
 
-    def create_task(self, name):
-        """Creates a task for the current subject."""
-        path = os.path.join(self.root, self.subject_id, name)
+    def create_task(self, task_id, column_names, array_names=None):
+        """Creates a task for the current subject.
+
+        Parameters
+        ----------
+        task_id : str
+            The ID of the task to add. The name must not have been used for
+            another task for the current subject.
+
+        Returns
+        -------
+        writer : TaskWriter
+            A new TaskWriter for storing task data.
+        column_names : sequence
+            A sequence of strings representing the columns of the trial data
+            columns. Passed along to the TaskWriter.
+        array_names : sequence, optional
+            A sequence of strings representing the array types that will be
+            stored. Passed along to TaskWriter. By default, no arrays are used.
+        """
+        path = self._task_path(task_id)
+
         try:
             makedirs(path)
         except FileExistsError:
             raise ValueError(
                 "Subject {} has already started \"{}\". Only unique task "
-                "names are allowed.".format(self.subject_id, name))
-        # TODO create and return TaskWriter
+                "names are allowed.".format(self.subject_id, task_id))
 
-    def require_task(self, name):
-        if name not in self.task_names:
+        return TaskWriter(path, task_id, column_names,
+                          array_names=array_names)
+
+    def require_task(self, task_id):
+        """Retrieves a task for the current subject.
+
+        Parameters
+        ----------
+        task_id :  str
+            The ID of the task to look for. The task must have already been run
+            with the current subject.
+
+        Returns
+        -------
+        reader : TaskReader
+            A new TaskReader for working with the existing task data.
+        """
+        if task_id not in self.task_ids:
             raise ValueError(
                 "Subject {} has not started \"{}\" yet. Use `create_task` to "
-                "create it first.".format(self.subject_id, name))
+                "create it first.".format(self.subject_id, task_id))
 
-        path = os.path.join(self.root, self.subject_id, name)
-        # TODO create and return TaskReader
+        path = self._task_path(task_id)
+        return TaskReader(path, task_id)
 
     def to_zip(self, outfile):
         """Create a ZIP archive from a data storage hierarchy.
@@ -107,14 +154,22 @@ class Storage(object):
         """
         pass
 
+    def _task_path(self, task_id):
+        return os.path.join(self.root, self.subject_id, task_id)
 
-def read_hdf5(filepath):
-    """Read the contents of the 'data' dataset into memory and return it.
+
+def read_hdf5(filepath, dataset='data'):
+    """Read the contents of a dataset.
+
+    This function assumes the dataset in the HDF5 file exists at the root of
+    the file (i.e. at '/').
 
     Parameters
     ----------
     filepath : str
         Path to the file to read from.
+    dataset : str, optional
+        Name of the dataset to retrieve. By default, 'data' is used.
 
     Returns
     -------
@@ -123,10 +178,10 @@ def read_hdf5(filepath):
         all determined by whatever is in the file.
     """
     with h5py.File(filepath, 'r') as f:
-        return f.get('/data')[:]
+        return f.get('/{}'.format(dataset))[:]
 
 
-def write_hdf5(filepath, data):
+def write_hdf5(filepath, data, dataset='data'):
     """Write data to an hdf5 file.
 
     The data is written to a new file with a single dataset called "data" in
@@ -139,9 +194,11 @@ def write_hdf5(filepath, data):
     data : ndarray
         NumPy array containing the data to write. The dtype, shape, etc. of the
         resulting dataset in storage is determined by this array directly.
+    dataset : str, optional
+        Name of the dataset to create. Default is 'data'.
     """
     with h5py.File(filepath, 'w') as f:
-        f.create_dataset('data', data=data)
+        f.create_dataset(dataset, data=data)
 
 
 def read_csv(filepath):
@@ -160,9 +217,10 @@ def read_csv(filepath):
     return pandas.read_csv(filepath)
 
 
-class ArrayBuffer(object):
+class ArrayWriter(object):
 
-    def __init__(self, orientation='vertical'):
+    def __init__(self, filepath, orientation='horizontal'):
+        self.filepath = filepath
         self.orientation = orientation
         self.data = None
 
@@ -175,82 +233,49 @@ class ArrayBuffer(object):
             else:
                 self.data = numpy.hstack([self.data, data])
 
+    def write(self, dataset):
+        write_hdf5(self.filepath, self.data, dataset=dataset)
+        self.clear()
+
     def clear(self):
         self.data = None
 
 
-class ArrayWriter(object):
+class TrialWriter(object):
+    """Writes trial data to a CSV file line by line."""
 
-    def __init__(self, path, orientation='horizontal'):
+    def __init__(self, path):
         self.path = path
-        makedirs(self.path, exist_ok=True)
-
-        self.buffer = ArrayBuffer(orientation=orientation)
-
-    def stack(self, data):
-        self.buffer.stack(data)
-
-    def write(self, subject, block, trial):
-        filename = self._gen_filename(subject, block, trial)
-        filepath = os.path.join(self.path, filename)
-        write_hdf5(filepath, self.buffer.data)
-        self.clear()
-        return filepath
-
-    @property
-    def data(self):
-        return self.buffer.data
-
-    def clear(self):
-        self.buffer.clear()
-
-    def _gen_filename(self, subject, block, trial):
-        return 's{}_b{}_t{}.hdf5'.format(subject, block, trial)
 
 
-class TaskCounter(object):
+class TaskWriter(object):
+    """The main interface for creating a task dataset.
 
-    def __init__(self, subj):
-        self.subj = subj
-        self.trial = 1
-        self.block = 1
+    Parameters
+    ----------
 
-    def next_trial(self):
-        self.trial += 1
+    Attributes
+    ----------
+    array : dict
+        Dictionary mapping names of arrays to the underlying ArrayWriter, which
+        serves as a buffer to repeated stack data during a trial.
+    """
 
-    def next_block(self):
-        self.block += 1
-        self.trial = 1
-
-    @property
-    def params(self):
-        return self.subj, self.block, self.trial
-
-
-class TaskStorage(object):
-
-    def __init__(self, task_name, subject, root='.', columns=None):
-        self.task_name = task_name
-        self.subject = subject
+    def __init__(self, root, task_id, column_names, array_names=None):
+        self.task_id = task_id
         self.root = root
-        if columns is None:
-            columns = []
-        self.columns = columns
-        self._init_dirs()
-        self.counter = TaskCounter(subject)
-        self.arrays = {}
+        self.column_names = column_names
 
-    def _init_dirs(self):
-        """Set up the global data paths for a task.
+        self._current_index = 0
 
-        This ensures that each experiment in the session gets its own
-        subdirectory in data storage. Call just before running an experiment.
-        """
-        self.path = os.path.join(self.root, self.task_name)
-        makedirs(self.path, exist_ok=True)
+        self.trial_writer = TrialWriter(os.path.join(root, 'trials.csv'))
 
-        self.trials_path = os.path.join(self.path, 'trials')
-        makedirs(self.trials_path, exist_ok=True)
+        if array_names is None:
+            array_names = []
+        self.arrays = {n: ArrayWriter() for n in array_names}
+
+    def finish_trial(self):
+        self._current_index += 1
 
     def new_array(self, name, orientation='horizontal'):
         path = os.path.join(self.path, name)
@@ -270,15 +295,17 @@ class TaskStorage(object):
     def next_block(self):
         self.counter.next_block()
 
+    def finish(self):
+        """Complete task data writing."""
+        # TODO close the trials file
+        pass
 
-class TaskWriter(object):
 
-    def __init__(self, name, columns=None):
-        self.trial_data = TrialWriter()
-        self.arrays = {}
+class TaskReader(object):
 
-    def create_array(self, name):
-        self.arrays[name] = ArrayWriter()
+    def __init__(self, root, task_id):
+        self.root = root
+        self.task_id = task_id
 
 
 def storage_to_zip(path, outfile=None):

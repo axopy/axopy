@@ -7,6 +7,11 @@ from axopy.gui.canvas import Canvas
 
 
 class Experiment(object):
+    """Experiment workflow manager.
+
+    Presents the researcher with a prompt for entering session details and then
+    presents the appropriate tasks.
+    """
 
     def __init__(self, tasks, device=None):
         self.tasks = tasks

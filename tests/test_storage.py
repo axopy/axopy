@@ -1,11 +1,12 @@
 import pytest
 import os
 import numpy
-from axopy.storage import Storage, TaskStorage, storage_to_zip
+from axopy.storage import (Storage, TaskWriter, ArrayWriter, read_hdf5,
+                           write_hdf5, storage_to_zip)
 
 
-@pytest.fixture
-def storage_filestruct(tmpdir):
+@pytest.fixture(scope='module')
+def storage_filestruct(tmpdir_factory):
     """Generates the following data filestructure::
 
         data/
@@ -17,7 +18,7 @@ def storage_filestruct(tmpdir):
             p2/
 
     """
-    root = os.path.join(tmpdir.dirpath(), 'data')
+    root = tmpdir_factory.mktemp('data')
 
     folders = {'p0': ['task1', 'task2'], 'p1': ['task1'], 'p2': []}
 
@@ -36,24 +37,24 @@ def test_storage_directories(storage_filestruct):
     storage = Storage(root)
 
     assert list(storage.subject_ids) == sorted(folders.keys())
-    assert list(storage.task_names) == []
+    assert list(storage.task_ids) == []
 
     # make sure everything matches the structure built by the fixture
     for subj_id, tasknames in folders.items():
         storage.subject_id = subj_id
-        assert list(storage.task_names) == tasknames
+        assert list(storage.task_ids) == tasknames
 
     # try a non-existing subject
     storage.subject_id = 'other_subject'
-    assert list(storage.task_names) == []
+    assert list(storage.task_ids) == []
 
     # create a new task
-    storage.create_task('task1')
+    storage.create_task('task1', ['attr1', 'attr2'])
     assert os.path.exists(os.path.join(root, storage.subject_id, 'task1'))
-    assert list(storage.task_names) == ['task1']
+    assert list(storage.task_ids) == ['task1']
     # ensure you can't overwrite existing task
     with pytest.raises(ValueError):
-        storage.create_task('task1')
+        storage.create_task('task1', [])
 
     # require an existing task
     storage.require_task('task1')
@@ -62,63 +63,80 @@ def test_storage_directories(storage_filestruct):
         storage.require_task('task2')
 
 
-#def test_task_storage(tmpdir):
-#    s = TaskStorage('some_task', '1', root=tmpdir.dirpath(),
-#                    columns=['trial', 'param1', 'param2'])
-#    arr1 = s.new_array('array1')
-#    arr2 = s.new_array('array2', orientation='vertical')
-#
-#    arr1.stack(numpy.random.randn(2, 10))
-#    arr1.stack(numpy.random.randn(2, 10))
-#    assert arr1.data.shape == (2, 20)
-#
-#    arr2.stack(numpy.random.randn(2, 10))
-#    arr2.stack(numpy.random.randn(2, 10))
-#    assert arr2.data.shape == (4, 10)
-#
-#    s.write_trial(None)
+def test_task_writer(storage_filestruct):
+    root, folders = storage_filestruct
+
+    task_id = 'some_task'
+    task_root = os.path.join(root, list(folders)[0])
+
+    # simple writer with one column and no arrays
+    #writer = TaskWriter(task_root, task_id, ['trial'])
+
+    #writer.start_trial()
+    #writer.write_trial(0)
+
+    #with pytest.raises(Exception):
+    #    writer.write_trial(0)
+
+    #writer.start_trial()
+    #writer.write_trial(1)
+
+    ## TODO check that the file at task_root/trial_data.csv is correct
+
+    #writer.finish()
+
+    ## writer with a column and an array
+    ## note ok to manually create a TaskWriter for data that already exists
+    #writer = TaskWriter(task_root, task_id, ['block', 'trial'],
+    #                    array_names=['arr'])
+
+    #writer.start_trial()
+    #writer.write_trial(0, 0)
+    #writer.arrays['arr'].stack(numpy.arange(10))
+    #writer.arrays['arr'].stack(numpy.arange(10))
+
+    ## TODO assert data at task_root/arr/0.hdf5 is correct
 
 
-#class SomeTask(Task):
-#
-#    def __init__(self, name, dep_task):
-#        self.name = name
-#        self.in_task_name = dep_task
-#
-#    def prepare_input_device(self, device):
-#        self.device.updated.connect(self.update)
-#
-#    def prepare_storage(self, storage):
-#        """Storage has already been created with subject ID and root path."""
-#        self._load_data(storage.find_task(self.in_task_name))
-#
-#        s = storage.new_task(self.name, )
-#        self.emg_storage = s.new_array('emg')
-#        self.position_storage = s.new_array('position')
-#
-#    def _load_data(self, task_storage):
-#        """Load data from a previous task."""
-#        # task_storage.trials is a pandas DataFrame
-#        # in this case, we're acting like a processing task generated x/y
-#        # positions paired with a set of features from the input signals
-#        data = task_storage.trials
-#        pos_cols = ['x', 'y']
-#        positions = data[pos_cols].values
-#        features = data.drop(pos_cols, axis=1).values
-#        self.pipeline.named_blocks['mapper'].fit(features, positions)
-#
-#    def update(self, data):
-#        pos = self.pipeline.process(data)
-#        self.cursor.position = pos
-#
-#
-#def test_storage_write(tmpdir):
-#    s = Storage('data')
-#    s.add_task('mapping')
-#    s.add_task('')
-#    s.add_task('cursor_practice')
-#    s.add_task('adaptation')
-#    s('hello', outfile='hellono')
+def test_array_writer(tmpdir):
+    fn = 'arrays.hdf5'
+    fp = os.path.join(tmpdir.dirpath(), fn)
+
+    x_expected = numpy.array([[0, 1, 2], [3, 4, 5]])
+
+    # horizontal stacking of a 1-D array
+    writer = ArrayWriter(fp)
+
+    assert fn not in os.listdir(tmpdir.dirpath())
+    writer.stack(x_expected[0])
+    writer.stack(x_expected[1])
+    writer.write('0')
+    assert fn in os.listdir(tmpdir.dirpath())
+    data = read_hdf5(fp, dataset='0')
+    numpy.testing.assert_array_equal(x_expected.reshape(1, -1).squeeze(), data)
+
+    # vertical stacking of 1-D arrays to get a 2-D array
+    writer = ArrayWriter(fp, orientation='vertical')
+    writer.stack(numpy.array([0, 1, 2]))
+    writer.stack(numpy.array([3, 4, 5]))
+    writer.write('1')
+
+    data = read_hdf5(fp, dataset='1')
+    numpy.testing.assert_array_equal(x_expected, data)
+
+
+def test_hdf5_read_write(tmpdir):
+    fp = os.path.join(tmpdir.dirpath(), 'file.hdf5')
+
+    x_expected = numpy.array([[0.1, 2.1, 4.1], [2.1, 4.2, 2.1]])
+
+    write_hdf5(fp, x_expected)
+    x = read_hdf5(fp)
+    numpy.testing.assert_array_equal(x_expected, x)
+
+    write_hdf5(fp, x_expected, dataset='somedata')
+    x = read_hdf5(fp, dataset='somedata')
+    numpy.testing.assert_array_equal(x_expected, x)
 
 
 def test_storage_to_zip(tmpdir):

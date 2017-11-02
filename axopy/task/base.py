@@ -111,6 +111,23 @@ class Task(object):
     def prepare_input_stream(self, input_stream):
         pass
 
+    def prepare_storage(self, storage):
+        """Initialize data storage.
+
+        Override to read or write task data. A :class:`axopy.storage.Storage`
+        object is given, which can be used to create a new
+        :class:`axopy.storage.TaskWriter` for storing new data or
+        a :class:`axopy.storage.TaskReader` for reading in existing data. Note
+        that the subject ID has already been set.
+
+        Parameters
+        ----------
+        storage : axopy.storage.Storage
+            The top-level storage object with which new storage can be
+            allocated and existing data can be read.
+        """
+        pass
+
     def run(self):
         """Start running the task.
 
