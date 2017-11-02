@@ -4,7 +4,7 @@ from axopy.util import makedirs
 
 
 def test_makedirs(tmpdir):
-    path = os.path.join(tmpdir.dirpath(), 'subdir', 'subsubdir')
+    path = os.path.join(str(tmpdir.dirpath()), 'subdir', 'subsubdir')
 
     # regular usage
     makedirs(path)
