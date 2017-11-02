@@ -18,7 +18,7 @@ def storage_filestruct(tmpdir_factory):
             p2/
 
     """
-    root = tmpdir_factory.mktemp('data')
+    root = str(tmpdir_factory.mktemp('data'))
 
     folders = {'p0': ['task1', 'task2'], 'p1': ['task1'], 'p2': []}
 
@@ -100,18 +100,19 @@ def test_task_writer(storage_filestruct):
 
 def test_array_writer(tmpdir):
     fn = 'arrays.hdf5'
-    fp = os.path.join(tmpdir.dirpath(), fn)
+    root = str(tmpdir.dirpath())
+    fp = os.path.join(root, fn)
 
     x_expected = numpy.array([[0, 1, 2], [3, 4, 5]])
 
     # horizontal stacking of a 1-D array
     writer = ArrayWriter(fp)
 
-    assert fn not in os.listdir(tmpdir.dirpath())
+    assert fn not in os.listdir(root)
     writer.stack(x_expected[0])
     writer.stack(x_expected[1])
     writer.write('0')
-    assert fn in os.listdir(tmpdir.dirpath())
+    assert fn in os.listdir(root)
     data = read_hdf5(fp, dataset='0')
     numpy.testing.assert_array_equal(x_expected.reshape(1, -1).squeeze(), data)
 
@@ -126,7 +127,7 @@ def test_array_writer(tmpdir):
 
 
 def test_hdf5_read_write(tmpdir):
-    fp = os.path.join(tmpdir.dirpath(), 'file.hdf5')
+    fp = os.path.join(str(tmpdir.dirpath()), 'file.hdf5')
 
     x_expected = numpy.array([[0.1, 2.1, 4.1], [2.1, 4.2, 2.1]])
 
@@ -141,17 +142,17 @@ def test_hdf5_read_write(tmpdir):
 
 def test_storage_to_zip(tmpdir):
     # make a dataset root under a subfolder
-    p = os.path.join(tmpdir.dirpath(), 'datasets', 'dataset01')
+    p = os.path.join(str(tmpdir.dirpath()), 'datasets', 'dataset01')
     os.makedirs(p)
     with open(os.path.join(p, 'file.txt'), 'w') as f:
         f.write("hello")
 
-    outfile = os.path.join(tmpdir.dirpath(), 'datasets', 'dataset01.zip')
+    outfile = os.path.join(str(tmpdir.dirpath()), 'datasets', 'dataset01.zip')
     zipfile = storage_to_zip(p)
     assert zipfile == outfile
     assert os.path.isfile(outfile)
 
-    outfile = os.path.join(tmpdir.dirpath(), 'dataset01_relocated.zip')
+    outfile = os.path.join(str(tmpdir.dirpath()), 'dataset01_relocated.zip')
     zipfile = storage_to_zip(p, outfile=outfile)
     assert zipfile == outfile
     assert os.path.isfile(outfile)
