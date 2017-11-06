@@ -87,17 +87,16 @@ def test_storage_directories(storage_filestruct):
         storage.require_task('task2')
 
 
-def test_task_writer(storage_filestruct):
-    root, folders = storage_filestruct
-
-    subj_root = os.path.join(root, list(folders)[0])
+def test_task_writer(tmpdir):
+    root = str(tmpdir.dirpath())
 
     # simple writer with a couple columns and no arrays
     cols = ['block', 'trial', 'attr']
     data = [[0, 0, 0.5], [0, 1, 0.2]]
 
     # fill in data for task1
-    task_root = os.path.join(subj_root, 'task1')
+    task_root = os.path.join(root, 'task1')
+    os.makedirs(task_root)
     writer = TaskWriter(task_root, cols)
 
     writer.write(data[0])
@@ -110,7 +109,8 @@ def test_task_writer(storage_filestruct):
     cols = ['trial', 'attr']
     trials = [[0, 'a'], [1, 'b']]
 
-    task_root = os.path.join(subj_root, 'task2')
+    task_root = os.path.join(root, 'task2')
+    os.makedirs(task_root)
     writer = TaskWriter(task_root, cols, array_names=['array1', 'array2'])
 
     writer.arrays['array1'].stack(numpy.array([0, 1, 2]))
