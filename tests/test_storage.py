@@ -1,8 +1,9 @@
 import pytest
 import os
 import numpy
-from axopy.storage import (Storage, TaskWriter, ArrayWriter, read_hdf5,
-                           write_hdf5, storage_to_zip)
+import pandas
+from axopy.storage import (Storage, TaskWriter, ArrayWriter, TrialWriter,
+                           read_hdf5, write_hdf5, storage_to_zip)
 
 
 @pytest.fixture(scope='module')
@@ -28,6 +29,29 @@ def storage_filestruct(tmpdir_factory):
             os.makedirs(os.path.join(root, subj_id, name))
 
     return root, folders
+
+
+def test_storage(tmpdir):
+    """Integration test for regular storage usage."""
+    root = str(tmpdir.dirpath())
+
+    # usually done by task manager
+    storage = Storage(root=root)
+    storage.subject_id = 'p0'
+
+    # task 1 implementation
+    writer = storage.create_task('task1', ['trial', 'label'],
+                                 array_names=['data'])
+    writer.arrays['data'].stack(numpy.array([0, 1, 2]))
+    writer.arrays['data'].stack(numpy.array([3, 4, 5]))
+    writer.write([0, 'label1'])
+
+    # task 2 implementation
+    reader = storage.require_task('task1')
+    writer = storage.create_task('task2', ['trial', 'success'])
+    # TODO do something with the reader
+    writer.write([0, True])
+    writer.write([1, False])
 
 
 def test_storage_directories(storage_filestruct):
@@ -66,36 +90,42 @@ def test_storage_directories(storage_filestruct):
 def test_task_writer(storage_filestruct):
     root, folders = storage_filestruct
 
-    task_id = 'some_task'
-    task_root = os.path.join(root, list(folders)[0])
+    subj_root = os.path.join(root, list(folders)[0])
 
-    # simple writer with one column and no arrays
-    #writer = TaskWriter(task_root, task_id, ['trial'])
+    # simple writer with a couple columns and no arrays
+    cols = ['block', 'trial', 'attr']
+    data = [[0, 0, 0.5], [0, 1, 0.2]]
 
-    #writer.start_trial()
-    #writer.write_trial(0)
+    # fill in data for task1
+    task_root = os.path.join(subj_root, 'task1')
+    writer = TaskWriter(task_root, cols)
 
-    #with pytest.raises(Exception):
-    #    writer.write_trial(0)
+    writer.write(data[0])
+    writer.write(data[1])
 
-    #writer.start_trial()
-    #writer.write_trial(1)
+    fdata = pandas.read_csv(os.path.join(task_root, 'trials.csv'))
+    assert fdata.equals(pandas.DataFrame(data, columns=cols))
 
-    ## TODO check that the file at task_root/trial_data.csv is correct
+    # writer with some array data
+    cols = ['trial', 'attr']
+    trials = [[0, 'a'], [1, 'b']]
 
-    #writer.finish()
+    task_root = os.path.join(subj_root, 'task2')
+    writer = TaskWriter(task_root, cols, array_names=['array1', 'array2'])
 
-    ## writer with a column and an array
-    ## note ok to manually create a TaskWriter for data that already exists
-    #writer = TaskWriter(task_root, task_id, ['block', 'trial'],
-    #                    array_names=['arr'])
+    writer.arrays['array1'].stack(numpy.array([0, 1, 2]))
+    writer.arrays['array2'].stack(numpy.array([0.0, 0.1, 0.2]))
+    writer.write(trials[0])
 
-    #writer.start_trial()
-    #writer.write_trial(0, 0)
-    #writer.arrays['arr'].stack(numpy.arange(10))
-    #writer.arrays['arr'].stack(numpy.arange(10))
+    writer.arrays['array1'].stack(numpy.array([3, 4, 5]))
+    writer.arrays['array2'].stack(numpy.array([0.3, 0.4, 0.5]))
+    writer.arrays['array2'].stack(numpy.array([0.6, 0.7, 0.8]))
+    writer.write(trials[1])
 
-    ## TODO assert data at task_root/arr/0.hdf5 is correct
+    arrdata = read_hdf5(os.path.join(task_root, 'array2.hdf5'), dataset='1')
+    numpy.testing.assert_array_equal(
+        arrdata,
+        numpy.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]))
 
 
 def test_array_writer(tmpdir):
@@ -124,6 +154,32 @@ def test_array_writer(tmpdir):
 
     data = read_hdf5(fp, dataset='1')
     numpy.testing.assert_array_equal(x_expected, data)
+
+
+def test_trial_writer(tmpdir):
+    fn = 'trials.csv'
+    root = str(tmpdir.dirpath())
+    fp = os.path.join(root, fn)
+
+    cols = ['a', 'b', 'c']
+
+    writer = TrialWriter(fp, cols)
+
+    # test array data
+    data = [[1, 2, 3.0], [4, 5, 6.0]]
+    writer.write(data[0])
+    assert writer.data.equals(pandas.DataFrame([data[0]], columns=cols))
+    writer.write(data[1])
+    assert writer.data.equals(pandas.DataFrame(data, columns=cols))
+
+    # file actually contains the data
+    assert pandas.read_csv(fp).equals(pandas.DataFrame(data, columns=cols))
+
+    # test dict data
+    data = {'b': 4, 'a': 2, 'c': 4.2}
+    writer = TrialWriter(fp, cols)
+    writer.write(data)
+    assert writer.data.equals(pandas.DataFrame(data, columns=cols, index=[0]))
 
 
 def test_hdf5_read_write(tmpdir):
