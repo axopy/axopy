@@ -1,3 +1,32 @@
+"""Cursor control example.
+
+This example experiment implements a continuous myoelectric control of a cursor
+in two dimensions via a scikit-learn regression model trained on simple
+amplitude-based features. There are two configurations:
+
+    1. ``'ridge'``: Use a ridge regression model.
+    2. ``'forest'``: Use a random forest regressor model.
+
+The tasks are the same for both configurations, with the exception of the model
+used in the ``CursorControl`` task:
+
+    1. ``Oscilloscope``: shows a simple oscilloscope view of the raw EMG data.
+        This task is built in to AxoPy.
+    2. ``CursorFollowing``: displays a cursor automatically moving around the
+       screen while the subject attempts to "follow" it with the wrist. Raw EMG
+       data recorded during each trial is recorded as well as the cursor
+       position.
+    3. ``Preprocessing``: reads in the data from CursorFollowing task and
+       computes features from the EMG signals. The features and cursor position
+       are all placed into a large table for ease of analysis using
+       scikit-learn.
+    4. ``CursorControl``: reads in the cursor position and EMG feature pairs to
+       train a scikit-learn model (depending on the coniguration), then uses
+       the model to produce output cursor position given EMG data. The subject
+       attempts to hit randomly presented targets around the screen. Cursor
+       trajectories and raw EMG data are recorded.
+"""
+
 import random
 import os
 import numpy
@@ -20,7 +49,28 @@ samples_per_update = 200
 data_root = 'data'
 
 
-def cardinal_out_and_back_trajectories(samples):
+def create_design(attrs, attr_name='attr', num_blocks=1, shuffle=True):
+    """Generate a task design from per-trial attributes.
+
+    Takes in a list of attributes, where each trial of a block contains a trial
+    with each attribute.
+    """
+    design = []
+    for iblock in range(num_blocks):
+        block = []
+        for itrial, attr in enumerate(attrs):
+            block.append({
+                'block': iblock,
+                'trial': itrial,
+                attr_name: attr
+            })
+        if shuffle:
+            block.shuffle()
+        design.append(block)
+    return design
+
+
+def cardinal_out_and_back_trajectories(nsamples):
     """Generate out-and-back trajectories with sinusoid velocity profiles.
 
     Trajectories for each of the four cardinal directions are generated: right,
@@ -34,101 +84,164 @@ def cardinal_out_and_back_trajectories(samples):
     return trajectories
 
 
+def setup_cursor_view(cursor_size=5, target_size=10, cursor_color='#aa1212',
+                      target_color='#32b124'):
+    """Initialize a basic cursor/target canvas.
+
+    Returns
+    -------
+    cursor : Circle
+        The cursor.
+    target : Circle
+        The target.
+    canvas : Canvas
+        The canvas. The cursor and target are added for you.
+    """
+    canvas = Canvas()
+    cursor = Circle(cursor_size, color=cursor_color)
+    target = Circle(target_size, color=target_color)
+
+    canvas.add_item(target)
+    canvas.add_item(cursor)
+    canvas.add_item(Cross())
+
+    return cursor, target, canvas
+
+
 class CursorFollowing(Task):
+    """Task in which the subject imagines following a moving cursor.
 
-    def __init__(self, trajectories, reps=1):
-        # build up an experiment structure
-        # each block consists of every trajectory shuffled randomly
-        blocks = []
-        for i in range(reps):
-            block = []
-            for traj in trajectories:
-                trial = dict(trajectory=traj)
-                block.append(trial)
-            random.shuffle(block)
-            blocks.append(block)
-        self.iter = TaskIter(blocks)
+    Flow:
+        - block starts
+            - trial starts
+                - increment cursor position
+                - log raw EMG data and cursor position
+                - if last position, finish trial
+            - trial finishes
+                - save data
+                - start a timer to initiate the next trial
+         - block finishes
+            - wait for key press to continue
+    """
 
-        exp_dir = init_task_storage(self.__class__.__name__)
-        cols = ['block', 'trial', 'emg_file', 'cursor_file']
-        self.trials_storage = TableWriter('trials', cols, data_path=exp_dir)
-        self.emg_storage = ArrayWriter('emg', data_path=exp_dir)
-        self.cursor_storage = ArrayWriter('paths', data_path=exp_dir)
+    def __init__(self, blocks=1, name='cursor_following',
+                 inter_trial_timeout=3):
+        self.name = name
+        self.design(create_design(cardinal_out_and_back_trajectories(20)))
 
-    def prepare(self):
-        self.ui = Canvas(bg_color=bg_color)
+    def prepare_view(self, container):
+        self.cursor, self.target, self.canvas = \
+            setup_cursor_view(**self.cursor_view_params)
+        container.set_view(self.canvas)
 
-        self.cursor = Circle(cursor_size, color=cursor_color)
-        self.ui.add_item(self.cursor)
+    def prepare_input_stream(self, input_stream):
+        input_stream.update.connect(self.update)
 
-        self.fixcross = Cross()
-        self.ui.add_item(self.fixcross)
-
-        self.device_stream.update.connect(self.update)
-        self.finish_trial.connect(self.ui.clear)
+    def prepare_storage(self, storage):
+        self.writer = storage.create_task(self.name,
+                                          ['block', 'trial', 'direction'],
+                                          array_names=['emg', 'cursor'])
 
     def run_trial(self, trial):
-        self.current_trajectory = trial.trajectory
+        # TODO: canvas object show/hide
+        self.cursor.show()
         self.cursor.move_to(0, 0)
 
-        self.device_stream.start()
+        self.input_stream.start()
+
+        self.current_trial = trial
+        self.pos_iter = iter(trial['cursor'])
+        self.update_pos()
+
+    def update_pos(self):
+        try:
+            self.cursor_pos = next(self.pos_iter)
+        except StopIteration:
+            self.finish_trial()
 
     def update(self, data):
-        pos = next(self.current_trajectory)
-        self.cursor.move_to(*(100*pos))
+        # move the cursor in the canvas
+        self.cursor.move_to(*(100*self.cursor_pos))
 
-        self.emg_storage.add(data)
-        self.cursor_storage.add(numpy.atleast_2d(pos).T)
+        # save the EMG data and the cursor position
+        self.writer.arrays['emg'].stack(data)
+        self.writer.arrays['cursor'].stack(numpy.atleast_2d(pos).T)
 
-        self.experiment.keyboard.check()
-
-        self.input_device.stop()
-        self.clear()
-
-        tup = (self.experiment.subject, self.block.id, self.trial.id)
-        cfp = self.cursor_storage.write(*tup)
-        efp = self.emg_storage.write(*tup)
-        self.experiment.data.add([self.block.id, self.trial.id, cfp, efp])
-
-        self.experiment.clock.wait(1000)
+        # update position at the end in case it's the last of this trial
+        self.update_pos()
 
     def finish_trial(self):
         self.input_device.stop()
         self.clear()
 
-        tup = (self.experiment.subject, self.block.id, self.trial.id)
-        cfp = self.cursor_storage.write(*tup)
-        efp = self.emg_storage.write(*tup)
-        self.experiment.data.add([self.block.id, self.trial.id, cfp, efp])
+        self.writer.write([
+            self.current_trial['block'],
+            self.current_trial['trial'],
+            self.current_trial['direction']
+        ])
+
+        # start timer to wait for next trial
+        # TODO: implement
+        OneShotTimer.delayed_call(self.next_trial,
+                                  self.inter_trial_timeout)
+
+    def key_press(self, key):
+        if self.awaiting_next_block and key == util.key_return:
+            self.awaiting_next_block = False
 
     def clear(self):
-        """Draw only the static elements of the interface."""
-        self.area_rect.present(clear=True)
-        self.fixcross.present(clear=False)
+        self.cursor.hide()
 
-    @staticmethod
-    def load_data(subject):
-        """Yields (emg_data, cursor_position) pairs from a subject's data."""
-        emg_dir = os.path.join(data_root, 'CursorFollowing', 'emg')
-        emg_files = sorted(os.listdir(emg_dir))
 
-        cursor_dir = os.path.join('data', 'CursorFollowing', 'paths')
-        cursor_files = sorted(os.listdir(cursor_dir))
+class Preprocessing(Task):
 
-        for efn, cfn in zip(emg_files, cursor_files):
-            emg_data = read_hdf5(os.path.join(emg_dir, efn))
-            cursor_data = read_hdf5(os.path.join(cursor_dir, cfn))
-            seg_length = int(emg_data.shape[1] / cursor_data.shape[1])
-            for i, x in enumerate(copper.segment(emg_data, seg_length)):
-                yield x, cursor_data[:, i]
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
 
-    @staticmethod
-    def load_training_dataset(subject, emg_pipeline):
-        emg_data = ArrayBuffer()
-        cursor_data = ArrayBuffer()
-        for emg, cursor in CursorFollowing.load_data(subject):
-            emg_proc = emg_pipeline.process(emg)
-            emg_data.add(emg_proc)
-            cursor_data.add(cursor)
+    def prepare_view(self, view):
+        # TODO set up a pyqtgraph plot
 
-        return emg_data.data, cursor_data.data
+    def prepare_storage(self, storage):
+        # TODO set up some variables for later
+        pass
+
+    def processs(self):
+        # TODO iterate over input data, run through pipeline, write output
+        pass
+
+    def key_press(self, key):
+        if key == util.key_return:
+            self.process()
+
+
+class CursorControl(Task):
+
+    def __init__(self, model_cls=None, interface_params=None):
+        self.model_cls = model_cls
+        self.interface_params = interface_params
+
+    def prepare_view(self, view):
+        self.cursor_view = CursorView(**self.interface_params)
+        view.set(self.cursor_view)
+
+    def prepare_storage(self, storage):
+
+
+
+if __name__ == '__main__':
+    design = {
+        'ridge': [
+            Oscilloscope(),
+            CursorFollowing(),
+            Preprocessing(),
+            CursorControl(model_cls=Ridge)
+        ],
+        'forest': [
+            Oscilloscope(),
+            CursorFollowing(),
+            Preprocessing(),
+            CursorControl(model_cls=RandomForestRegressor)
+        ]
+    }
+
+    exp = Experiment(design)
