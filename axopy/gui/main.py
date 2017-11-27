@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtCore, QtWidgets
 from axopy import util
 from axopy.messaging import transmitter
 
@@ -113,7 +113,6 @@ class MainWindow(QtWidgets.QMainWindow):
         If the container is already somewhere in the stack, it is just made
         visible, otherwise it is added to the stack.
         """
-        # FIXME find out if there's a variable in Qt to use instead of -1 here
         if self._layout.indexOf(container) == -1:
             self._layout.addWidget(container)
         self._layout.setCurrentWidget(container)
@@ -131,18 +130,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def quit(self):
         """Quit the application."""
         get_qtapp().quit()
-
-    #def eventFilter(self, obj, event):
-    #    if event.type() == QtCore.QEvent.KeyPress:
-    #        try:
-    #            key = key_map[event.key()]
-    #        except KeyError:
-    #            return False
-
-    #        self.key_pressed(key)
-    #        return True
-    #    else:
-    #        return False
 
     def keyPressEvent(self, event):
         """Qt callback for key presses.

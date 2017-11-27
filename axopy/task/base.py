@@ -1,9 +1,10 @@
 """Base task implementation."""
 
+from axopy import util
 from axopy.messaging import transmitter, receiver
 
 
-class TaskIter(object):
+class _TaskIter(object):
     """Cleanly retrieves blocks of a task design and the trials within them.
 
     A task design is a sequence of sequences: a sequence of blocks which are
@@ -43,7 +44,7 @@ class TaskIter(object):
 
     def __init__(self, design=None):
         if design is None:
-            design = [[]]
+            design = [[{}]]
 
         self.design = design
         self.block_iter = iter(design)
@@ -84,13 +85,19 @@ class Task(object):
 
     Most task implementations will want to override the `prepare` and
     `run_trial` methods, while the rest can be left to default behavior.
+
+    Attributes
+    ----------
+    advance_block_key : str
+        Key for the user to press in order to advance to the next block. Can
+        set to ``None`` to disable the feature (next block starts immediately
+        after one finishes).
     """
 
-    def __init__(self, design=None):
-        self.iter = TaskIter(design)
+    advance_block_key = util.key_return
 
     def design(self, trials):
-        self.iter = TaskIter(trials)
+        self.iter = _TaskIter(trials)
 
     def prepare_view(self, view):
         """Initialize graphical elements and messaging connections.
@@ -147,16 +154,18 @@ class Task(object):
         ready to proceed. If there are no more blocks to run, the `finish`
         method is called. You usually do not need to override this method.
         """
-        # wait for confirmation between blocks
         block = self.iter.next_block()
         if block is None:
             self.finish()
             return
 
-        # TODO: (optionally) wait for confirmation to start
-
         self.block = block
-        self.next_trial()
+
+        # wait for confirmation between blocks
+        if self.advance_block_key is None:
+            self.next_trial()
+        else:
+            self._awaiting_key = True
 
     def next_trial(self):
         """Get the next trial in the block and starts running it.
@@ -192,7 +201,7 @@ class Task(object):
 
         Override if you need to do some cleanup between blocks.
         """
-        self.next_block()
+        pass
 
     @transmitter()
     def finish(self):
@@ -209,32 +218,11 @@ class Task(object):
 
         Override this method to receive key press events. Available keys can be
         found in :mod:`axopy.util` (named `key_<keyname>`, e.g. `key_k`).
+
+        Important note: if relying on the ``advance_block_key`` to advance the
+        task, make sure to call this super implementaiton.
         """
-        pass
-
-
-class CustomTask(Task):
-
-    def __init__(self, design):
-        super().__init__(design)
-
-    def run_trial(self, trial):
-        print('running trial with data {}'.format(trial))
-        import time
-        time.sleep(1)
-        self.finish_trial()
-
-    def finish_trial(self):
-        print('finishing trial')
-        self.next_trial()
-
-
-if __name__ == '__main__':
-    design = [
-        [{'attr': 32}, {'attr': 24}],
-        [{'attr': 20}, {'attr': 21}],
-        [{'attr': 10}, {'attr': 88}]
-    ]
-
-    task = CustomTask(design)
-    task.run()
+        if getattr(self, '_awaiting_key', False) and \
+                key == self.advance_block_key:
+            self._awaiting_key = False
+            self.next_trial()

@@ -3,7 +3,6 @@
 from axopy.task import Task
 from axopy import util
 from axopy.messaging import transmitter
-from axopy.gui.subject import ParticipantSelector
 from axopy.gui.signals import SignalWidget
 
 
@@ -39,23 +38,23 @@ class Oscilloscope(Task):
         return
 
 
-class SubjectSelection(Task):
-
-    def __init__(self, extra_params=None):
-        self.extra_params = extra_params
-
-    def prepare_view(self, view):
-        self.ui = ParticipantSelector(extra_attrs=self.extra_params)
-        self.ui.selected.connect(self._on_subject_selected)
-        view.set_view(self.ui)
-
-    def run(self):
-        pass
-
-    def _on_subject_selected(self, subject):
-        self.select(subject)
-        self.finish()
-
-    @transmitter(('subject', dict))
-    def select(self, subject):
-        return subject
+# class SubjectSelection(Task):
+# 
+#     def __init__(self, extra_params=None):
+#         self.extra_params = extra_params
+# 
+#     def prepare_view(self, view):
+#         self.ui = ParticipantSelector(extra_attrs=self.extra_params)
+#         self.ui.selected.connect(self._on_subject_selected)
+#         view.set_view(self.ui)
+# 
+#     def run(self):
+#         pass
+# 
+#     def _on_subject_selected(self, subject):
+#         self.select(subject)
+#         self.finish()
+# 
+#     @transmitter(('subject', dict))
+#     def select(self, subject):
+#         return subject
