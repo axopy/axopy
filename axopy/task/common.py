@@ -36,25 +36,3 @@ class Oscilloscope(Task):
         self.input_stream.kill()
         self.input_stream.updated.disconnect(self.update)
         return
-
-
-# class SubjectSelection(Task):
-# 
-#     def __init__(self, extra_params=None):
-#         self.extra_params = extra_params
-# 
-#     def prepare_view(self, view):
-#         self.ui = ParticipantSelector(extra_attrs=self.extra_params)
-#         self.ui.selected.connect(self._on_subject_selected)
-#         view.set_view(self.ui)
-# 
-#     def run(self):
-#         pass
-# 
-#     def _on_subject_selected(self, subject):
-#         self.select(subject)
-#         self.finish()
-# 
-#     @transmitter(('subject', dict))
-#     def select(self, subject):
-#         return subject

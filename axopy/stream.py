@@ -29,9 +29,9 @@ class InputStream(QtCore.QThread):
         Emitted when there is a problem with the data acquisition unit.
     """
 
-    updated = QtCore.pyqtSignal(object)
-    disconnected = QtCore.pyqtSignal()
-    finished = QtCore.pyqtSignal()
+    #updated = QtCore.pyqtSignal(object)
+    #disconnected = QtCore.pyqtSignal()
+    #finished = QtCore.pyqtSignal()
 
     def __init__(self, device):
         super(InputStream, self).__init__()
@@ -55,14 +55,14 @@ class InputStream(QtCore.QThread):
             try:
                 d = self.device.read()
             except IOError:
-                self.disconnected.emit()
+                self.disconnected()
                 return
 
             if self._running:
-                self.updated.emit(d)
+                self.updated(d)
 
         self.device.stop()
-        self.finished.emit()
+        self.finished()
 
     def kill(self, wait=True):
         self._running = False

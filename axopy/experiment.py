@@ -1,8 +1,9 @@
 """Experiment workflow and design."""
 
 from axopy import util
+from axopy.stream import InputStream
 from axopy.messaging import transmitter
-from axopy.gui.main import MainWindow
+from axopy.gui.main import MainWindow, SessionInfo
 from axopy.gui.canvas import Canvas
 
 
@@ -11,22 +12,53 @@ class Experiment(object):
 
     Presents the researcher with a prompt for entering session details and then
     presents the appropriate tasks.
+
+    Parameters
+    ----------
+    tasks : list or dict
+        List of tasks in the experiment or a dictionary mapping experiment
+        confgurations to task lists. The configurations are shown in a dropdown
+        list so the researcher can select which configuration to use at
+        run-time.
+    device : object
+        Any object that implements the device protocol.
     """
 
     def __init__(self, tasks, device=None):
+        if isinstance(tasks, dict):
+            configs = list(tasks)
+        else:
+            tasks = {'default': tasks}
+            configs = ['default']
         self.tasks = tasks
-        self.device = device
 
-        self.task_iter = iter(tasks)
+        self.device = device
+        self.input_stream = InputStream(device)
 
         self.receive_keys = False
 
+        # main screen
         self.screen = MainWindow()
         self.screen.key_pressed.connect(self.key_press)
 
+        # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
         self.confirm_screen.scene().addText("Ready")
 
+        # initial screen to enter subject ID
+        session_info_screen = SessionInfo(configs)
+        session_info_screen.finished.connect(self._setup_session)
+        self.screen.set_container(session_info_screen)
+
+    def _setup_session(self, session):
+        self.subject = session['subject']
+        self.configuration = session['configuration']
+
+        self.screen.set_status(
+            "subject: {}, config: {}".format(self.subject, self.configuration))
+
+        self.current_task = None
+        self.task_iter = iter(self.tasks[self.configuration])
         self.task_finished()
 
     def run(self):
@@ -45,19 +77,13 @@ class Experiment(object):
         con = self.screen.new_container()
 
         self.current_task.prepare_view(con)
-        self.current_task.prepare_input_stream(self.device)
+        self.current_task.prepare_input_stream(self.input_stream)
         self.current_task.run()
 
-    def set_subject(self, subject):
-        print(subject)
-
     def task_finished(self):
-        try:
+        if self.current_task is not None:
             self.current_task.finish.disconnect(self.task_finished)
             self.key_pressed.disconnect(self.current_task.key_press)
-        except:
-            # either there is no current task or it wasn't connected
-            pass
 
         try:
             self.current_task = next(self.task_iter)
@@ -79,36 +105,3 @@ class Experiment(object):
     @transmitter(('key', str))
     def key_pressed(self, key):
         return key
-
-
-class ExperimentDesign(object):
-
-    def __init__(self):
-        self.design_dict = {}
-
-    def add_condition(self, condition):
-        self.design_dict[condition.name] = condition
-
-    def to_json(self):
-        pass
-
-    @classmethod
-    def from_dict(self, d):
-        pass
-
-    @classmethod
-    def from_json(self, s):
-        pass
-
-
-class Condition(object):
-
-    def __init__(self):
-        self.tasks = []
-
-    @classmethod
-    def from_list(self, l):
-        pass
-
-    def add_task(self, name, cls, params):
-        self.tasks.append((name, cls, params))
