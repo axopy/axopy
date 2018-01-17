@@ -1,8 +1,7 @@
 import pytest
 from PyQt5 import QtCore, QtWidgets
 from axopy import util
-from axopy.gui.main import MainWindow, Container
-from axopy.gui.session import SessionInfoWidget
+from axopy.gui.main import MainWindow, Container, SessionInfo
 
 
 def test_main_window(qtbot):
@@ -32,7 +31,7 @@ def test_session_info_widget(qtbot, mock):
                       return_value=QtWidgets.QMessageBox.Ok)
 
     # single configuration session
-    w = SessionInfoWidget()
+    w = SessionInfo()
 
     # if no subject ID is entered, make sure warning is shown and finished
     # signal isn't emitted
@@ -48,7 +47,7 @@ def test_session_info_widget(qtbot, mock):
     qtbot.mouseClick(w._button, QtCore.Qt.LeftButton)
 
     # multi-configuration session
-    w = SessionInfoWidget(configurations=('a', 'b', 'c'))
+    w = SessionInfo(configurations=('a', 'b', 'c'))
     assert w._config_combo_box.count() == 3
     qtbot.keyClicks(w._subject_line_edit, 'p1')
 

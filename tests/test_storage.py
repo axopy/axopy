@@ -47,7 +47,7 @@ def test_storage(tmpdir):
     writer.write([0, 'label1'])
 
     # task 2 implementation
-    reader = storage.require_task('task1')
+    storage.require_task('task1')
     writer = storage.create_task('task2', ['trial', 'success'])
     # TODO do something with the reader
     writer.write([0, True])

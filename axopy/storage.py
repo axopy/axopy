@@ -319,9 +319,43 @@ class TaskWriter(object):
 
 
 class TaskReader(object):
+    """High-level interface to task storage.
+
+    Parameters
+    ----------
+    root : str
+        Path to task's root directory. This is the directory specific to a task
+        which contains a ``trials.csv`` file and HDF5 array files.
+
+    Attributes
+    ----------
+    trials : DataFrame
+        A Pandas DataFrame representing the trial data.
+    """
 
     def __init__(self, root):
         self.root = root
+
+    @property
+    def trials(self):
+        return pandas.read_csv(os.path.join(self.root, 'trials.csv'))
+
+    def iterarray(self, name):
+        """Iteratively retrieve an array for each trial.
+
+        Parameters
+        ----------
+        name : str
+            Name of the array type.
+        """
+        for ind in self.trials.index:
+            dset = str(ind)
+            yield read_hdf5(os.path.join(self.root, '{}.hdf5'.format(name)),
+                            dataset=dset)
+
+    def array(self, name):
+        """Retrieve an array type's data for all trials."""
+        return numpy.vstack(self.iterarray(name))
 
 
 def read_hdf5(filepath, dataset='data'):
