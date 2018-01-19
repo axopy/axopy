@@ -56,12 +56,11 @@ def test_base_task(simple_design):
     task.key_press(util.key_return)
     assert task.trial == simple_design[0][0]
 
+    # automatically advance to next block
+    task.advance_block_key = None
     task.next_trial()
     task.next_trial()
 
-    # automatically advance to next trial in block
-    task.advance_block_key = None
-    task.next_block()
     assert task.block == simple_design[1]
     assert task.trial == simple_design[1][0]
 

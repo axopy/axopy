@@ -29,10 +29,6 @@ class InputStream(QtCore.QThread):
         Emitted when there is a problem with the data acquisition unit.
     """
 
-    #updated = QtCore.pyqtSignal(object)
-    #disconnected = QtCore.pyqtSignal()
-    #finished = QtCore.pyqtSignal()
-
     def __init__(self, device):
         super(InputStream, self).__init__()
         self.device = device

@@ -1,6 +1,7 @@
 """Experiment workflow and design."""
 
 from axopy import util
+from axopy.storage import Storage
 from axopy.stream import InputStream
 from axopy.messaging import transmitter
 from axopy.gui.main import MainWindow, SessionInfo
@@ -24,7 +25,7 @@ class Experiment(object):
         Any object that implements the device protocol.
     """
 
-    def __init__(self, tasks, device=None):
+    def __init__(self, tasks, device=None, data_root='data'):
         if isinstance(tasks, dict):
             configs = list(tasks)
         else:
@@ -34,6 +35,8 @@ class Experiment(object):
 
         self.device = device
         self.input_stream = InputStream(device)
+
+        self.storage = Storage(data_root)
 
         self.receive_keys = False
 
@@ -57,6 +60,8 @@ class Experiment(object):
         self.screen.set_status(
             "subject: {}, config: {}".format(self.subject, self.configuration))
 
+        self.storage.subject_id = self.subject
+
         self.current_task = None
         self.task_iter = iter(self.tasks[self.configuration])
         self.task_finished()
@@ -78,6 +83,7 @@ class Experiment(object):
 
         self.current_task.prepare_view(con)
         self.current_task.prepare_input_stream(self.input_stream)
+        self.current_task.prepare_storage(self.storage)
         self.current_task.run()
 
     def task_finished(self):

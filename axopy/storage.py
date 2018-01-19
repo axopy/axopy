@@ -397,7 +397,7 @@ def write_hdf5(filepath, data, dataset='data'):
     dataset : str, optional
         Name of the dataset to create. Default is 'data'.
     """
-    with h5py.File(filepath, 'w') as f:
+    with h5py.File(filepath, 'a') as f:
         f.create_dataset(dataset, data=data)
 
 

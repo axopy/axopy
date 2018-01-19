@@ -201,7 +201,7 @@ class Task(object):
 
         Override if you need to do some cleanup between blocks.
         """
-        pass
+        self.next_block()
 
     @transmitter()
     def finish(self):
