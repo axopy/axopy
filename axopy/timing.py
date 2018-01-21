@@ -1,5 +1,6 @@
 """Utilities for keeping track of time in a task."""
 
+from PyQt5 import QtCore
 from axopy.messaging import transmitter, receiver
 
 
@@ -72,3 +73,24 @@ class IncrementalTimer(object):
     def reset(self):
         """Resets the count to 0 to start over."""
         self.count = 0
+
+
+class Timer(object):
+
+    def __init__(self, duration):
+        self.duration = duration
+
+        self._qtimer = QtCore.QTimer()
+        self._qtimer.setInterval(self.duration)
+        self._qtimer.setSingleShot(True)
+        self._qtimer.timeout.connect(self.timeout)
+
+    def start(self):
+        self._qtimer.start()
+
+    def stop(self):
+        self._qtimer.stop()
+
+    @transmitter()
+    def timeout(self):
+        return
