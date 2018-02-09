@@ -6,8 +6,8 @@ python:
     - "3.6"
 
 install:
-    - sudo apt-get install xvfb
-    - pip install tox-travis
+    - pip install -r requirements-dev.txt
+    - pip install -e .
 
 script:
-    - tox
+    - python -m pytest -v
