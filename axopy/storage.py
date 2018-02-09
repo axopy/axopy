@@ -1,8 +1,5 @@
 """Experiment data storage."""
 
-# TODO come up with ArrayReader API
-# TODO implement ArrayReader
-# TODO write tests for ArrayReader
 # TODO come up with to_hdf5 functionality
 # TODO implement to_hdf5
 # TODO test to_hdf5
@@ -15,6 +12,10 @@ import pandas
 import zipfile
 from axopy.util import makedirs
 
+
+#
+# Highest layer. Used by tasks to obtain task readers/writers
+#
 
 class Storage(object):
     """Top-level data storage maintainer.
@@ -152,120 +153,9 @@ class Storage(object):
         return os.path.join(self.root, self.subject_id, task_id)
 
 
-class ArrayWriter(object):
-    """Buffered array data backed by HDF5.
-
-    The `ArrayWriter` is responsible for "stacking" data into an array and
-    writing it to disk all at once. Once an array is written, the buffer is
-    cleared and you can write another array. All arrays are written to a single
-    HDF5 file with a given dataset name.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to the HDF5 file that will store the arrays.
-    orientation : str, optional
-        Orientation of stacking. If 'vertical', data is stacked vertically
-        (i.e. along axis 1), otherwise it is stacked horizontally.
-
-    Attributes
-    ----------
-    data : ndarray
-        Data that has been buffered so far. Can be set directly if you don't
-        want to use the stacking mechanism to accumulate data.
-    """
-
-    def __init__(self, filepath, orientation='horizontal'):
-        self.filepath = filepath
-        self.orientation = orientation
-
-        self.data = None
-
-    def stack(self, data):
-        """Stack new data onto the current buffer.
-
-        Parameters
-        ----------
-        data : ndarray
-            The data to stack. Must be of a compatible shape with the existing
-            buffer. For example, if stacking horizontally, the number of rows
-            must be consistent on each call to `stack`, but the number of
-            columns doesn't matter.
-        """
-        if self.data is None:
-            self.data = data
-        else:
-            if self.orientation == 'vertical':
-                self.data = numpy.vstack([self.data, data])
-            else:
-                self.data = numpy.hstack([self.data, data])
-
-    def write(self, dataset):
-        """Write the contents of the buffer to a new dataset in the HDF5 file.
-
-        The HDF5 dataset is created in the root group.
-
-        Parameters
-        ----------
-        dataset : str
-            Name of the dataset to create in the HDF5 flie.
-        """
-        write_hdf5(self.filepath, self.data, dataset=dataset)
-        self.clear()
-
-    def clear(self):
-        """Clears the buffer.
-
-        Anything that was in the buffer is not retrievable.
-        """
-        self.data = None
-
-
-class TrialWriter(object):
-    """Writes trial data to a CSV file line by line.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to the file to create.
-    columns : sequence
-        Column names.
-    """
-
-    def __init__(self, filepath, columns):
-        self.filepath = filepath
-        self.columns = columns
-
-        self._data = {col: [] for col in self.columns}
-
-    @property
-    def data(self):
-        """A pandas DataFrame containing all of the data."""
-        return pandas.DataFrame(self._data, columns=self.columns)
-
-    def write(self, data):
-        """Add a single row to the trials dataset.
-
-        Data is immediately added to the file on disk.
-
-        Parameters
-        ----------
-        data : sequence or dict
-            Data values to add. If a sequence (e.g. list, tuple), it is assumed
-            there are as many values as columns and the values are assumed to
-            be in the same order as the columns. If a dictionary, it is assumed
-            enough items are given.
-        """
-        if isinstance(data, dict):
-            it = data.items()
-        else:
-            it = zip(self.columns, data)
-
-        for col, val in it:
-            self._data[col].append(val)
-
-        self.data.to_csv(self.filepath, index=False)
-
+#
+# Middle layer. Used by tasks to read/write data.
+#
 
 class TaskWriter(object):
     """The main interface for creating a task dataset.
@@ -335,10 +225,14 @@ class TaskReader(object):
 
     def __init__(self, root):
         self.root = root
+        self._trials = None
 
     @property
     def trials(self):
-        return pandas.read_csv(os.path.join(self.root, 'trials.csv'))
+        if self._trials is None:
+            self._trials = pandas.read_csv(
+                os.path.join(self.root, 'trials.csv'))
+        return self._trials
 
     def iterarray(self, name):
         """Iteratively retrieve an array for each trial.
@@ -357,6 +251,129 @@ class TaskReader(object):
         """Retrieve an array type's data for all trials."""
         return numpy.vstack(self.iterarray(name))
 
+
+#
+# Lowest layer. Used by TaskReader/TaskWriter.
+#
+
+class TrialWriter(object):
+    """Writes trial data to a CSV file line by line.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the file to create.
+    columns : sequence
+        Column names.
+    """
+
+    def __init__(self, filepath, columns):
+        self.filepath = filepath
+        self.columns = columns
+
+        self._data = {col: [] for col in self.columns}
+
+    @property
+    def data(self):
+        """A pandas DataFrame containing all of the data."""
+        return pandas.DataFrame(self._data, columns=self.columns)
+
+    def write(self, data):
+        """Add a single row to the trials dataset.
+
+        Data is immediately added to the file on disk.
+
+        Parameters
+        ----------
+        data : sequence or dict
+            Data values to add. If a sequence (e.g. list, tuple), it is assumed
+            there are as many values as columns and the values are assumed to
+            be in the same order as the columns. If a dictionary, it is assumed
+            enough items are given.
+        """
+        if isinstance(data, dict):
+            it = data.items()
+        else:
+            it = zip(self.columns, data)
+
+        for col, val in it:
+            self._data[col].append(val)
+
+        self.data.to_csv(self.filepath, index=False)
+
+
+class ArrayWriter(object):
+    """Buffered array data backed by HDF5.
+
+    The `ArrayWriter` is responsible for "stacking" data into an array and
+    writing it to disk all at once. Once an array is written, the buffer is
+    cleared and you can write another array. All arrays are written to a single
+    HDF5 file with a given dataset name.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the HDF5 file that will store the arrays.
+    orientation : str, optional
+        Orientation of stacking. If 'vertical', data is stacked vertically
+        (i.e. along axis 1), otherwise it is stacked horizontally.
+
+    Attributes
+    ----------
+    data : ndarray
+        Data that has been buffered so far. Can be set directly if you don't
+        want to use the stacking mechanism to accumulate data.
+    """
+
+    def __init__(self, filepath, orientation='horizontal'):
+        self.filepath = filepath
+        self.orientation = orientation
+
+        self.data = None
+
+    def stack(self, data):
+        """Stack new data onto the current buffer.
+
+        Parameters
+        ----------
+        data : ndarray
+            The data to stack. Must be of a compatible shape with the existing
+            buffer. For example, if stacking horizontally, the number of rows
+            must be consistent on each call to `stack`, but the number of
+            columns doesn't matter.
+        """
+        if self.data is None:
+            self.data = data
+        else:
+            if self.orientation == 'vertical':
+                self.data = numpy.vstack([self.data, data])
+            else:
+                self.data = numpy.hstack([self.data, data])
+
+    def write(self, dataset):
+        """Write the contents of the buffer to a new dataset in the HDF5 file.
+
+        The HDF5 dataset is created in the root group.
+
+        Parameters
+        ----------
+        dataset : str
+            Name of the dataset to create in the HDF5 flie.
+        """
+        write_hdf5(self.filepath, self.data, dataset=dataset)
+        self.clear()
+
+    def clear(self):
+        """Clears the buffer.
+
+        Anything that was in the buffer is not retrievable.
+        """
+        self.data = None
+
+
+#
+# Utilities
+#
 
 def read_hdf5(filepath, dataset='data'):
     """Read the contents of a dataset.
