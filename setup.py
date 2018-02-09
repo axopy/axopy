@@ -38,6 +38,10 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
+        'PyQt5',
+        'pandas',
+        'h5py',
+        'pyqtgraph'
     ],
 
     extras_require={}

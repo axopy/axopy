@@ -1,5 +1,6 @@
 numpy
 scipy
 pandas
+h5py
+pyqt5
 pyqtgraph>=0.10
-git+https://github.com/ucdrascal/copper.git

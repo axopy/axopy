@@ -1,0 +1,9 @@
+-r requirements.txt
+pytest
+pytest-cov
+pytest-qt
+pytest-mock
+pytest-xvfb
+flake8
+sphinx
+sphinx_rtd_theme
