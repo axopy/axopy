@@ -6,7 +6,6 @@ python:
     - "3.6"
 
 install:
-    - sudo apt-get install xvfb
     - pip install -r requirements-dev.txt
     - pip install -e .
 
