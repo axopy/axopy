@@ -1,5 +1,5 @@
 import pytest
-from axopy.timing import IncrementalTimer
+from axopy.timing import Counter
 
 
 class TimeoutReceiver(object):
@@ -12,7 +12,7 @@ class TimeoutReceiver(object):
 
 
 def test_incremental_timer():
-    timer = IncrementalTimer(2)
+    timer = Counter(2)
     recv = TimeoutReceiver()
     timer.timeout.connect(recv.rx)
 
@@ -27,12 +27,12 @@ def test_incremental_timer():
     assert timer.count == 0
 
     with pytest.raises(ValueError):
-        IncrementalTimer(-1)
-        IncrementalTimer(0)
+        Counter(-1)
+        Counter(0)
 
 
 def test_incremental_timer_float():
-    timer = IncrementalTimer(3.5)
+    timer = Counter(3.5)
     recv = TimeoutReceiver()
     timer.timeout.connect(recv.rx)
 
@@ -44,7 +44,7 @@ def test_incremental_timer_float():
 
 
 def test_incremental_timer_noreset():
-    timer = IncrementalTimer(2, reset_on_timeout=False)
+    timer = Counter(2, reset_on_timeout=False)
 
     assert timer.count == 0
     timer.increment()

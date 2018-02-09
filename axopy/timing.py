@@ -4,7 +4,7 @@ from PyQt5 import QtCore
 from axopy.messaging import transmitter, receiver
 
 
-class IncrementalTimer(object):
+class Counter(object):
     """Counts to a given number then transmits a timeout event.
 
     Parameters
@@ -16,12 +16,17 @@ class IncrementalTimer(object):
         Specifies whether or not the timer should reset its count back to zero
         once the timeout event occurs. The default behavior is to reset.
 
+    Attributes
+    ----------
+    count : int
+        Current count.
+
     Examples
     --------
     Basic usage:
 
-    >>> from axopy.timing import IncrementalTimer
-    >>> timer = IncrementalTimer(2)
+    >>> from axopy.timing import Counter
+    >>> timer = Counter(2)
     >>> timer.timeout.connect(lambda: print("timed out"))
     >>> timer.increment()
     >>> timer.count
