@@ -11,6 +11,7 @@ These are the modules/subpackages which constitute AxoPy.
    api/experiment
    api/task
    api/pipeline
+   api/features
    api/messaging
    api/storage
    api/stream
