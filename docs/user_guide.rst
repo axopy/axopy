@@ -8,6 +8,6 @@ User Guide
 
    user_guide/application
    user_guide/daq
-   user_guide/processing_data
    user_guide/storage
    user_guide/messaging
+   user_guide/pipeline
