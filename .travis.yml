@@ -25,8 +25,10 @@ install:
       conda update -q conda
       conda info -a
 
-      conda env create -f environment.yml -n testenv python="$TRAVIS_PYTHON_VERSION"
+      # create the env in two steps for specific python version
+      conda create -n testenv python="$TRAVIS_PYTHON_VERSION"
       source activate testenv
+      conda env update -n testenv -f environment.yml
     else
       # python>=3.5
       pip install -r requirements.txt
