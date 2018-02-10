@@ -13,7 +13,7 @@ rand_data_1d = np.random.rand(100)
 rand_data_2d1 = np.random.rand(1, 100)
 rand_data_2d = np.random.rand(5, 100)
 
-b, a = signal.butter(2, (10/1000, 450/1000), btype='bandpass')
+b, a = signal.butter(2, (10/1000., 450/1000.), btype='bandpass')
 
 
 #

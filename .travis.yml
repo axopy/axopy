@@ -1,13 +1,40 @@
-sudo: required
 language: python
+os: linux
+sudo: required
 
 python:
-    - "3.5"
-    - "3.6"
+  - "2.7"
+  - "3.4"
+  - "3.5"
+  - "3.6"
 
 install:
-    - pip install -r requirements-dev.txt
-    - pip install -e .
+  - sudo apt-get update
+  - |
+    if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
+      # python<=3.4
+      CONDA_URL="https://repo.continuum.io/miniconda"
+      CONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
+      CONDA_DEST="$HOME/miniconda"
+
+      wget "$CONDA_URL/$CONDA_FILE" -O miniconda.sh
+      bash miniconda.sh -b -p "$CONDA_DEST"
+
+      export PATH="$CONDA_DEST/bin:$PATH"
+      conda config --set always_yes yes --set changeps1 no
+      conda update -q conda
+      conda info -a
+
+      # create the env in two steps for specific python version
+      conda create -n testenv python="$TRAVIS_PYTHON_VERSION"
+      source activate testenv
+      conda env update -n testenv -f environment.yml
+    else
+      # python>=3.5
+      pip install -r requirements.txt
+    fi
+  - pip install -r requirements-dev.txt
+  - pip install -e .
 
 script:
-    - python -m pytest -v
+  - pytest
