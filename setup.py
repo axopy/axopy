@@ -1,9 +1,23 @@
+import os
 from setuptools import setup, find_packages
 
 
 def readme():
     with open('README.rst') as f:
         return f.read()
+
+
+install_requires = [
+    'numpy',
+    'scipy',
+    'pandas',
+    'h5py',
+    'pyqtgraph'
+]
+# add pyqt5 to requirements for pip installs only
+# conda will complain because its package is just called "pyqt"
+if "CONDA_PREFIX" not in os.environ:
+    install_requires.append('pyqt5')
 
 
 setup(
@@ -35,14 +49,5 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=[
-        'numpy',
-        'scipy',
-        'pandas',
-        'h5py',
-        'pyqt5',
-        'pyqtgraph'
-    ],
-
-    extras_require={}
+    install_requires=install_requires,
 )

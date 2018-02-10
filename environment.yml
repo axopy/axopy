@@ -1,0 +1,12 @@
+name: axopy
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    - python
+    - numpy
+    - scipy
+    - pandas
+    - h5py
+    - pyqt>=5
+    - pyqtgraph>=0.10

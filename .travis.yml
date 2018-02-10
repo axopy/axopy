@@ -2,12 +2,33 @@ sudo: required
 language: python
 
 python:
+    - "2.7"
+    - "3.4"
     - "3.5"
     - "3.6"
 
 install:
+    - sudo apt-get update
+    # 
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
+          wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+          bash miniconda.sh -b -p $HOME/miniconda
+          export PATH="$HOME/miniconda/bin:$PATH"
+          hash -r
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+
+          conda info -a
+
+          conda create -q -n testenv python=$TRAVIS_PYTHON_VERSION -f environment.yml
+          source activate testenv
+      else
+          # python 3.5+
+          pip install -r requirements.txt
+      fi
+    # with 
     - pip install -r requirements-dev.txt
     - pip install -e .
 
 script:
-    - python -m pytest -v
+    - pytest
