@@ -9,7 +9,7 @@ class Canvas(QtWidgets.QGraphicsView):
     with a gray border.
     """
 
-    rect = (-100, -100, 200, 200) # x, y, w, h
+    rect = (-100, -100, 200, 200)  # x, y, w, h
     border_width = 1
 
     default_border_color = '#444444'
