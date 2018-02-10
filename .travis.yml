@@ -16,11 +16,12 @@ install:
       MAJOR="${TRAVIS_PYTHON_VERSION:0:1}"
       URL="https://repo.continuum.io/miniconda/"
       FILE="Miniconda${MAJOR}-latest-Linux-x86_64.sh"
-      wget "${URL}/{FILE}" -O miniconda.sh
+      DEST="{HOME}/miniconda"
 
-      bash miniconda.sh -b -p $HOME/miniconda
-      export PATH="$HOME/miniconda/bin:$PATH"
-      hash -r
+      wget "${URL}/{FILE}" -O miniconda.sh
+      bash miniconda.sh -b -p $DEST
+
+      source $DEST/bin/activate root
       conda config --set always_yes yes --set changeps1 no
       conda update -q conda
       conda info -a
