@@ -105,7 +105,7 @@ class Storage(object):
 
         try:
             makedirs(path)
-        except FileExistsError:
+        except OSError:
             raise ValueError(
                 "Subject {} has already started \"{}\". Only unique task "
                 "names are allowed.".format(self.subject_id, task_id))

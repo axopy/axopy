@@ -1,5 +1,6 @@
 """Utilities for keeping track of time in a task."""
 
+from __future__ import division
 from PyQt5 import QtCore
 from axopy.messaging import transmitter, receiver
 
