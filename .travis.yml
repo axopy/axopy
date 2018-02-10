@@ -13,15 +13,15 @@ install:
   - |
     if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       # python<=3.4
-      MAJOR="${TRAVIS_PYTHON_VERSION:0:1}"
-      URL="https://repo.continuum.io/miniconda/"
-      FILE="Miniconda${MAJOR}-latest-Linux-x86_64.sh"
-      DEST="{HOME}/miniconda"
+      PYTHON_MAJOR="${TRAVIS_PYTHON_VERSION:0:1}"
+      CONDA_URL="https://repo.continuum.io/miniconda/"
+      CONDA_FILE="Miniconda${PYTHON_MAJOR}-latest-Linux-x86_64.sh"
+      CONDA_DEST="{HOME}/miniconda"
 
-      wget "${URL}/{FILE}" -O miniconda.sh
-      bash miniconda.sh -b -p $DEST
+      wget "${CONDA_URL}/{CONDA_FILE}" -O miniconda.sh
+      bash miniconda.sh -b -p $CONDA_DEST
 
-      source $DEST/bin/activate root
+      source $CONDA_DEST/bin/activate root
       conda config --set always_yes yes --set changeps1 no
       conda update -q conda
       conda info -a
