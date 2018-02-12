@@ -38,7 +38,7 @@ install:
   - pip install codecov
 
 script:
-  - python -c python3 -c "from PyQt5.QtWidgets import QApplication; QApplication([])"
+  - python -c "from PyQt5.QtWidgets import QApplication; QApplication([])"
   - pytest --cov
 
 after_success:
