@@ -31,6 +31,8 @@ install:
       conda env update -n testenv -f environment.yml
     else
       # python>=3.5
+      # exclude 5.10 on travis https://bugreports.qt.io/browse/QTBUG-64928
+      pip install "pyqt5!=5.10"
       pip install -r requirements.txt
     fi
   - pip install -r requirements-dev.txt
