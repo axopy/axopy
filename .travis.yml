@@ -1,12 +1,6 @@
 language: python
 os: linux
 sudo: required
-addons:
-  apt:
-  sources:
-    - sourceline: "deb http://us.archive.ubuntu.com/ubuntu/ xenial main universe"
-  packages:
-    - xvfb
 
 python:
   - "2.7"
