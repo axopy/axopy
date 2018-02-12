@@ -5,10 +5,6 @@ from axopy import util
 from axopy.gui.main import MainWindow, Container, SessionInfo
 
 
-pytestmark = pytest.mark.skipif('TRAVIS' in os.environ,
-                                reason="Skip GUI tests on Travis.")
-
-
 def test_main_window(qtbot):
     win = MainWindow()
 
