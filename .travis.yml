@@ -9,7 +9,7 @@ python:
   - "3.6"
 
 install:
-  - sudo apt-get update
+  - sudo apt-get update && sudo apt-get install xvfb
   - |
     if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       # python<=3.4
