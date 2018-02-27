@@ -56,11 +56,11 @@ Installation
 
 AxoPy can be installed with either ``pip`` or ``conda``. For ``pip``, try::
 
-    pip install axopy
+    $ pip install axopy
 
 For ``conda``, use::
 
-    conda install -c conda-forge axopy
+    $ conda install -c conda-forge axopy
 
 Hello AxoPy
 -----------
