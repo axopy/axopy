@@ -19,7 +19,74 @@
 
 Axo-Pythonic synapses are those in which an axon synapses upon a Python
 program. AxoPy aims to facilitate such connections between electrophysiolgical
-signals and machines.
+signals and machines by making it easy for researchers to develop
+human-computer interface experiments.
+
+AxoPy consists of:
+
+Graphical interface
+    Central to AxoPy is the graphical user interface providing visual feedback
+    to the subject and controlling the flow of the experiment. The GUI is
+    backed by PyQt5, and you're free to implement customized graphical elements
+    of those built in to AxoPy don't suit your needs.
+
+Data acquisition
+    AxoPy establishes a fairly simple API for communicating with input
+    hardware, so all that's usually needed is a bit of middleware to get going.
+    Check out pytrigno_ or pymcc_ to see what this is like.
+
+Data storage
+    Data is stored in a file structure with common file formats (CSV and HDF5)
+    so you can a) start working with data as soon as an experiment session is
+    over and b) you don't need anything but standard tools (pandas, h5py) to do
+    so. A high-level interface to the storage structure is also provided to
+    make traversing a dataset simple.
+
+Pipeline processing
+    Estimating intentions of the user from raw electrophysiological signals
+    often involves a large number of processing operations. AxoPy facilitates
+    flexible construction of pipelines that can be reused in different parts of
+    an experiment.
+
+
+Quickstart
+==========
+
+Installation
+------------
+
+**TODO**: make this true
+
+AxoPy can be installed with either ``pip`` or ``conda``. For ``pip``, try::
+
+    pip install axopy
+
+For ``conda``, use::
+
+    conda install -c conda-forge axopy
+
+Hello AxoPy
+-----------
+
+Here's a minimal example to display some randomly generated signals in an
+"oscilloscope":
+
+.. code-block:: python
+
+    from axopy.experiment import Experiment
+    from axopy.task import Oscilloscope
+    from axopy.stream import EmulatedDaq
+
+    daq = EmulatedDaq(rate=1000, num_channels=4, read_size=100)
+    tasks = [Oscilloscope()]
+    exp = Experiment(tasks, device=daq)
+    exp.run()
+
+What Now?
+---------
+
+Check out the documentation_ for more information on creating experiments. Some
+examples are also located in the ``examples/`` folder.
 
 
 Contributing
@@ -44,3 +111,8 @@ change before spending significant time preparing the pull request.
 Ideally, new/changed functionality should come with tests and documentation. If
 you are new to contributing, it is perfectly fine to open a work-in-progress
 pull request and have it iteratively reviewed.
+
+
+.. _pytrigno: https://github.com/ucdrascal/pytrigno
+.. _pymcc: https://github.com/ucdrascal/pymcc
+.. _documentation: https://axopy.readthedocs.io
