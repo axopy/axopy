@@ -184,7 +184,7 @@ class Filter(PipelineBlock):
     def __init__(self, b, a=1, overlap=0):
         super(Filter, self).__init__()
         self.b = b
-        self.a = a
+        self.a = np.atleast_1d(a)
         self.overlap = overlap
 
         self.clear()

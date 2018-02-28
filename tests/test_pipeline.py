@@ -456,6 +456,14 @@ def test_filter_1d():
         block.process(data)
 
 
+def test_fir_filter():
+    # use default parameter for a
+    data = rand_data_2d
+    block = pipeline.Filter(b)
+    block.process(data)
+    block.process(data)
+
+
 def test_fextractor_simple():
     f0 = _NthSampleFeature(0)
     ex = pipeline.FeatureExtractor([('0', f0),
