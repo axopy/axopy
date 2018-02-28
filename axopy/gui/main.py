@@ -47,6 +47,8 @@ key_map = {
     QtCore.Qt.Key_Escape: util.key_escape,
 }
 
+qt_key_map = {v: k for k, v in key_map.items()}
+
 qtapp = None
 
 

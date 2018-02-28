@@ -4,6 +4,7 @@ import time
 import numpy
 from axopy.messaging import transmitter
 from PyQt5 import QtCore
+from axopy.gui.main import get_qtapp, qt_key_map
 
 
 class InputStream(QtCore.QThread):
@@ -122,8 +123,7 @@ class EmulatedDaq(object):
 
         self._sigma = amplitude / 3
 
-        self._t_last_read = None
-        self._t_per_read = float(self.read_size / self.rate)
+        self.sleeper = _Sleeper(float(self.read_size/self.rate))
 
     def start(self):
         pass
@@ -143,24 +143,124 @@ class EmulatedDaq(object):
         data : ndarray, shape (num_channels, read_size)
             The generated data.
         """
-        t = time.time()
-        if self._t_last_read is None:
-            time.sleep(self._t_per_read)
-        else:
-            try:
-                time.sleep(self._t_per_read - (t - self._t_last_read))
-            except ValueError:
-                # if we're not meeting real-time requirement, don't wait
-                pass
-
+        self.sleeper.sleep()
         data = self._sigma * numpy.random.randn(self.num_channels,
                                                 self.read_size)
-
-        self._t_last_read = time.time()
         return data
 
     def stop(self):
         pass
 
     def reset(self):
-        pass
+        self.sleeper.reset()
+
+
+class Keyboard(QtCore.QObject):
+    """Keyboard input device.
+
+    The keyboard device works by periodically sampling (with the rate
+    specified) whether or not the watched keys have been pressed since the last
+    sampling event. The output is a numpy array of shape ``(n_keys, 1)``, where
+    the numerical values are booleans indicating whether or not the
+    corresponding keys have been pressed.
+
+    Parameters
+    ----------
+    rate : int, optional
+        Sampling rate, in Hz.
+    keys : container of str, optional
+        Keys watch and use as input signals. The keys used here should not
+        conflict with the key used by the ``Experiment`` to start the next
+        task.
+
+    Notes
+    -----
+
+    There are a couple reasonable alternatives to the way the keyboard device
+    is currently implemented. One way to do it might be sampling the key states
+    at a given rate and producing segments of sampled key state data, much like
+    a regular data acquisition device. One issue is that actual key state
+    (whether the key is being physically pressed or not) doesn't seem to be
+    feasible to find out with Qt. You can hook into key press and key release
+    events, but these are subject to repeat delay and repeat rate.
+
+    Another possible keyboard device would be responsive to key press events
+    themselves rather than an input sampling event. While Qt enables
+    event-based keyboard handling, the method used here fits the input device
+    model, making it easily swappable with other input devices.
+    """
+
+    def __init__(self, rate=10, keys=None):
+        super(Keyboard, self).__init__()
+        self.rate = rate
+
+        if keys is None:
+            keys = list('wasd')
+        self.keys = keys
+
+        self._qkeys = [qt_key_map[k] for k in keys]
+
+        self._sleeper = _Sleeper(1.0/rate)
+        self._data = numpy.zeros((len(self.keys), 1))
+
+    def start(self):
+        """Start the keyboard input device."""
+        # install event filter to capture keyboard input events
+        get_qtapp().installEventFilter(self)
+
+    def read(self):
+        """Read which keys have just been pressed.
+
+        Returns
+        -------
+        data : ndarray, shape (n_keys, 1)
+            A boolean array with a 1 indicating the corresponding key has been
+            pressed and a 0 indicating it has not.
+        """
+        self._sleeper.sleep()
+        out = self._data.copy()
+        self._data *= 0
+        return out
+
+    def stop(self):
+        """Stop the keyboard input device.
+
+        You may need to stop the device in case you want to be able to use the
+        keys watched by the device for another purpose.
+        """
+        # remove event filter so captured keys propagate when daq isn't used
+        get_qtapp().removeEventFilter(self)
+
+    def reset(self):
+        self._sleeper.reset()
+
+    def eventFilter(self, obj, event):
+        evtype = event.type()
+        if evtype == QtCore.QEvent.KeyPress and event.key() in self._qkeys:
+            self._data[self._qkeys.index(event.key())] = 1
+            return True
+
+        return False
+
+
+class _Sleeper(object):
+
+    def __init__(self, read_time):
+        self.read_time = read_time
+        self.last_read_time = None
+
+    def sleep(self):
+        t = time.time()
+        if self.last_read_time is None:
+            time.sleep(self.read_time)
+        else:
+            try:
+                time.sleep(self.read_time - (t - self.last_read_time))
+            except ValueError:
+                # if we're not meeting real-time requirement, don't wait
+                pass
+
+        self._last_read_time = time.time()
+
+    def reset(self):
+        self.last_read_time = None
