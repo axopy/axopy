@@ -16,7 +16,7 @@ import numpy as np
 from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
 from axopy.stream import EmulatedDaq, Keyboard
-from axopy.pipeline import Pipeline, Windower, Filter
+from axopy.pipeline import Pipeline, CallablePipelineBlock, Windower
 
 
 def rainbow():
@@ -33,8 +33,14 @@ def keyboard():
 
 def keystick():
     dev = Keyboard(rate=20, keys=list('wasd'))
-    # pipeline with simple moving average filter
-    pipeline = Pipeline([Windower(20), Filter(np.ones(10)/10.)])
+    pipeline = Pipeline([
+        # window to average over
+        Windower(10),
+        # mean along rows
+        CallablePipelineBlock(lambda x: np.mean(x, axis=1, keepdims=True)),
+        # window to show in the oscilloscope
+        Windower(60)
+    ])
     run(dev, pipeline)
 
 
