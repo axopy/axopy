@@ -25,6 +25,8 @@ class Experiment(object):
         Any object that implements the device protocol.
     """
 
+    status_format = "subject: {subject}, config: {configuration}"
+
     def __init__(self, tasks, device=None, data_root='data'):
         if isinstance(tasks, dict):
             configs = list(tasks)
@@ -53,12 +55,15 @@ class Experiment(object):
         session_info_screen.finished.connect(self._setup_session)
         self.screen.set_container(session_info_screen)
 
+    @property
+    def status(self):
+        return self.status_format.format(**self.__dict__)
+
     def _setup_session(self, session):
         self.subject = session['subject']
         self.configuration = session['configuration']
 
-        self.screen.set_status(
-            "subject: {}, config: {}".format(self.subject, self.configuration))
+        self.screen.set_status(self.status)
 
         self.storage.subject_id = self.subject
 
