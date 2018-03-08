@@ -32,7 +32,9 @@ Graphical interface
 Data acquisition
     AxoPy establishes a fairly simple API for communicating with input
     hardware, so all that's usually needed is a bit of middleware to get going.
-    Check out pytrigno_ or pymcc_ to see what this is like.
+    Check out pytrigno_ or pymcc_ to see what this is like. A couple input
+    devices are built in (keyboard, noise generator), so examples run without
+    needing special hardware.
 Data storage
     Data is stored in a file structure with common file formats (CSV and HDF5)
     so you can a) start working with data as soon as an experiment session is

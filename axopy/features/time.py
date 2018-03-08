@@ -80,13 +80,12 @@ def mean_absolute_value(x, weights='mav'):
 
     References
     ----------
-    .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New
-       Strategy for Multifunction Myoelectric Control," IEEE Transactions on
-       Biomedical Engineering, vol. 40, no. 1, pp. 82-94, 1993.
-    .. [2] A. Phinyomark, P. Phukpattaranont, and C.
-       Limsakul, "Feature Reduction and Selection for EMG Signal
-       Classification," Expert Systems with Applications, vol. 39, no. 8, pp.
-       7420-7431, 2012.
+    .. [1] B. Hudgins, P. Parker, and R. N. Scott, "A New Strategy for
+       Multifunction Myoelectric Control," IEEE Transactions on Biomedical
+       Engineering, vol. 40, no. 1, pp. 82-94, 1993.
+    .. [2] A. Phinyomark, P. Phukpattaranont, and C.  Limsakul, "Feature
+       Reduction and Selection for EMG Signal Classification," Expert Systems
+       with Applications, vol. 39, no. 8, pp.  7420-7431, 2012.
     """
     x = ensure_2d(x)
     n = x.shape[1]
@@ -166,12 +165,13 @@ def zero_crossings(x, threshold=0):
     """
     x = ensure_2d(x)
 
-    # two conditions:
-    #   1. sign changes from one sample to the next
-    #   2. difference between adjacent samples bigger than threshold
+    # sum to count boolean values which indicate slope sign changes
     return np.sum(
+        # two conditions:
         np.logical_and(
+            # 1. sign changes from one sample to the next
             np.diff(np.signbit(x), axis=1),
+            # 2. difference between adjacent samples bigger than threshold
             np.absolute(np.diff(x, axis=1)) > threshold),
         axis=1)
 
@@ -206,15 +206,15 @@ def slope_sign_changes(x, threshold=0):
     """
     x = ensure_2d(x)
 
-    # two conditions:
-    #   1. sign of the diff changes from one pair of samples to the next
-    #   2. the max of two adjacent diffs is bigger than threshold
+    # sum to count boolean values which indicate slope sign changes
     return np.sum(
+        # two conditions need to be met
         np.logical_and(
+            # 1. sign of the diff changes from one pair of samples to the next
             np.diff(np.signbit(np.diff(x, axis=1)), axis=1),
+            # 2. the max of two adjacent diffs is bigger than threshold
             np.max(rolling_window(
-                np.absolute(
-                    np.diff(x, axis=1)), 2), axis=-1) > threshold),
+                np.absolute(np.diff(x, axis=1)), 2), axis=-1) > threshold),
         axis=1)
 
 
@@ -234,7 +234,7 @@ def root_mean_square(x):
     Returns
     -------
     y : array, shape (n_channels,)
-        SSC of each channel.
+        RMS of each channel.
     """
     x = ensure_2d(x)
     return np.sqrt(np.mean(np.square(x), axis=1))
@@ -253,7 +253,7 @@ def integrated_emg(x):
     Returns
     -------
     y : array, shape (n_channels,)
-        SSC of each channel.
+        IEMG of each channel.
     """
     x = ensure_2d(x)
     return np.sum(np.absolute(x), axis=1)
