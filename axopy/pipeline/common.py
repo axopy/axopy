@@ -3,10 +3,10 @@
 import numpy as np
 from scipy import signal
 
-from axopy.pipeline.core import PipelineBlock
+from axopy.pipeline import Block
 
 
-class Windower(PipelineBlock):
+class Windower(Block):
     """Windows incoming data to a specific length.
 
     Takes new input data and combines with past data to maintain a sliding
@@ -106,7 +106,7 @@ class Windower(PipelineBlock):
         self._out = np.zeros((n_channels, self.length))
 
 
-class Centerer(PipelineBlock):
+class Centerer(Block):
     """Centers data by subtracting out its mean.
 
     .. math:: \\tilde{x} = x - \\sum_{i=0}^{N-1} x[i]
@@ -128,7 +128,7 @@ class Centerer(PipelineBlock):
         return data - np.mean(data)
 
 
-class Filter(PipelineBlock):
+class Filter(Block):
     """Filters incoming data with a time domain filter.
 
     This filter implementation takes filter coefficients that are designed
@@ -235,7 +235,7 @@ class Filter(PipelineBlock):
         return out
 
 
-class FeatureExtractor(PipelineBlock):
+class FeatureExtractor(Block):
     """Computes multiple features from the input, concatenating the results.
 
     Each feature should be able to take in the same data and output a 1D array,
@@ -317,7 +317,7 @@ class FeatureExtractor(PipelineBlock):
         return self._output
 
 
-class Estimator(PipelineBlock):
+class Estimator(Block):
     """A pipeline block wrapper around scikit-learn's idea of an estimator.
 
     An estimator is an object that can be trained with some data (``fit``) and,
@@ -341,7 +341,7 @@ class Estimator(PipelineBlock):
         return self.estimator.predict(data)
 
 
-class Transformer(PipelineBlock):
+class Transformer(Block):
     """A pipeline block wrapper around scikit-learn's idea of a transformer.
 
     A transformer is trained with some data (``fit``) and, once trained, can
@@ -366,7 +366,7 @@ class Transformer(PipelineBlock):
         return self.transformer.transform(data)
 
 
-class Ensure2D(PipelineBlock):
+class Ensure2D(Block):
     """Transforms an array to ensure it has 2 dimensions.
 
     Input with shape ``(n,)`` can be made to have shape ``(n, 1)`` or

@@ -1,7 +1,7 @@
 """Base classes for pipelines and pipeline blocks."""
 
 
-class PipelineBlock(object):
+class Block(object):
     """Base class for all blocks.
 
     Notes
@@ -26,7 +26,7 @@ class PipelineBlock(object):
         """Process input data and produce a result.
 
         Subclasses must implement this method, otherwise it shouldn't really be
-        a ``PipelineBlock``.
+        a ``Block``.
         """
         raise NotImplementedError
 
@@ -53,11 +53,11 @@ class PipelineBlock(object):
         )
 
 
-class Pipeline(PipelineBlock):
+class Pipeline(Block):
     """Feedforward arrangement of blocks for processing data.
 
-    A :class:`Pipeline` contains a set of :class:`PipelineBlock` objects which
-    operate on data to produce a final output.
+    A :class:`Pipeline` contains a set of :class:`Block` objects which operate
+    on data to produce a final output.
 
     To create a pipeline, the following two rules are needed: blocks in a list
     processed in series, and blocks in a tuple are processed in parallel.
@@ -174,10 +174,10 @@ class PassthroughPipeline(Pipeline):
             return data, out
 
 
-class CallablePipelineBlock(PipelineBlock):
-    """A `PipelineBlock` that does not require persistent attributes.
+class CallableBlock(Block):
+    """A `Block` that does not require persistent attributes.
 
-    Many `PipelineBlock` implementations don't require attributes to update
+    Many `Block` implementations don't require attributes to update
     on successive calls to the `process` method, but instead are essentially a
     function that can be called repeatedly. This class is for conveniently
     creating such a block.
@@ -213,7 +213,7 @@ class CallablePipelineBlock(PipelineBlock):
                  hooks=None):
         if name is None:
             name = func.__name__
-        super(CallablePipelineBlock, self).__init__(name=name, hooks=hooks)
+        super(CallableBlock, self).__init__(name=name, hooks=hooks)
         self.func = func
         self.func_args = func_args if func_args is not None else []
         self.func_kwargs = func_kwargs if func_kwargs is not None else {}

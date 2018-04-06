@@ -39,33 +39,33 @@ def _threein(x, y, z):
     return (x * y) + z
 
 
-class _FBlock(pipeline.PipelineBlock):
+class _FBlock(pipeline.Block):
 
     def process(self, data):
         return _f(data)
 
 
-class _GBlock(pipeline.PipelineBlock):
+class _GBlock(pipeline.Block):
 
     def process(self, data):
         return _g(data)
 
 
-class _TwoIn(pipeline.PipelineBlock):
+class _TwoIn(pipeline.Block):
 
     def process(self, data):
         a, b = data
         return _twoin(a, b)
 
 
-class _ThreeIn(pipeline.PipelineBlock):
+class _ThreeIn(pipeline.Block):
 
     def process(self, data):
         a, b, c = data
         return _threein(a, b, c)
 
 
-class _Stateful(pipeline.PipelineBlock):
+class _Stateful(pipeline.Block):
 
     def __init__(self, initial):
         super(_Stateful, self).__init__()
@@ -80,13 +80,13 @@ class _Stateful(pipeline.PipelineBlock):
         return self.data
 
 
-class _NamedBlock(pipeline.PipelineBlock):
+class _NamedBlock(pipeline.Block):
 
     def __init__(self, name=None):
         super(_NamedBlock, self).__init__(name=name)
 
 
-class _HookEnabledBlock(pipeline.PipelineBlock):
+class _HookEnabledBlock(pipeline.Block):
 
     def __init__(self, hooks=None):
         super(_HookEnabledBlock, self).__init__(hooks=hooks)
@@ -219,7 +219,7 @@ def test_clear():
 
 def test_clear_pass():
     # make sure clear passes
-    a = pipeline.PipelineBlock()
+    a = pipeline.Block()
     a.clear()
 
     f = _FBlock()
@@ -237,20 +237,20 @@ def test_clear_pipeline():
 
 
 def test_block_repr():
-    b = pipeline.PipelineBlock()
-    assert repr(b) == 'axopy.pipeline.core.PipelineBlock()'
+    b = pipeline.Block()
+    assert repr(b) == 'axopy.pipeline.core.Block()'
 
 
 def test_process_unimplemented():
     # unimplemented process method should raise error
-    a = pipeline.PipelineBlock()
+    a = pipeline.Block()
     with pytest.raises(NotImplementedError):
         a.process(0)
 
-    class BadPipelineBlock(pipeline.PipelineBlock):
+    class BadBlock(pipeline.Block):
         pass
 
-    a = BadPipelineBlock()
+    a = BadBlock()
     with pytest.raises(NotImplementedError):
         a.process(0)
 
@@ -324,17 +324,17 @@ def test_named_subpipeline():
 def test_callable_block():
     # test block creation from function
     a = _FBlock()
-    b = pipeline.CallablePipelineBlock(_g)
+    b = pipeline.CallableBlock(_g)
     p = pipeline.Pipeline([a, b])
     result = p.process(data)
     assert result == _g(_f(data))
 
     # lambdas work too
-    a = pipeline.CallablePipelineBlock(lambda x: x + 2)
+    a = pipeline.CallableBlock(lambda x: x + 2)
     assert a.process(3) == 5
 
     # check that naming works -- use name of function, not the class
-    a = pipeline.CallablePipelineBlock(_g)
+    a = pipeline.CallableBlock(_g)
     assert a.name == '_g'
 
 
@@ -343,7 +343,7 @@ def test_callable_block_with_args():
     def func(data, param, kwarg=None):
         return param, kwarg
 
-    a = pipeline.CallablePipelineBlock(
+    a = pipeline.CallableBlock(
         func, func_args=(42,), func_kwargs={'kwarg': 10})
     assert a.process(3) == (42, 10)
 

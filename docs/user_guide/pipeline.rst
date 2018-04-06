@@ -109,8 +109,8 @@ Connecting Blocks
 -----------------
 
 The :mod:`~.core` module is a small infrastructure for processing data in
-a pipeline style. You create or use the built-in :class:`~.PipelineBlock`
-objects, then connect them up with an efficient (but still readable) syntax
+a pipeline style. You create or use the built-in :class:`~.Block` objects, then
+connect them up with an efficient (but still readable) syntax
 with a :class:`~.Pipeline`.
 
 The syntax for expressing pipeline structure is based on lists and tuples.
@@ -179,11 +179,11 @@ some processed form of the input data::
 
     import axopy.pipeline as pipeline
 
-    class FooBlock(pipeline.PipelineBlock):
+    class FooBlock(pipeline.Block):
         def process(self, data):
             return data + 1
 
-    class BarBlock(pipeline.PipelineBlock):
+    class BarBlock(pipeline.Block):
         def process(self, data):
             return 2 * data
 
@@ -214,22 +214,21 @@ let's say you have a simple pipeline::
         ─a─b─
 
 You run some data through the pipeline to get the result from block ``b``, but
-you also want to run some function with the output of ``a``. ``PipelineBlock``
-takes a ``hooks`` keword argument which takes a list of functions to execute
-after the block's ``process`` method finishes. To use hooks, make sure your
-custom block calls the parent ``PipelineBlock`` ``__init__`` method. For
-example::
+you also want to run some function with the output of ``a``. ``Block`` takes
+a ``hooks`` keword argument which takes a list of functions to execute after
+the block's ``process`` method finishes. To use hooks, make sure your custom
+block calls the parent ``Block`` ``__init__`` method. For example::
 
     import axopy.pipeline as pipeline
 
-    class FooBlock(pipeline.PipelineBlock):
+    class FooBlock(pipeline.Block):
         def __init__(self, hooks=None):
             super(FooBlock, self).__init__(hooks=hooks)
 
         def process(self, data):
             return data + 1
 
-    class BarBlock(pipeline.PipelineBlock):
+    class BarBlock(pipeline.Block):
         def process(self, data):
             return 2 * data
 
