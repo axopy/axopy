@@ -6,37 +6,16 @@ from axopy.storage import (Storage, TaskWriter, ArrayWriter, TrialWriter,
                            read_hdf5, write_hdf5, storage_to_zip)
 
 
-@pytest.fixture(scope='module')
-def storage_filestruct(tmpdir_factory):
-    """Generates the following data filestructure::
-
-        data/
-            p0/
-                task1/
-                task2/
-            p1/
-                task1/
-            p2/
-
-    """
-    root = str(tmpdir_factory.mktemp('data'))
-
-    folders = {'p0': ['task1', 'task2'], 'p1': ['task1'], 'p2': []}
-
-    for subj_id, tasknames in folders.items():
-        os.makedirs(os.path.join(root, subj_id))
-        for name in tasknames:
-            os.makedirs(os.path.join(root, subj_id, name))
-
-    return root, folders
+@pytest.fixture(scope='function')
+def tmpdirpath(tmpdir):
+    """Convenience fixture to get the path to a temporary directory."""
+    return str(tmpdir.dirpath())
 
 
-def test_storage(tmpdir):
+def test_storage(tmpdirpath):
     """Integration test for regular storage usage."""
-    root = str(tmpdir.dirpath())
-
     # usually done by task manager
-    storage = Storage(root=root)
+    storage = Storage(root=tmpdirpath)
     storage.subject_id = 'p0'
 
     # task 1 implementation
@@ -54,9 +33,24 @@ def test_storage(tmpdir):
     writer.write([1, False])
 
 
-def test_storage_directories(storage_filestruct):
+def test_storage_directories(tmpdir_factory):
     """Test that Storage can find and create the right directories."""
-    root, folders = storage_filestruct
+    # create a file structure:
+    #    data/
+    #        p0/
+    #            task1/
+    #            task2/
+    #        p1/
+    #            task1/
+    #        p2/
+    root = str(tmpdir_factory.mktemp('data'))
+
+    folders = {'p0': ['task1', 'task2'], 'p1': ['task1'], 'p2': []}
+
+    for subj_id, tasknames in folders.items():
+        os.makedirs(os.path.join(root, subj_id))
+        for name in tasknames:
+            os.makedirs(os.path.join(root, subj_id, name))
 
     storage = Storage(root)
 
@@ -87,15 +81,14 @@ def test_storage_directories(storage_filestruct):
         storage.require_task('task2')
 
 
-def test_task_writer(tmpdir):
-    root = str(tmpdir.dirpath())
-
+def test_task_writer(tmpdirpath):
     # simple writer with a couple columns and no arrays
+    print(tmpdirpath)
     cols = ['block', 'trial', 'attr']
     data = [[0, 0, 0.5], [0, 1, 0.2]]
 
     # fill in data for task1
-    task_root = os.path.join(root, 'task1')
+    task_root = os.path.join(tmpdirpath, 'task1')
     os.makedirs(task_root)
     writer = TaskWriter(task_root, cols)
 
@@ -109,7 +102,7 @@ def test_task_writer(tmpdir):
     cols = ['trial', 'attr']
     trials = [[0, 'a'], [1, 'b']]
 
-    task_root = os.path.join(root, 'task2')
+    task_root = os.path.join(tmpdirpath, 'task2')
     os.makedirs(task_root)
     writer = TaskWriter(task_root, cols, array_names=['array1', 'array2'])
 
@@ -128,21 +121,21 @@ def test_task_writer(tmpdir):
         numpy.array([0.3, 0.4, 0.5, 0.6, 0.7, 0.8]))
 
 
-def test_array_writer(tmpdir):
+def test_array_writer(tmpdirpath):
     fn = 'arrays.hdf5'
-    root = str(tmpdir.dirpath())
-    fp = os.path.join(root, fn)
+    fp = os.path.join(tmpdirpath, fn)
+    print(tmpdirpath)
 
     x_expected = numpy.array([[0, 1, 2], [3, 4, 5]])
 
     # horizontal stacking of a 1-D array
     writer = ArrayWriter(fp)
 
-    assert fn not in os.listdir(root)
+    assert fn not in os.listdir(tmpdirpath)
     writer.stack(x_expected[0])
     writer.stack(x_expected[1])
     writer.write('0')
-    assert fn in os.listdir(root)
+    assert fn in os.listdir(tmpdirpath)
     data = read_hdf5(fp, dataset='0')
     numpy.testing.assert_array_equal(x_expected.reshape(1, -1).squeeze(), data)
 
@@ -156,10 +149,9 @@ def test_array_writer(tmpdir):
     numpy.testing.assert_array_equal(x_expected, data)
 
 
-def test_trial_writer(tmpdir):
+def test_trial_writer(tmpdirpath):
     fn = 'trials.csv'
-    root = str(tmpdir.dirpath())
-    fp = os.path.join(root, fn)
+    fp = os.path.join(tmpdirpath, fn)
 
     cols = ['a', 'b', 'c']
 
@@ -182,8 +174,8 @@ def test_trial_writer(tmpdir):
     assert writer.data.equals(pandas.DataFrame(data, columns=cols, index=[0]))
 
 
-def test_hdf5_read_write(tmpdir):
-    fp = os.path.join(str(tmpdir.dirpath()), 'file.hdf5')
+def test_hdf5_read_write(tmpdirpath):
+    fp = os.path.join(tmpdirpath, 'file.hdf5')
 
     x_expected = numpy.array([[0.1, 2.1, 4.1], [2.1, 4.2, 2.1]])
 
@@ -196,19 +188,19 @@ def test_hdf5_read_write(tmpdir):
     numpy.testing.assert_array_equal(x_expected, x)
 
 
-def test_storage_to_zip(tmpdir):
+def test_storage_to_zip(tmpdirpath):
     # make a dataset root under a subfolder
-    p = os.path.join(str(tmpdir.dirpath()), 'datasets', 'dataset01')
+    p = os.path.join(tmpdirpath, 'datasets', 'dataset01')
     os.makedirs(p)
     with open(os.path.join(p, 'file.txt'), 'w') as f:
         f.write("hello")
 
-    outfile = os.path.join(str(tmpdir.dirpath()), 'datasets', 'dataset01.zip')
+    outfile = os.path.join(tmpdirpath, 'datasets', 'dataset01.zip')
     zipfile = storage_to_zip(p)
     assert zipfile == outfile
     assert os.path.isfile(outfile)
 
-    outfile = os.path.join(str(tmpdir.dirpath()), 'dataset01_relocated.zip')
+    outfile = os.path.join(tmpdirpath, 'dataset01_relocated.zip')
     zipfile = storage_to_zip(p, outfile=outfile)
     assert zipfile == outfile
     assert os.path.isfile(outfile)
