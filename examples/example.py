@@ -1,19 +1,40 @@
-import copper
-import exgfeatures as exg
+"""Adaptive cursor control mapping example.
+
+This example contains a 2D cursor-to-target task which processes input signals
+from a data acquisition device (e.g. from EMG hardware) and adaptively learns a
+linear mapping from input magnitude to cursor position via the recursive least
+squares (RLS) algorithm.
+
+Once the cursor interface is shown, press the "Enter" key to begin. The target
+will move to some location on the screen and the subject should attempt to move
+the cursor toward the target. As input data is collected, the recursive least
+squares algorithm updates the weights of a linear mapping from input amplitude
+to cursor position. Once this training procedure is finished, the target
+changes color and the subject can attempt to hit the targets with the mapping
+now fixed.
+"""
+
+# TODO split this into two tasks (a "training" task and a "practice" task).
+# This would involve storing the RLS weights and loading them for the practice
+# task. Probably a good idea to write a simple cursor interface class to share
+# common code between the two tasks.
+
 import numpy
 import random
 from scipy.signal import butter
 
+from axopy import pipeline
+from axopy.features import mean_absolute_value
 from axopy.experiment import Experiment
 from axopy import util
 from axopy.messaging import transmitter, receiver
-from axopy.task import Task, Oscilloscope, SubjectSelection
-from axopy.timing import IncrementalTimer
+from axopy.task import Task, Oscilloscope
+from axopy.timing import Counter
 from axopy.stream import InputStream
 from axopy.gui.canvas import Canvas, Circle, Cross
 
 
-class RLSMapping(copper.PipelineBlock):
+class RLSMapping(pipeline.Block):
     """Linear mapping of EMG amplitude to position updated by RLS.
 
     Parameters
@@ -36,6 +57,7 @@ class RLSMapping(copper.PipelineBlock):
 
     @classmethod
     def from_weights(cls, weights):
+        """Construct an RLSMapping static weights."""
         obj = cls(1, 1, 1)
         obj.weights = weights
         return obj
@@ -67,12 +89,10 @@ class CursorFollowing(Task):
             for i in range(4):
                 p = 80
                 for x, y in [(p, 0), (0, p), (0, 0), (-p, 0), (0, -p)]:
-                    trials.append(
-                        {
-                            'pos': numpy.array([x, y]),
-                            'training': training
-                        }
-                    )
+                    trials.append({
+                        'pos': numpy.array([x, y]),
+                        'training': training
+                    })
             if training:
                 random.shuffle(trials)
         design = [trials]
@@ -95,7 +115,7 @@ class CursorFollowing(Task):
         self.input_stream.updated.connect(self.update)
         self.input_stream.finished.connect(self.stopped)
 
-        self.timer = IncrementalTimer(50)
+        self.timer = Counter(50)
         self.timer.timeout.connect(self.finish_trial)
         self.update.connect(self.timer.increment)
 
@@ -148,6 +168,8 @@ class CursorFollowing(Task):
     def key_press(self, key):
         if key == util.key_escape:
             self.finish()
+        else:
+            super().key_press(key)
 
 
 if __name__ == '__main__':
@@ -155,25 +177,23 @@ if __name__ == '__main__':
     # dev = TrignoEMG((0, 3), 200, host='192.168.1.114', units='normalized')
     from axopy.stream import EmulatedDaq
     dev = EmulatedDaq(rate=2000, num_channels=4, read_size=200)
-    indev = InputStream(dev)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')
-    preproc_pipeline = copper.Pipeline([
-        copper.Windower(400),
-        copper.Centerer(),
-        copper.Filter(b, a=a, overlap=200),
+    preproc_pipeline = pipeline.Pipeline([
+        pipeline.Windower(400),
+        pipeline.Centerer(),
+        pipeline.Filter(b, a=a, overlap=200),
     ])
-    main_pipeline = copper.Pipeline([
+    main_pipeline = pipeline.Pipeline([
         preproc_pipeline,
-        copper.CallablePipelineBlock(exg.mean_absolute_value),
+        pipeline.Callable(mean_absolute_value),
         RLSMapping(4, 2, 0.99)
     ])
 
     Experiment(
         [
-            SubjectSelection(extra_params=['hand']),
             Oscilloscope(preproc_pipeline),
             CursorFollowing(main_pipeline)
         ],
-        device=indev
+        device=dev
     ).run()
