@@ -1,14 +1,13 @@
-from axopy.pipeline.core import (Block, Pipeline, PassthroughPipeline,
-                                 CallableBlock)
-from axopy.pipeline.common import (Windower, Centerer, Filter,
-                                   FeatureExtractor, Estimator, Transformer,
-                                   Ensure2D)
+from axopy.pipeline.core import Block, Pipeline
+from axopy.pipeline.common import (Passthrough, Callable, Windower, Centerer,
+                                   Filter, FeatureExtractor, Estimator,
+                                   Transformer, Ensure2D)
 from axopy.pipeline.sources import segment, segment_indices
 
 __all__ = ['Block',
            'Pipeline',
-           'PassthroughPipeline',
-           'CallableBlock',
+           'Passthrough',
+           'Callable',
            'Windower',
            'Centerer',
            'Filter',

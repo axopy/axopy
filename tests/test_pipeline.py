@@ -187,7 +187,7 @@ def test_passthrough():
     """
     b = _FBlock()
     c = _GBlock()
-    m = pipeline.PassthroughPipeline((b, c))
+    m = pipeline.Passthrough((b, c))
     a = _FBlock()
     d = _ThreeIn()
     p = pipeline.Pipeline([a, m, d])
@@ -201,7 +201,7 @@ def test_passthrough_noexpand():
     # test passthrough block without expanding output
     a = _FBlock()
     b = _GBlock()
-    c = pipeline.PassthroughPipeline((a, b), expand_output=False)
+    c = pipeline.Passthrough((a, b), expand_output=False)
     assert c.process(data) == (data, [_f(data), _g(data)])
 
 
@@ -310,7 +310,7 @@ def test_named_subpipeline():
     b = _NamedBlock(name='sub_b')
     c = _NamedBlock(name='c')
 
-    passthrough = pipeline.PassthroughPipeline([a, b], name='passthrough')
+    passthrough = pipeline.Passthrough([a, b], name='passthrough')
     p = pipeline.Pipeline([passthrough, c])
 
     names = list(p.named_blocks)
@@ -324,17 +324,17 @@ def test_named_subpipeline():
 def test_callable_block():
     # test block creation from function
     a = _FBlock()
-    b = pipeline.CallableBlock(_g)
+    b = pipeline.Callable(_g)
     p = pipeline.Pipeline([a, b])
     result = p.process(data)
     assert result == _g(_f(data))
 
     # lambdas work too
-    a = pipeline.CallableBlock(lambda x: x + 2)
+    a = pipeline.Callable(lambda x: x + 2)
     assert a.process(3) == 5
 
     # check that naming works -- use name of function, not the class
-    a = pipeline.CallableBlock(_g)
+    a = pipeline.Callable(_g)
     assert a.name == '_g'
 
 
@@ -343,8 +343,7 @@ def test_callable_block_with_args():
     def func(data, param, kwarg=None):
         return param, kwarg
 
-    a = pipeline.CallableBlock(
-        func, func_args=(42,), func_kwargs={'kwarg': 10})
+    a = pipeline.Callable(func, func_args=(42,), func_kwargs={'kwarg': 10})
     assert a.process(3) == (42, 10)
 
 
