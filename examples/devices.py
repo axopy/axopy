@@ -6,6 +6,8 @@ keyboard
     Basic use of a Keyboard to show roughly-timed keyboard inputs.
 keystick
     Neat use of a filter to get joystick-like inputs from a keyboard.
+mouse
+    Basic use of a Mouse for velocity input.
 """
 
 # TODO use the above as docstrings for each function and generate the help
@@ -15,8 +17,8 @@ import argparse
 import numpy as np
 from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
-from axopy.stream import EmulatedDaq, Keyboard
-from axopy.pipeline import Pipeline, CallableBlock, Windower
+from axopy.stream import EmulatedDaq, Keyboard, Mouse
+from axopy.pipeline import Pipeline, Callable, Windower, Filter
 
 
 def rainbow():
@@ -37,9 +39,20 @@ def keystick():
         # window to average over
         Windower(10),
         # mean along rows
-        CallableBlock(lambda x: np.mean(x, axis=1, keepdims=True)),
+        Callable(lambda x: np.mean(x, axis=1, keepdims=True)),
         # window to show in the oscilloscope
         Windower(60)
+    ])
+    run(dev, pipeline)
+
+
+def mouse():
+    dev = Mouse(rate=20)
+    pipeline = Pipeline([
+        # just for scaling the input since it's in pixels
+        Callable(lambda x: x/100),
+        # window to show in the oscilloscope
+        Windower(40)
     ])
     run(dev, pipeline)
 
@@ -53,12 +66,11 @@ if __name__ == '__main__':
     functions = {
         'rainbow': rainbow,
         'keyboard': keyboard,
-        'keystick': keystick
+        'keystick': keystick,
+        'mouse': mouse,
     }
 
-    parser = argparse.ArgumentParser(
-        __doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(usage=__doc__)
     parser.add_argument(
         'function',
         help='Function in the example script to run.')

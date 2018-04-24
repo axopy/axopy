@@ -2,22 +2,22 @@
 
 import time
 import numpy
-from axopy.messaging import transmitter
 from PyQt5 import QtCore
+from axopy.messaging import transmitter
 from axopy.gui.main import get_qtapp, qt_key_map
+from axopy.pipeline import Filter
 
 
 class InputStream(QtCore.QThread):
     """Asynchronous interface to an input device.
 
-    Wraps an input device
-    Runs a persistent while loop wherein the InputStream device is repeatedly
-    polled for data. When the data becomes available, it is emitted and the
-    loop continues.
+    Runs a persistent while loop wherein the device is repeatedly polled for
+    data. When the data becomes available, it is emitted and the loop
+    continues.
 
     Parameters
     ----------
-    device : OutputDevice
+    device : InputDevice
         Any object implementing the OutputDevice interface. See EmulatedDaq for
         an example.
 
@@ -169,13 +169,12 @@ class Keyboard(QtCore.QObject):
     rate : int, optional
         Sampling rate, in Hz.
     keys : container of str, optional
-        Keys watch and use as input signals. The keys used here should not
+        Keys to watch and use as input signals. The keys used here should not
         conflict with the key used by the ``Experiment`` to start the next
         task.
 
     Notes
     -----
-
     There are a couple reasonable alternatives to the way the keyboard device
     is currently implemented. One way to do it might be sampling the key states
     at a given rate and producing segments of sampled key state data, much like
@@ -232,6 +231,7 @@ class Keyboard(QtCore.QObject):
         get_qtapp().removeEventFilter(self)
 
     def reset(self):
+        """Reset the input device."""
         self._sleeper.reset()
 
     def eventFilter(self, obj, event):
@@ -240,6 +240,78 @@ class Keyboard(QtCore.QObject):
             self._data[self._qkeys.index(event.key())] = 1
             return True
 
+        return False
+
+
+class Mouse(QtCore.QObject):
+    """Mouse input device.
+
+    The mouse device works by periodically sampling (with the rate specified)
+    the mouse position within the AxoPy experiment window. The output is in the
+    form of a numpy array of shape ``(2, 1)``, representing either the change
+    in position (default) or the absolute position in the window.
+
+    Parameters
+    ----------
+    rate : int, optional
+        Sampling rate, in Hz.
+    position : bool, optional
+        Whether or not to return the mouse's position (instead of the position
+        difference from the prevoius sample).
+
+    Notes
+    -----
+    In Qt's coordinate system, the positive y direction is *downward*. Here,
+    this is inverted as a convenience (upward movement of the mouse produces a
+    positive "velocity").
+
+    Mouse events are intercepted here but they are not *consumed*, meaning you
+    can still use the mouse to manipulate widgets in the experiment window.
+    """
+
+    def __init__(self, rate=10, position=False):
+        super(Mouse, self).__init__()
+        self.rate = rate
+        self._sleeper = _Sleeper(1.0/rate)
+
+        if position:
+            b = 1
+        else:
+            b = (1, -1)
+        self._filter = Filter(b)
+
+        self.reset()
+
+    def start(self):
+        """Start sampling mouse movements."""
+        get_qtapp().installEventFilter(self)
+
+    def read(self):
+        """Read the last-updated mouse position.
+
+        Returns
+        -------
+        data : ndarray, shape (2, 1)
+            The mouse "velocity" or position (x, y).
+        """
+        self._sleeper.sleep()
+        return self._filter.process(self._data.copy())
+
+    def stop(self):
+        """Stop sampling mouse movements."""
+        get_qtapp().removeEventFilter(self)
+
+    def reset(self):
+        """Clear the input device."""
+        self._data = numpy.zeros((2, 1), dtype=float)
+        self._filter.clear()
+        self._sleeper.reset()
+
+    def eventFilter(self, obj, event):
+        evtype = event.type()
+        if evtype == QtCore.QEvent.MouseMove:
+            self._data[0] = event.x()
+            self._data[1] = -event.y()
         return False
 
 
