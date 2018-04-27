@@ -157,6 +157,7 @@ class Task(object):
         block = self.iter.next_block()
         if block is None:
             self.finish()
+            self.finished()
             return
 
         self.block = block
@@ -203,12 +204,23 @@ class Task(object):
         """
         self.next_block()
 
-    @transmitter()
     def finish(self):
+        """Clean up at the end of the task.
+
+        Override if you need to clean up once the task is completely finished.
+        This is a good time to disconnect transmitters. By default, nothing is
+        done.
+        """
+        pass
+
+    @transmitter()
+    def finished(self):
         """Signal that the last trial of the last block has run.
 
-        This method simply transmits an event. Override to do cleanup if
-        needed, but make sure to keep it as a transmitter.
+        This method simply transmits an event, primarily for the
+        :class:`axopy.experiment.Experiment` to know when the task has finished
+        so it can run the next one. You shouldn't need to override or call this
+        method.
         """
         return
 

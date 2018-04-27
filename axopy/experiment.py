@@ -79,7 +79,7 @@ class Experiment(object):
         self.receive_keys = False
 
         # wait for task to finish
-        self.current_task.finish.connect(self.task_finished)
+        self.current_task.finished.connect(self.task_finished)
         # forward key presses to the task
         self.key_pressed.connect(self.current_task.key_press)
 
@@ -93,7 +93,7 @@ class Experiment(object):
 
     def task_finished(self):
         if self.current_task is not None:
-            self.current_task.finish.disconnect(self.task_finished)
+            self.current_task.finished.disconnect(self.task_finished)
             self.key_pressed.disconnect(self.current_task.key_press)
 
         try:
