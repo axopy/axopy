@@ -9,14 +9,14 @@ class Canvas(QtWidgets.QGraphicsView):
     with a gray border.
     """
 
-    rect = (-100, -100, 200, 200)  # x, y, w, h
+    scaler = 100
     border_width = 1
 
     default_border_color = '#444444'
     default_bg_color = '#dddddd'
 
     def __init__(self, draw_border=True, bg_color=None, border_color=None,
-                 parent=None):
+                 parent=None, invert_x=False, invert_y=False):
         super().__init__(parent=parent)
 
         if bg_color is None:
@@ -27,13 +27,18 @@ class Canvas(QtWidgets.QGraphicsView):
             border_color = self.default_border_color
         self.border_color = border_color
 
+        self.invert_x = invert_x
+        self.invert_y = invert_y
+
         self._init_scene()
         if draw_border:
             self._init_border()
 
     def _init_scene(self):
         scene = QtWidgets.QGraphicsScene()
-        scene.setSceneRect(*self.rect)
+        # x, y, width, height
+        scene.setSceneRect(-self.scaler, -self.scaler,
+                           self.scaler*2, self.scaler*2)
 
         self.setScene(scene)
         self.setRenderHint(QtGui.QPainter.Antialiasing)
@@ -58,6 +63,32 @@ class Canvas(QtWidgets.QGraphicsView):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.fitInView(self.sceneRect(), QtCore.Qt.KeepAspectRatio)
+
+    def canvas_x(self, x):
+        cx = self.scaler * x
+        if self.invert_x:
+            cx *= -1
+        return cx
+
+    def canvas_y(self, y):
+        # negative here because Qt coords are positive down
+        cy = -self.scaler * y
+        if self.invert_y:
+            cy *= -1
+        return cy
+
+    def norm_x(self, x):
+        nx = x / float(self.scaler)
+        if self.invert_x:
+            nx *= -1
+        return nx
+
+    def norm_y(self, y):
+        # negative here because Qt coords are positive down
+        ny = -y / float(self.scaler)
+        if self.invert_y:
+            ny *= -1
+        return ny
 
 
 class GraphicsItemWrapper(object):
