@@ -69,6 +69,6 @@ def test_base_task(simple_design):
             self.finish_received = True
 
     r = recv()
-    task.finish.connect(r.finish)
+    task.finished.connect(r.finish)
     task.next_block()
     assert r.finish_received
