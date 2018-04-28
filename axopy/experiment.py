@@ -5,7 +5,7 @@ from axopy.storage import Storage
 from axopy.stream import InputStream
 from axopy.messaging import transmitter
 from axopy.gui.main import MainWindow, SessionInfo
-from axopy.gui.canvas import Canvas
+from axopy.gui.canvas import Canvas, Text
 
 
 class Experiment(object):
@@ -48,7 +48,7 @@ class Experiment(object):
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
-        self.confirm_screen.scene().addText("Ready")
+        self.confirm_screen.add_item(Text("Ready"))
 
         # initial screen to enter subject ID
         session_info_screen = SessionInfo(configs)

@@ -9,8 +9,8 @@ class Canvas(QtWidgets.QGraphicsView):
     with a gray border.
     """
 
-    scaler = 100
-    border_width = 1
+    scaler = 1
+    border_width = 0.01
 
     default_border_color = '#444444'
     default_bg_color = '#dddddd'
@@ -39,10 +39,16 @@ class Canvas(QtWidgets.QGraphicsView):
         # x, y, width, height
         scene.setSceneRect(-self.scaler, -self.scaler,
                            self.scaler*2, self.scaler*2)
-
         self.setScene(scene)
-        self.setRenderHint(QtGui.QPainter.Antialiasing)
 
+        if self.invert_x:
+            self.scale(-1, 1)
+
+        # Qt is positive downward, so invert logic for y inversion
+        if not self.invert_y:
+            self.scale(1, -1)
+
+        self.setRenderHint(QtGui.QPainter.Antialiasing)
         self.setBackgroundBrush(QtGui.QColor(self.bg_color))
 
     def _init_border(self):
@@ -61,46 +67,13 @@ class Canvas(QtWidgets.QGraphicsView):
         self.scene().addItem(item)
 
     def resizeEvent(self, event):
+        # override resize event to keep the scene rect intact (everything
+        # scales with the window changing size, aspect ratio is preserved)
         super().resizeEvent(event)
         self.fitInView(self.sceneRect(), QtCore.Qt.KeepAspectRatio)
 
-    def canvas_x(self, x):
-        cx = self.scaler * x
-        if self.invert_x:
-            cx *= -1
-        return cx
 
-    def canvas_y(self, y):
-        # negative here because Qt coords are positive down
-        cy = -self.scaler * y
-        if self.invert_y:
-            cy *= -1
-        return cy
-
-    def norm_x(self, x):
-        nx = x / float(self.scaler)
-        if self.invert_x:
-            nx *= -1
-        return nx
-
-    def norm_y(self, y):
-        # negative here because Qt coords are positive down
-        ny = -y / float(self.scaler)
-        if self.invert_y:
-            ny *= -1
-        return ny
-
-
-class GraphicsItemWrapper(object):
-
-    def move_to(self, x, y):
-        self.setPos(x, y)
-
-    def move_by(self, dx, dy):
-        self.moveBy(dx, dy)
-
-
-class Circle(QtWidgets.QGraphicsEllipseItem, GraphicsItemWrapper):
+class Circle(QtWidgets.QGraphicsEllipseItem):
 
     def __init__(self, size, color='#333333'):
         self.size = size
@@ -113,29 +86,55 @@ class Circle(QtWidgets.QGraphicsEllipseItem, GraphicsItemWrapper):
         self.setBrush(QtGui.QColor(color))
 
 
-class Cross(QtWidgets.QGraphicsItemGroup, GraphicsItemWrapper):
+class Cross(QtWidgets.QGraphicsItemGroup):
 
-    default_size = 5
+    default_size = 0.05
+    default_linewidth = 0.01
 
-    def __init__(self, size=None, color='#333333'):
+    def __init__(self, size=None, linewidth=None, color='#333333'):
         super().__init__()
         if size is None:
             size = self.default_size
         self.size = size
 
+        if linweidth is None:
+            linewidth = self.default_linewidth
+        self.linewidth = linewidth
+
         # horizontal line
-        self.addToGroup(Line(-size/2, 0, size/2, 0))
+        self.addToGroup(Line(-size/2, 0, size/2, 0, width=self.linewidth))
         # vertical line
-        self.addToGroup(Line(0, -size/2, 0, size/2))
+        self.addToGroup(Line(0, -size/2, 0, size/2, width=self.linewidth))
 
 
 class Line(QtWidgets.QGraphicsLineItem):
 
-    def __init__(self, x1, y1, x2, y2, color='#333333'):
+    default_width = 0.01
+
+    def __init__(self, x1, y1, x2, y2, width=None, color='#333333'):
         super().__init__(x1, y1, x2, y2)
-        self.width = 1
+        if width is None:
+            width = self.default_width
+        self.width = width
 
         pen = QtGui.QPen(QtGui.QBrush(QtGui.QColor(color)),
                          self.width,
                          cap=QtCore.Qt.FlatCap)
         self.setPen(pen)
+
+
+class Text(QtWidgets.QGraphicsSimpleTextItem):
+
+    def __init__(self, text, color='#333333'):
+        super(Text, self).__init__(text)
+        self.setBrush(QtGui.QColor(color))
+
+        # invert because Canvas is inverted
+        self.scale(0.01, -0.01)
+
+        self._center()
+
+    def _center(self):
+        scene_bounds = self.sceneBoundingRect()
+        self.setX(-scene_bounds.width()/2)
+        self.setY(scene_bounds.height()/2)
