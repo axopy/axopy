@@ -97,7 +97,7 @@ class Cross(QtWidgets.QGraphicsItemGroup):
             size = self.default_size
         self.size = size
 
-        if linweidth is None:
+        if linewidth is None:
             linewidth = self.default_linewidth
         self.linewidth = linewidth
 
