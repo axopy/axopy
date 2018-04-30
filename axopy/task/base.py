@@ -116,6 +116,7 @@ class Task(object):
         transmitter.connect(receiver)
 
     def disconnect(self, transmitter, receiver):
+        """Disconnect a transmitter from a receiver."""
         name = _connection_name(transmitter, receiver)
         try:
             del self._connections[name]
