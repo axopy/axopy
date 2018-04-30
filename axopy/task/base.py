@@ -88,6 +88,8 @@ class Task(object):
 
     Attributes
     ----------
+    trial : dict
+        Dictionary containing the current trial's attributes.
     advance_block_key : str
         Key for the user to press in order to advance to the next block. Can
         set to ``None`` to disable the feature (next block starts immediately
@@ -96,8 +98,37 @@ class Task(object):
 
     advance_block_key = util.key_return
 
+    def __init__(self):
+        self._connections = {}
+
     def design(self, trials):
         self.iter = _TaskIter(trials)
+
+    def connect(self, transmitter, receiver):
+        """Connect a transmitter to a receiver.
+
+        This method helps the task keep track of connections so that all of the
+        manually specified connections can be torn down by the
+        :class:`axopy.experiment.Experiment`.
+        """
+        name = _connection_name(transmitter, receiver)
+        self._connections[name] = (transmitter, receiver)
+        transmitter.connect(receiver)
+
+    def disconnect(self, transmitter, receiver):
+        name = _connection_name(transmitter, receiver)
+        try:
+            del self._connections[name]
+            transmitter.disconnect(receiver)
+        except KeyError:
+            # tx/rx pair already removed/disconnected
+            pass
+
+    def disconnect_all(self):
+        """Disconnect all of the task's manually-created connections."""
+        for name, (tx, rx) in self._connections.items():
+            tx.disconnect(rx)
+        self._connections.clear()
 
     def prepare_view(self, view):
         """Initialize graphical elements and messaging connections.
@@ -238,3 +269,7 @@ class Task(object):
                 key == self.advance_block_key:
             self._awaiting_key = False
             self.next_trial()
+
+
+def _connection_name(tx, rx):
+    return str(tx) + str(rx)

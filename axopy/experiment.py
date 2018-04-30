@@ -4,6 +4,7 @@ from axopy import util
 from axopy.storage import Storage
 from axopy.stream import InputStream
 from axopy.messaging import transmitter
+from axopy.messaging.base import BaseTransmitter
 from axopy.gui.main import MainWindow, SessionInfo
 from axopy.gui.canvas import Canvas, Text
 
@@ -93,6 +94,7 @@ class Experiment(object):
 
     def task_finished(self):
         if self.current_task is not None:
+            self.current_task.disconnect_all()
             self.current_task.finished.disconnect(self.task_finished)
             self.key_pressed.disconnect(self.current_task.key_press)
 

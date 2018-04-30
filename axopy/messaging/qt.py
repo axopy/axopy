@@ -8,7 +8,11 @@ class _QtTransmitter(BaseTransmitter, QObject):
         self.signal.connect(receiver)
 
     def disconnect(self, receiver):
-        self.signal.disconnect(receiver)
+        try:
+            self.signal.disconnect(receiver)
+        except TypeError:
+            # signal not connected, that's ok
+            pass
 
     def transmit(self, *data):
         self.signal.emit(*data)
