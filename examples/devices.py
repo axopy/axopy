@@ -59,7 +59,7 @@ def mouse():
 
 def run(dev, pipeline=None):
     # run an experiment with just an oscilloscope task
-    Experiment([Oscilloscope(pipeline)], device=dev).run()
+    Experiment(daq=dev, subject='test').run(Oscilloscope(pipeline))
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ from axopy.storage import Storage
 from axopy.stream import InputStream
 from axopy.messaging import transmitter
 from axopy.messaging.base import BaseTransmitter
-from axopy.gui.main import MainWindow, SessionInfo
+from axopy.gui.main import MainWindow, SessionConfig
 from axopy.gui.canvas import Canvas, Text
 
 
@@ -14,73 +14,74 @@ class Experiment(object):
 
     Presents the researcher with a prompt for entering session details and then
     presents the appropriate tasks.
-
-    Parameters
-    ----------
-    tasks : list or dict
-        List of tasks in the experiment or a dictionary mapping experiment
-        confgurations to task lists. The configurations are shown in a dropdown
-        list so the researcher can select which configuration to use at
-        run-time.
-    device : object
-        Any object that implements the device protocol.
     """
 
-    status_format = "subject: {subject}, config: {configuration}"
+    status_format = "subject: {subject}"
 
-    def __init__(self, tasks, device=None, data_root='data'):
-        if isinstance(tasks, dict):
-            configs = list(tasks)
-        else:
-            tasks = {'default': tasks}
-            configs = ['default']
-        self.tasks = tasks
+    def __init__(self, daq=None, data='data', subject=None):
+        self.daq = daq
+        self.input_stream = InputStream(daq)
+        self.storage = Storage(data)
 
-        self.device = device
-        self.input_stream = InputStream(device)
+        self._receive_keys = False
 
-        self.storage = Storage(data_root)
+        self.subject = subject
 
-        self.receive_keys = False
+    def configure(self, **options):
+        """Configure the experiment with custom options.
+
+        This method allows you to specify a number of options that you want to
+        configure with a graphical interface prior to running the tasks. Use
+        keyword arguments to specify which options you want to configure. The
+        options selected/specified in the graphical interface are then returned
+        by this method so that you can alter setup before running the
+        experiment.
+
+        Each keyword argument should list the data type to configure, such as
+        ``float``, ``str``, or ``int``. You can also provide a list or tuple of
+        available choices for that option.
+
+        You *do not* need to add an option for the subject name/ID -- that is
+        added automatically if the subject ID was not specified when creating
+        the experiment.
+        """
+        options['subject'] = str
+        config = SessionConfig(options).run()
+        self.subject = config['subject']
+        return config
+
+    def run(self, *tasks):
+        """Run the experimental tasks."""
+        if self.subject is None:
+            self.configure()
 
         # main screen
         self.screen = MainWindow()
         self.screen.key_pressed.connect(self.key_press)
+        self.screen.set_status(self.status)
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
         self.confirm_screen.add_item(Text("Ready"))
 
-        # initial screen to enter subject ID
-        session_info_screen = SessionInfo(configs)
-        session_info_screen.finished.connect(self._setup_session)
-        self.screen.set_container(session_info_screen)
+        self.storage.subject_id = self.subject
+        self.tasks = tasks
+
+        self.current_task = None
+        self.task_iter = iter(self.tasks)
+        self._task_finished()
+
+        self.screen.run()
 
     @property
     def status(self):
         return self.status_format.format(**self.__dict__)
 
-    def _setup_session(self, session):
-        self.subject = session['subject']
-        self.configuration = session['configuration']
-
-        self.screen.set_status(self.status)
-
-        self.storage.subject_id = self.subject
-
-        self.current_task = None
-        self.task_iter = iter(self.tasks[self.configuration])
-        self.task_finished()
-
-    def run(self):
-        """Start the experiment."""
-        self.screen.run()
-
-    def run_task(self):
-        self.receive_keys = False
+    def _run_task(self):
+        self._receive_keys = False
 
         # wait for task to finish
-        self.current_task.finished.connect(self.task_finished)
+        self.current_task.finished.connect(self._task_finished)
         # forward key presses to the task
         self.key_pressed.connect(self.current_task.key_press)
 
@@ -92,10 +93,10 @@ class Experiment(object):
         self.current_task.prepare_storage(self.storage)
         self.current_task.run()
 
-    def task_finished(self):
+    def _task_finished(self):
         if self.current_task is not None:
             self.current_task.disconnect_all()
-            self.current_task.finished.disconnect(self.task_finished)
+            self.current_task.finished.disconnect(self._task_finished)
             self.key_pressed.disconnect(self.current_task.key_press)
 
         try:
@@ -104,14 +105,14 @@ class Experiment(object):
             self.screen.quit()
 
         self.screen.set_container(self.confirm_screen)
-        self.receive_keys = True
+        self._receive_keys = True
 
     def key_press(self, key):
-        if self.receive_keys:
+        if self._receive_keys:
             if key == util.key_escape:
                 self.screen.quit()
             elif key == util.key_return:
-                self.run_task()
+                self._run_task()
         else:
             self.key_pressed(key)
 

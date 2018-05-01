@@ -84,10 +84,13 @@ class RLSMapping(pipeline.Block):
 class CursorFollowing(Task):
 
     def __init__(self, pipeline):
+        super(CursorFollowing, self).__init__()
+        self.pipeline = pipeline
+
         trials = []
         for training in [True, False]:
             for i in range(4):
-                p = 80
+                p = 0.8
                 for x, y in [(p, 0), (0, p), (0, 0), (-p, 0), (0, -p)]:
                     trials.append({
                         'pos': numpy.array([x, y]),
@@ -96,15 +99,12 @@ class CursorFollowing(Task):
             if training:
                 random.shuffle(trials)
         design = [trials]
-
-        self.pipeline = pipeline
-
         self.design(design)
 
     def prepare_view(self, view):
         self.canvas = Canvas()
-        self.cursor = Circle(5, color='#aa1212')
-        self.target = Circle(10, color='#32b124')
+        self.cursor = Circle(0.05, color='#aa1212')
+        self.target = Circle(0.1, color='#32b124')
         self.canvas.add_item(self.target)
         self.canvas.add_item(self.cursor)
         self.canvas.add_item(Cross())
@@ -112,58 +112,45 @@ class CursorFollowing(Task):
 
     def prepare_input_stream(self, input_stream):
         self.input_stream = input_stream
-        self.input_stream.updated.connect(self.update)
-        self.input_stream.finished.connect(self.stopped)
+        self.input_stream.start()
 
         self.timer = Counter(50)
         self.timer.timeout.connect(self.finish_trial)
-        self.update.connect(self.timer.increment)
 
     def run_trial(self, trial):
-        self.current_trial = trial
         if not trial['training']:
             self.target.set_color('#3224b1')
         pos = trial['pos']
         self._reset()
-        self.target.move_to(pos[0], pos[1])
+        self.target.setPos(pos[0], pos[1])
         self.target.setVisible(True)
-        self.input_stream.start()
         self.pipeline.clear()
+        self.connect(self.input_stream.updated, self.update)
 
-    @transmitter()
     def update(self, data):
         xhat = self.pipeline.process(data)
-        self.cursor.move_to(xhat[0], xhat[1])
+        self.cursor.setPos(xhat[0], xhat[1])
 
-        if self.current_trial['training']:
-            self.pipeline.named_blocks['RLSMapping'].update(
-                self.current_trial['pos'])
+        if self.trial['training']:
+            self.pipeline.named_blocks['RLSMapping'].update(self.trial['pos'])
 
         if self.cursor.collidesWithItem(self.target):
             self.finish_trial()
 
-        return
+        self.timer.increment()
 
-    @receiver
     def finish_trial(self):
+        self.disconnect(self.input_stream.updated, self.update)
         self._reset()
-        self.input_stream.kill(wait=False)
-
-    @receiver
-    def stopped(self):
         self.next_trial()
 
     def _reset(self):
-        self.cursor.move_to(0, 0)
+        self.cursor.setPos(0, 0)
         self.timer.reset()
         self.target.setVisible(False)
 
-    @transmitter()
     def finish(self):
-        self.input_stream.finished.disconnect(self.stopped)
         self.input_stream.kill()
-        self.input_stream.updated.disconnect(self.update)
-        return
 
     def key_press(self, key):
         if key == util.key_escape:
@@ -190,10 +177,7 @@ if __name__ == '__main__':
         RLSMapping(4, 2, 0.99)
     ])
 
-    Experiment(
-        [
-            Oscilloscope(preproc_pipeline),
-            CursorFollowing(main_pipeline)
-        ],
-        device=dev
-    ).run()
+    Experiment(daq=dev, subject='test').run(
+        Oscilloscope(preproc_pipeline),
+        CursorFollowing(main_pipeline)
+    )

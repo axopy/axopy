@@ -9,6 +9,7 @@ from axopy.gui.signals import SignalWidget
 class Oscilloscope(Task):
 
     def __init__(self, pipeline=None):
+        super(Oscilloscope, self).__init__()
         self.pipeline = pipeline
 
     def prepare_view(self, view):
@@ -17,7 +18,7 @@ class Oscilloscope(Task):
 
     def prepare_input_stream(self, input_stream):
         self.input_stream = input_stream
-        self.input_stream.updated.connect(self.update)
+        self.connect(self.input_stream.updated, self.update)
 
     def run(self):
         self.input_stream.start()
@@ -29,10 +30,7 @@ class Oscilloscope(Task):
 
     def key_press(self, key):
         if key == util.key_return:
-            self.finish()
+            self.finished()
 
-    @transmitter()
     def finish(self):
         self.input_stream.kill()
-        self.input_stream.updated.disconnect(self.update)
-        return

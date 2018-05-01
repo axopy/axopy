@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtCore, QtWidgets
 from axopy import util
 from axopy.messaging import transmitter
+import collections
 
 # This mapping from key names in the Qt namespace to axopy key names just
 # allows users to write code without any Qt stuff in it
@@ -172,33 +173,21 @@ class Container(QtWidgets.QWidget):
         self.layout.addWidget(view, 0, 0)
 
 
-class SessionInfo(QtWidgets.QWidget):
-    """Widget for setting up a session.
+class SessionConfig(QtWidgets.QDialog):
+    """Widget for configuring a session.
 
-    Shows a combo box for selecting the experiment configuration (if there are
-    multiple) and a text box for entering the subject ID. Connect to the
-    ``finished`` signal to receive a dictionary containing the subject ID and
-    the configuration (if applicable).
-
-    Parameters
-    ----------
-    configurations : sequence, optional
-        Sequence of strings representing possible session configurations. These
-        are displayed in a combo box. If `None`, the combo box isn't displayed.
-
-    Attributes
-    ----------
-    finished : pyqtSignal
-        Signal emitted when the session info has been entered. The info is a
-        dictionary ``{'subject': '<subject_id>', 'configuration':
-        '<config_id>'}``. The ``configuration`` item is not included if there
-        are not multiple configurations to choose from.
+    Shows a form layout with the specified options. Options are passed as a
+    dictionary with option labels as keys and option types as values. The value
+    can also be a sequence of strings, which are shown in a combo box. Use
+    ``run()`` to run the dialog and return the results in a dictionary.
     """
 
-    finished = QtCore.pyqtSignal(dict)
-
-    def __init__(self, configurations=None, parent=None):
-        super(SessionInfo, self).__init__(parent=parent)
+    def __init__(self, options):
+        app = get_qtapp()
+        super(SessionConfig, self).__init__()
+        self.options = options
+        self.results = {}
+        self.widgets = {}
 
         main_layout = QtWidgets.QVBoxLayout()
         self.setLayout(main_layout)
@@ -207,32 +196,45 @@ class SessionInfo(QtWidgets.QWidget):
         form_layout.setFormAlignment(QtCore.Qt.AlignVCenter)
         main_layout.addLayout(form_layout)
 
-        if configurations is not None:
-            self._config_combo_box = QtWidgets.QComboBox()
-            form_layout.addRow("Configuration", self._config_combo_box)
+        for label, typ in options.items():
+            if typ in {str, int, float}:
+                w = QtWidgets.QLineEdit()
+                self.widgets[label] = w
+                form_layout.addRow(label, w)
+            elif isinstance(typ, collections.Sequence):
+                w = QtWidgets.QComboBox()
+                for choice in typ:
+                    w.addItem(str(choice))
+                self.widgets[label] = w
+                form_layout.addRow(label, w)
+            else:
+                raise TypeError("option {}({}) not a supported type".format(
+                    label, typ))
 
-            for config in configurations:
-                self._config_combo_box.addItem(config)
+        button = QtWidgets.QPushButton("Ok")
+        main_layout.addWidget(button)
+        button.clicked.connect(self._on_button_click)
 
-        self._subject_line_edit = QtWidgets.QLineEdit()
-        form_layout.addRow("Subject", self._subject_line_edit)
+        self.show()
 
-        self._button = QtWidgets.QPushButton("Start")
-        main_layout.addWidget(self._button)
-
-        self._button.clicked.connect(self._on_button_click)
+    def run(self):
+        """Start the application."""
+        get_qtapp().exec_()
+        return self.results
 
     def _on_button_click(self):
-        info = {}
+        for label, widget in self.widgets.items():
+            t = self.options[label]
+            if t is str:
+                self.results[label] = str(widget.text())
+            elif t is int:
+                self.results[label] = int(widget.text())
+            elif t is float:
+                self.results[label] = float(widget.text())
+            else:
+                self.results[label] = str(widget.currentText())
 
-        subject = str(self._subject_line_edit.text())
-        info['subject'] = subject
-
-        if hasattr(self, '_config_combo_box'):
-            config = str(self._config_combo_box.currentText())
-            info['configuration'] = config
-
-        if subject == '':
+        if 'subject' in self.options and self.results['subject'] == '':
             QtWidgets.QMessageBox.warning(
                 self,
                 "Warning",
@@ -240,4 +242,4 @@ class SessionInfo(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.Ok)
             return
 
-        self.finished.emit(info)
+        self.done(0)
