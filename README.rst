@@ -77,9 +77,7 @@ Here's a minimal example to display some randomly generated signals in an
     from axopy.stream import EmulatedDaq
 
     daq = EmulatedDaq(rate=1000, num_channels=4, read_size=100)
-    tasks = [Oscilloscope()]
-    exp = Experiment(tasks, device=daq)
-    exp.run()
+    Experiment(daq=daq).run(Oscilloscope())
 
 What Now?
 ---------
