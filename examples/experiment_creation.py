@@ -9,9 +9,9 @@ customized
 
 from axopy.experiment import Experiment
 from axopy.task import Oscilloscope
-from axopy.stream import EmulatedDaq
+from axopy.stream import NoiseGenerator 
 
-daq = EmulatedDaq(rate=2000, num_channels=6, read_size=200)
+daq = NoiseGenerator(rate=2000, num_channels=6, read_size=200)
 
 
 def run():

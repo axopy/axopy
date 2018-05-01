@@ -162,8 +162,8 @@ class CursorFollowing(Task):
 if __name__ == '__main__':
     # from pytrigno import TrignoEMG
     # dev = TrignoEMG((0, 3), 200, host='192.168.1.114', units='normalized')
-    from axopy.stream import EmulatedDaq
-    dev = EmulatedDaq(rate=2000, num_channels=4, read_size=200)
+    from axopy.stream import NoiseGenerator 
+    dev = NoiseGenerator(rate=2000, num_channels=4, read_size=200)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')
     preproc_pipeline = pipeline.Pipeline([

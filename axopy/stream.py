@@ -18,8 +18,8 @@ class InputStream(QtCore.QThread):
     Parameters
     ----------
     device : InputDevice
-        Any object implementing the OutputDevice interface. See EmulatedDaq for
-        an example.
+        Any object implementing the OutputDevice interface. See
+        :class:`NoiseGenerator` for an example.
 
     Attributes
     ----------
@@ -87,7 +87,7 @@ class InputStream(QtCore.QThread):
         return
 
 
-class EmulatedDaq(object):
+class NoiseGenerator(object):
     """
     An emulated data acquisition device which generates random data.
 
@@ -96,7 +96,7 @@ class EmulatedDaq(object):
     corresponds to three standard deviations. That is, approximately 99.7% of
     the samples should be within the desired peak amplitude.
 
-    :class:`EmulatedDaq` is meant to emulate data acquisition devices that
+    :class:`NoiseGenerator` is meant to emulate data acquisition devices that
     block on each request for data until the data is available. See
     :meth:`read` for details.
 

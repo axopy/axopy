@@ -1,7 +1,7 @@
 """Examples of input devices built into AxoPy for testing.
 
 rainbow
-    Basic use of an EmulatedDaq to show lots of colorful random data.
+    Basic use of an NoiseGenerator to show lots of colorful random data.
 keyboard
     Basic use of a Keyboard to show roughly-timed keyboard inputs.
 keystick
@@ -17,12 +17,12 @@ import argparse
 import numpy as np
 from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
-from axopy.stream import EmulatedDaq, Keyboard, Mouse
+from axopy.stream import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter
 
 
 def rainbow():
-    dev = EmulatedDaq(rate=2000, num_channels=16, read_size=200)
+    dev = NoiseGenerator(rate=2000, num_channels=16, read_size=200)
     run(dev)
 
 
