@@ -83,23 +83,24 @@ class RLSMapping(pipeline.Block):
 
 class CursorFollowing(Task):
 
+    target_dist = 0.8
+
     def __init__(self, pipeline):
         super(CursorFollowing, self).__init__()
         self.pipeline = pipeline
 
-        trials = []
+    def prepare_design(self, design):
+        d = self.target_dist
+        target_positions = [(d, 0), (0, d), (-d, 0), (0, -d), (0, 0)]
         for training in [True, False]:
-            for i in range(4):
-                p = 0.8
-                for x, y in [(p, 0), (0, p), (0, 0), (-p, 0), (0, -p)]:
-                    trials.append({
-                        'pos': numpy.array([x, y]),
-                        'training': training
-                    })
-            if training:
-                random.shuffle(trials)
-        design = [trials]
-        self.design(design)
+            block = design.add_block()
+            for x, y in target_positions:
+                block.add_trial(attrs={
+                    'target_x': x,
+                    'target_y': y,
+                    'training': training
+                })
+            block.shuffle()
 
     def prepare_view(self, view):
         self.canvas = Canvas()
@@ -118,11 +119,10 @@ class CursorFollowing(Task):
         self.timer.timeout.connect(self.finish_trial)
 
     def run_trial(self, trial):
-        if not trial['training']:
+        if not trial.attrs['training']:
             self.target.set_color('#3224b1')
-        pos = trial['pos']
         self._reset()
-        self.target.setPos(pos[0], pos[1])
+        self.target.setPos(trial.attrs['target_x'], trial.attrs['target_y'])
         self.target.setVisible(True)
         self.pipeline.clear()
         self.connect(self.input_stream.updated, self.update)
@@ -131,8 +131,10 @@ class CursorFollowing(Task):
         xhat = self.pipeline.process(data)
         self.cursor.setPos(xhat[0], xhat[1])
 
-        if self.trial['training']:
-            self.pipeline.named_blocks['RLSMapping'].update(self.trial['pos'])
+        target_pos = numpy.array([self.trial.attrs['target_x'],
+                                  self.trial.attrs['target_y']])
+        if self.trial.attrs['training']:
+            self.pipeline.named_blocks['RLSMapping'].update(target_pos)
 
         if self.cursor.collidesWithItem(self.target):
             self.finish_trial()

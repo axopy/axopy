@@ -1,81 +1,8 @@
 """Base task implementation."""
 
 from axopy import util
+from axopy.design import Design
 from axopy.messaging import transmitter, receiver
-
-
-class _TaskIter(object):
-    """Cleanly retrieves blocks of a task design and the trials within them.
-
-    A task design is a sequence of sequences: a sequence of blocks which are
-    themselves sequences of trials. The `TaskIter` iterates over blocks,
-    returning the block data when a new block is available. Nested in the
-    blocks are trials, which the `TaskIter` further iterates over, returning
-    them when available.
-
-    Here is more graphical depiction of the flow through a design::
-
-        design: [
-            next_block -> block: [
-                next_trial -> trial,
-                next_trial -> trial,
-                ...
-                next_trial -> None
-            ],
-            next_block -> block: [
-                next_trial -> trial,
-                next_trial -> trial,
-                ...
-                next_trial -> None
-            ],
-            ...
-            next_block -> None
-        ]
-
-    Parameters
-    ----------
-    design : list
-        The task `design` must be an iterable of iterables, such as a list of
-        lists. The elements of the outer iterable are termed "blocks" and the
-        elements of the inner iterable are termed "trials." The trials have any
-        structure you want, but a typical choice would be a dictionary with
-        attributes that specify all parameters of the trial.
-    """
-
-    def __init__(self, design=None):
-        if design is None:
-            design = [[{}]]
-
-        self.design = design
-        self.block_iter = iter(design)
-
-    def next_block(self):
-        """Get the next block in the task if available.
-
-        If no more blocks are available, `None` is returned. Once this occurs,
-        the task is complete and should be finished.
-        """
-        try:
-            block = next(self.block_iter)
-        except StopIteration:
-            return None
-
-        self.trial_iter = iter(block)
-        return block
-
-    def next_trial(self):
-        """Get the next trial in the current block, if available.
-
-        If there are no more trials in the block, `None` is returned. Once
-        this occurs, you should call `next_block` to get the next block of
-        trials.
-        """
-        try:
-            trial = next(self.trial_iter)
-        except StopIteration:
-            return None
-
-        return trial
 
 
 class Task(object):
@@ -85,6 +12,14 @@ class Task(object):
 
     Most task implementations will want to override the `prepare` and
     `run_trial` methods, while the rest can be left to default behavior.
+
+    If you need to implement a custom constructor (``__init__``), you *must*
+    call the base task ``__init__``::
+
+        class CustomTask(Task):
+
+            def __init__(self, custom_param):
+                super(CustomTask, self).__init__()
 
     Attributes
     ----------
@@ -101,8 +36,9 @@ class Task(object):
     def __init__(self):
         self._connections = {}
 
-    def design(self, trials):
-        self.iter = _TaskIter(trials)
+        design = Design()
+        self.iter = _TaskIter(design)
+        self.prepare_design(design)
 
     def connect(self, transmitter, receiver):
         """Connect a transmitter to a receiver.
@@ -130,6 +66,19 @@ class Task(object):
         for name, (tx, rx) in self._connections.items():
             tx.disconnect(rx)
         self._connections.clear()
+
+    def prepare_design(self, design):
+        """Callback for setting up the task design.
+
+        See :class:`axopy.design.Design` for details on how to design the task.
+        By default, nothing is added to the design.
+
+        Parameters
+        ----------
+        design : Design
+            The task design object you can use to add blocks and trials.
+        """
+        pass
 
     def prepare_view(self, view):
         """Initialize graphical elements and messaging connections.
@@ -274,3 +223,74 @@ class Task(object):
 
 def _connection_name(tx, rx):
     return str(tx) + str(rx)
+
+
+class _TaskIter(object):
+    """Cleanly retrieves blocks of a task design and the trials within them.
+
+    A task design is a sequence of sequences: a sequence of blocks which are
+    themselves sequences of trials. The `TaskIter` iterates over blocks,
+    returning the block data when a new block is available. Nested in the
+    blocks are trials, which the `TaskIter` further iterates over, returning
+    them when available.
+
+    Here is more graphical depiction of the flow through a design::
+
+        design: [
+            next_block -> block: [
+                next_trial -> trial,
+                next_trial -> trial,
+                ...
+                next_trial -> None
+            ],
+            next_block -> block: [
+                next_trial -> trial,
+                next_trial -> trial,
+                ...
+                next_trial -> None
+            ],
+            ...
+            next_block -> None
+        ]
+
+    Parameters
+    ----------
+    design : list
+        The task `design` must be an iterable of iterables, such as a list of
+        lists. The elements of the outer iterable are termed "blocks" and the
+        elements of the inner iterable are termed "trials." The trials have any
+        structure you want, but a typical choice would be a dictionary with
+        attributes that specify all parameters of the trial.
+    """
+
+    def __init__(self, design):
+        self.design = design
+        self.block_iter = iter(design)
+
+    def next_block(self):
+        """Get the next block in the task if available.
+
+        If no more blocks are available, `None` is returned. Once this occurs,
+        the task is complete and should be finished.
+        """
+        try:
+            block = next(self.block_iter)
+        except StopIteration:
+            return None
+
+        self.trial_iter = iter(block)
+        return block
+
+    def next_trial(self):
+        """Get the next trial in the current block, if available.
+
+        If there are no more trials in the block, `None` is returned. Once
+        this occurs, you should call `next_block` to get the next block of
+        trials.
+        """
+        try:
+            trial = next(self.trial_iter)
+        except StopIteration:
+            return None
+
+        return trial
