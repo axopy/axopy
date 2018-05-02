@@ -127,7 +127,7 @@ class Trial(object):
         kwargs : dict
             Keyword arguments passed along to :class:`Array`.
         """
-        self.arrays[name] = Array(data=data, stack_axis=stack_axis)
+        self.arrays[name] = Array(**kwargs)
 
     def __repr__(self):
         return str(self.attrs) + '\n' + str(self.arrays)
