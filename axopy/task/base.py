@@ -229,38 +229,14 @@ class _TaskIter(object):
     """Cleanly retrieves blocks of a task design and the trials within them.
 
     A task design is a sequence of sequences: a sequence of blocks which are
-    themselves sequences of trials. The `TaskIter` iterates over blocks,
+    themselves sequences of trials. The ``TaskIter`` iterates over blocks,
     returning the block data when a new block is available. Nested in the
-    blocks are trials, which the `TaskIter` further iterates over, returning
+    blocks are trials, which the ``TaskIter`` further iterates over, returning
     them when available.
 
-    Here is more graphical depiction of the flow through a design::
-
-        design: [
-            next_block -> block: [
-                next_trial -> trial,
-                next_trial -> trial,
-                ...
-                next_trial -> None
-            ],
-            next_block -> block: [
-                next_trial -> trial,
-                next_trial -> trial,
-                ...
-                next_trial -> None
-            ],
-            ...
-            next_block -> None
-        ]
-
-    Parameters
-    ----------
-    design : list
-        The task `design` must be an iterable of iterables, such as a list of
-        lists. The elements of the outer iterable are termed "blocks" and the
-        elements of the inner iterable are termed "trials." The trials have any
-        structure you want, but a typical choice would be a dictionary with
-        attributes that specify all parameters of the trial.
+    The ``TaskIter`` accepts either a :class:`axopy.design.Design`` or a
+    manually-created list of blocks, where each block is a list containing
+    dictionaries corresponding to trials.
     """
 
     def __init__(self, design):
