@@ -6,25 +6,31 @@ Data Storage
 
 .. currentmodule:: axopy.storage
 
+The AxoPy data storage model was created so that your experimental dataset can
+be easily passed on to others and read using a variety of tools on any
+platform, meaning AxoPy is not required to use the *raw dataset*. It was also
+designed so that you can browse the dataset using a standard file browser so
+you do not need to write any code to have a peek.
+
 Data is stored in a hierarchical fashion using a specific file structure and
 common file types. There are two types of files: comma separated value (CSV)
-files for *trial data* (one row per trial) and HDF5 files for *array data* (one
-file per trial). Here's the file structure in abstract terms::
+files for *trial data* (one row per trial) and HDF5_ files for *array data*
+(one file per trial). Here's the file structure in abstract terms::
 
-    data_root/
+    data/
         subject_id/
-            task_id/
+            task_name/
                 file: trials.csv
-                array_type/
-                    file: 1.hdf5
-                    file: 2.hdf5
-                    ...
+                file: array_type1.hdf5
+                file: array_type2.hdf5
 
 You have the root of the entire dataset, containing a subfolder for each
 subject. Each subject folder contains a set of subfolders, one per task. The
 task subfolders contain a single CSV file which contains all of the
-*attributes* (scalars) for each trial, and it contains subfolders for each type
-of array data. These array data subfolders contain an HDF5 file per trial.
+*attributes* (scalars) for each trial, and it contains HDF5 files which store
+array data, one for each kind of array (e.g. an ``emg.hdf5`` file containing
+raw electrophysiological recordings for each trial and a ``cursor.hdf5`` file
+containing cursor positions for each trial).
 
 As an concrete example, suppose you are running an experiment where subjects
 are tasked with contracting a muscle to a specified level, determined using
@@ -42,7 +48,7 @@ The trial data variables here are time to target and overshoots, so these are
 placed in a CSV file with one row per trial:
 
 ===== ============== ==========
-index time_to_target overshoots
+trial time_to_target overshoots
 ===== ============== ==========
 0     3.271942       1
 1     2.159271       0
@@ -52,26 +58,21 @@ index time_to_target overshoots
 Since you have two different array-like entities to store (raw EMG data at
 2 kHz and processed position at 10 Hz), you create two different array types:
 ``emg`` and ``level``. They are placed in separate subfolders of the task and
-each one is stored as an array in a HDF5 file, one file per trial. The result
-of all of this is a structure that looks like::
+each one is stored as an array in a HDF5 file, with one HDF5 dataset (in the
+root group) per trial. The result of all of this is a structure that looks
+like::
 
     data_root/
         subject_id/
             contraction_level_task/
                 file: trials.csv
-                emg/
-                    file: 1.hdf5
-                    file: 2.hdf5
-                    ...
-                level/
-                    file: 1.hdf5
-                    file: 2.hdf5
-                    ...
+                file: emg.hdf5
+                file: level.hdf5
 
 The HDF5 format was chosen for all array data because it naturally works with
 NumPy arrays, which are the assumed container for data as it goes from
 a hardware device through processing code to computer interaction. It also
-saves the arrays in a binary format instaed of converting to strings as
+saves the arrays in a binary format instead of converting to strings as
 something like ``numpy.savetxt`` would do, potentially reducing the size of
 a whole experiment's dataset significantly if you store many arrays
 representing high-frequency electrophysiological recordings.
@@ -84,6 +85,7 @@ designate a single root folder and move all subject data there). The layout is
 *not* optimized for processing and analyzing data once an experiment is
 complete, however. For that, see :ref:`data-consolidation`.
 
+.. _HDF5: https://support.hdfgroup.org/HDF5/
 
 .. _experiment-storage:
 
