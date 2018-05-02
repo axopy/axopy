@@ -14,14 +14,6 @@ def simple_design():
     return design
 
 
-def test_empty_design():
-    it = _TaskIter()
-    assert it.next_block() is not None
-    assert it.next_trial() is not None
-    assert it.next_block() is None
-    assert it.next_trial() is None
-
-
 def test_task_iter(simple_design):
     d = simple_design
 
@@ -43,27 +35,31 @@ def test_task_iter(simple_design):
 
 def test_base_task(simple_design):
     task = Task()
-    task.design(simple_design)
 
-    # task prepare hooks
+    for b in range(2):
+        block = task.iter.design.add_block()
+        for t in range(2):
+            block.add_trial()
+
+    # task prepare hooks run by Experiment
     task.prepare_view(None)
     task.prepare_input_stream(None)
     task.prepare_storage(None)
 
     task.run()
-    assert task.block == simple_design[0]
+    assert task.block.index == 0
     # task is waiting for key press to advance
     assert not hasattr(task, 'trial')
     task.key_press(util.key_return)
-    assert task.trial == simple_design[0][0]
+    assert task.trial.attrs == simple_design[0][0]
 
     # automatically advance to next block
     task.advance_block_key = None
     task.next_trial()
     task.next_trial()
 
-    assert task.block == simple_design[1]
-    assert task.trial == simple_design[1][0]
+    assert task.block.index == 1
+    assert task.trial.attrs == simple_design[1][0]
 
     class recv(object):
         def finish(self):

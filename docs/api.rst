@@ -10,6 +10,7 @@ These are the modules/subpackages which constitute AxoPy.
 
    api/experiment
    api/task
+   api/design
    api/pipeline
    api/features
    api/messaging
