@@ -32,12 +32,16 @@ def test_storage(tmpdirpath):
     t.add_array('data', data=numpy.zeros(3))
     writer.write(t)
 
+    writer.pickle([1, 2, 3], 'somelist')
+
     # task reading
     reader = storage.require_task('task1')
     assert len(reader.trials) == 2
     arrays = reader.iterarray('data')
     assert next(arrays).shape == (5,)
     assert next(arrays).shape == (3,)
+
+    assert reader.pickle('somelist') == [1, 2, 3]
 
 
 def test_storage_directories(tmpdir_factory):

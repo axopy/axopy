@@ -1,15 +1,12 @@
 """Experiment data storage."""
 
-# TODO come up with to_hdf5 functionality
-# TODO implement to_hdf5
-# TODO test to_hdf5
-# TODO decide on supporting array attributes (e.g. channel names)
-
 import os
 import h5py
 import numpy
 import pandas
 import zipfile
+import shutil
+import pickle
 
 
 #
@@ -26,10 +23,14 @@ class Storage(object):
     root : str, optional
         Path to the root of the data storage filestructure. By default, 'data'
         is used. If the directory doesn't exist, it is created.
+    allow_overwrite : bool, optional
+        Specified whether or not the storage interface allows you to overwrite
+        a task's data for a subject if it already exists.
     """
 
-    def __init__(self, root='data'):
+    def __init__(self, root='data', allow_overwrite=False):
         self.root = root
+        self.allow_overwrite = allow_overwrite
         makedirs(root, exist_ok=True)
         self._subject_id = None
 
@@ -99,9 +100,13 @@ class Storage(object):
         try:
             makedirs(path)
         except OSError:
-            raise ValueError(
-                "Subject {} has already started \"{}\". Only unique task "
-                "names are allowed.".format(self.subject_id, task_id))
+            if self.allow_overwrite:
+                shutil.rmtree(path)
+                makedirs(path)
+            else:
+                raise ValueError(
+                    "Subject {} has already started \"{}\". Only unique task "
+                    "names are allowed.".format(self.subject_id, task_id))
 
         return TaskWriter(path)
 
@@ -182,6 +187,27 @@ class TaskWriter(object):
             write_hdf5(path, array.data, dataset=str(trial.attrs['trial']))
             array.clear()
 
+    def pickle(self, obj, name):
+        """Write a generic object to storage.
+
+        This can be useful to persist an object from one task to another, or to
+        store something that doesn't easily fit into the AxoPy storage model
+        (trial attributes and arrays). Be cautious, however, as pickles are not
+        the best way to store things long-term nor securely. See the advice
+        given here, for example:
+        http://scikit-learn.org/stable/modules/model_persistence.html
+
+        Parameters
+        ----------
+        obj : object
+        return obj
+            The object to pickle.
+        name : str
+            Name of the pickle to save (no extension).
+        """
+        with open(_pickle_path(self.root, name), 'wb') as f:
+            pickle.dump(obj, f)
+
 
 class TaskReader(object):
     """High-level interface to task storage.
@@ -223,6 +249,18 @@ class TaskReader(object):
     def array(self, name):
         """Retrieve an array type's data for all trials."""
         return numpy.vstack(self.iterarray(name))
+
+    def pickle(self, name):
+        """Load a pickled object from storage.
+
+        Parameters
+        ----------
+        name : str
+            Name of the pickled object (no extension).
+        """
+        with open(_pickle_path(self.root, name), 'rb') as f:
+            obj = pickle.load(f)
+            return obj
 
 
 #
@@ -275,6 +313,10 @@ def _trials_path(taskroot):
 
 def _array_path(taskroot, arrayname):
     return os.path.join(taskroot, '{}.hdf5'.format(arrayname))
+
+
+def _pickle_path(taskroot, picklename):
+    return os.path.join(taskroot, '{}.pkl'.format(picklename))
 
 
 def read_hdf5(filepath, dataset='data'):

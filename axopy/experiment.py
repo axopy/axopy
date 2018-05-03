@@ -14,14 +14,30 @@ class Experiment(object):
 
     Presents the researcher with a prompt for entering session details and then
     presents the appropriate tasks.
+
+    Parameters
+    ----------
+    daq : object, optional
+        A data acquisition device that follows the AxoPy DAQ protocol. See
+        :mod:`axopy.stream`.
+    data : str, optional
+        Path to the data. The directory is created for you if it doesn't exist.
+    subject : str, optional
+        The subject ID to use. If not specified, a configuration screen is
+        shown before running the tasks so you can enter it there. This is
+        mostly for experiment writing (to avoid the extra configuration step).
+    allow_overwrite : bool, optional
+        If ``True``, overwrite protection in :class:`Storage` is disabled. This
+        is mostly for experiment writing purposes.
     """
 
     status_format = "subject: {subject}"
 
-    def __init__(self, daq=None, data='data', subject=None):
+    def __init__(self, daq=None, data='data', subject=None,
+                 allow_overwrite=False):
         self.daq = daq
         self.input_stream = InputStream(daq)
-        self.storage = Storage(data)
+        self.storage = Storage(data, allow_overwrite=allow_overwrite)
 
         self._receive_keys = False
 
