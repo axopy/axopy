@@ -7,6 +7,7 @@ import pandas
 import zipfile
 import shutil
 import pickle
+import logging
 
 
 #
@@ -186,6 +187,9 @@ class TaskWriter(object):
             path = _array_path(self.root, name)
             write_hdf5(path, array.data, dataset=str(trial.attrs['trial']))
             array.clear()
+
+        logging.info('saving trial {}:{}\n{}'.format(
+            trial.attrs['block'], trial.attrs['trial'], str(trial)))
 
     def pickle(self, obj, name):
         """Write a generic object to storage.

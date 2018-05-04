@@ -1,6 +1,7 @@
 """Task design containers."""
 import numpy
 import random
+import pprint
 
 __all__ = ['Design', 'Block', 'Trial', 'Array']
 
@@ -129,8 +130,8 @@ class Trial(object):
         """
         self.arrays[name] = Array(**kwargs)
 
-    def __repr__(self):
-        return str(self.attrs) + '\n' + str(self.arrays)
+    def __str__(self):
+        return pprint.pformat(self.attrs)
 
 
 class Array(object):
