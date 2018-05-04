@@ -14,7 +14,7 @@ def mean_absolute_value(x, weights='mav'):
     """Computes the mean absolute value (MAV) of each signal.
 
     Mean absolute value is a popular feature for obtaining amplitude
-    information from EMG, especially in gesture classification contexts.
+    information from EMG, especially in gesture classification contexts [1]_.
 
     There is an optional windowing function applied to the rectified signal,
     described as MAV1 and MAV2 in some references. A custom window can also be
@@ -75,8 +75,8 @@ def mean_absolute_value(x, weights='mav'):
 
     See Also
     --------
-    exgfeatures.util.inverted_t_window: Generates the window for MAV1
-    exgfeatures.util.trapezoidal_window: Generates the window for MAV2
+    axopy.features.util.inverted_t_window: Generates the window for MAV1
+    axopy.features.util.trapezoidal_window: Generates the window for MAV2
 
     References
     ----------
