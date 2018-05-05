@@ -52,7 +52,7 @@ def mean_absolute_value(x, weights='mav'):
 
     Parameters
     ----------
-    x : array, shape (n_channels, n_samples)
+    x : ndarray, shape (n_channels, n_samples)
         Input data.
     weights : str or ndarray, optional
         Weights to use. Possible values:
@@ -70,7 +70,7 @@ def mean_absolute_value(x, weights='mav'):
 
     Returns
     -------
-    y : array, shape (n_channels,)
+    y : ndarray, shape (n_channels,)
         MAV of each channel.
 
     See Also
@@ -118,12 +118,12 @@ def waveform_length(x):
 
     Parameters
     ----------
-    x : array, shape (n_channels, n_samples)
+    x : ndarray, shape (n_channels, n_samples)
         Input data.
 
     Returns
     -------
-    y : array, shape (n_channels,)
+    y : ndarray, shape (n_channels,)
         WL of each channel.
 
     References
@@ -145,7 +145,7 @@ def zero_crossings(x, threshold=0):
 
     Parameters
     ----------
-    x : array, shape (n_channels, n_samples)
+    x : ndarray, shape (n_channels, n_samples)
         Input data.
     threshold : float, optional
         A threshold for discriminating true zero crossings from those caused
@@ -154,7 +154,7 @@ def zero_crossings(x, threshold=0):
 
     Returns
     -------
-    y : array, shape (n_channels,)
+    y : ndarray, shape (n_channels,)
         ZC of each channel.
 
     References
@@ -185,7 +185,7 @@ def slope_sign_changes(x, threshold=0):
 
     Parameters
     ----------
-    x : array, shape (n_channels, n_samples)
+    x : ndarray, shape (n_channels, n_samples)
         Input data.
     threshold : float, optional
         A threshold for discriminating true slope sign changes from those
@@ -195,7 +195,7 @@ def slope_sign_changes(x, threshold=0):
 
     Returns
     -------
-    y : array, shape (n_channels,)
+    y : ndarray, shape (n_channels,)
         SSC of each channel.
 
     References
@@ -228,12 +228,12 @@ def root_mean_square(x):
 
     Parameters
     ----------
-    x : array, shape (n_channels, n_samples)
+    x : ndarray, shape (n_channels, n_samples)
         Input data.
 
     Returns
     -------
-    y : array, shape (n_channels,)
+    y : ndarray, shape (n_channels,)
         RMS of each channel.
     """
     x = ensure_2d(x)
@@ -247,13 +247,51 @@ def integrated_emg(x):
 
     Parameters
     ----------
-    x : array, shape (n_channels, n_samples)
+    x : ndarray, shape (n_channels, n_samples)
         Input data.
 
     Returns
     -------
-    y : array, shape (n_channels,)
+    y : ndarray, shape (n_channels,)
         IEMG of each channel.
     """
     x = ensure_2d(x)
     return np.sum(np.absolute(x), axis=1)
+
+
+def logvar(x):
+    """Log of the variance of the signal.
+
+    .. math::
+        \\text{log-var} = \\log \left( \\frac{1}{N}
+            \\sum_{i=1}^{N} \\left(x_i - \\mu \\right)^2 \\right)
+
+    For electrophysiological signals that are mean-zero, this is the log of the
+    mean square value, making it similar to :func:`root_mean_square` but
+    scaling differently (slower) with :math:`x`.
+
+    For EMG data recorded from forearm muscles, log-var has been found to
+    relate to wrist angle fairly linearly [1]_.
+
+    Note: base-10 logarithm is used, though the base is not specified in [1]_.
+
+    Parameters
+    ----------
+    x : ndarray, shape (n_channels, n_samples)
+        Input data.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        log-var of each channel.
+
+    References
+    ----------
+    .. [1] J. M. Hahne, F. Bießmann, N. Jiang, H. Rehbaum, D. Farina, F. C.
+       Meinecke, K.-R. Müller, and L. C. Parra, "Linear and Nonlinear
+       Regression Techniques for Simultaneous and Proportional Myoelectric
+       Control," IEEE Transactions on Neural Systems and Rehabilitation
+       Engineering, vol. 22, no. 2, pp. 269–279, 2014.
+    """
+    x = ensure_2d(x)
+    return np.log10(np.var(x, axis=1))
