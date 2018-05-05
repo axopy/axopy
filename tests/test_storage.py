@@ -20,26 +20,29 @@ def test_storage(tmpdirpath):
     storage.subject_id = 'p0'
 
     writer = storage.create_task('task1')
-    # task design and writing
     d = Design()
-    b = d.add_block()
+    for i in range(3):
+        b = d.add_block()
 
-    t = b.add_trial(attrs={'trial': 0, 'label': 'a'})
-    t.add_array('data', data=numpy.zeros(5))
-    writer.write(t)
+        t = b.add_trial(attrs={'trial': 0, 'label': 'a'})
+        t.add_array('data', data=numpy.zeros(5))
+        writer.write(t)
 
-    t = b.add_trial(attrs={'trial': 1, 'label': 'b'})
-    t.add_array('data', data=numpy.zeros(3))
-    writer.write(t)
+        t = b.add_trial(attrs={'trial': 1, 'label': 'b'})
+        t.add_array('data')
+        t.arrays['data'].stack(numpy.zeros(3))
+        writer.write(t)
 
-    writer.pickle([1, 2, 3], 'somelist')
+        writer.pickle([1, 2, 3], 'somelist')
 
     # task reading
     reader = storage.require_task('task1')
-    assert len(reader.trials) == 2
+    assert len(reader.trials) == 6
+
     arrays = reader.iterarray('data')
     assert next(arrays).shape == (5,)
     assert next(arrays).shape == (3,)
+    assert next(arrays).shape == (5,)
 
     assert reader.pickle('somelist') == [1, 2, 3]
 

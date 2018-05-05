@@ -183,9 +183,10 @@ class TaskWriter(object):
         """
         self.trials.write(trial.attrs)
 
+        ind = self.trials.df.index[-1]
         for name, array in trial.arrays.items():
             path = _array_path(self.root, name)
-            write_hdf5(path, array.data, dataset=str(trial.attrs['trial']))
+            write_hdf5(path, array.data, dataset=str(ind))
             array.clear()
 
         logging.info('saving trial {}:{}\n{}'.format(
@@ -304,7 +305,8 @@ class TrialWriter(object):
                 self.data[col] = []
             self.data[col].append(val)
 
-        pandas.DataFrame(self.data).to_csv(self.filepath, index=False)
+        self.df = pandas.DataFrame(self.data)
+        self.df.to_csv(self.filepath, index=False)
 
 
 #
