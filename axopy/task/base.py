@@ -80,7 +80,7 @@ class Task(object):
         """
         pass
 
-    def prepare_view(self, view):
+    def prepare_graphics(self, container):
         """Initialize graphical elements and messaging connections.
 
         This method should be overridden if the task uses any graphics (which
@@ -91,12 +91,13 @@ class Task(object):
 
         Parameters
         ----------
-        view : Container
+        container : axopy.gui.main.Container
             The graphical container you can add objects to.
         """
         pass
 
     def prepare_input_stream(self, input_stream):
+        """Set up the input device, if applicable."""
         pass
 
     def prepare_storage(self, storage):

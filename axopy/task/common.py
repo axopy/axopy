@@ -3,7 +3,7 @@
 from axopy.task import Task
 from axopy import util
 from axopy.messaging import transmitter
-from axopy.gui.signals import SignalWidget
+from axopy.gui.graph import SignalWidget
 
 
 class Oscilloscope(Task):
@@ -12,9 +12,9 @@ class Oscilloscope(Task):
         super(Oscilloscope, self).__init__()
         self.pipeline = pipeline
 
-    def prepare_view(self, view):
+    def prepare_graphics(self, container):
         self.scope = SignalWidget()
-        view.set_view(self.scope)
+        container.set_widget(self.scope)
 
     def prepare_input_stream(self, input_stream):
         self.input_stream = input_stream

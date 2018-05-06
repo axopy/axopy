@@ -17,4 +17,5 @@ These are the modules/subpackages which constitute AxoPy.
    api/storage
    api/stream
    api/timing
+   api/gui
    api/util

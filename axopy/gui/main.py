@@ -68,7 +68,7 @@ def get_qtapp():
     return qtapp
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class _MainWindow(QtWidgets.QMainWindow):
     """The window containing all graphical content of the application.
 
     It is a very simple GUI implemented as a `QMainWindow` with a
@@ -78,7 +78,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         app = get_qtapp()
-        super(MainWindow, self).__init__()
+        super(_MainWindow, self).__init__()
 
         app.installEventFilter(self)
 
@@ -163,17 +163,28 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 class Container(QtWidgets.QWidget):
+    """Graphics container for tasks."""
 
-    def __init__(self, parent=None):
-        super(Container, self).__init__(parent=parent)
+    def set_widget(self, widget):
+        """Set the widget containing all graphical elements.
 
-    def set_view(self, view):
+        Parameters
+        ----------
+        widget : QWidget
+            Any QWidget is OK to add.
+
+        See Also
+        --------
+        axopy.gui.canvas: Canvas widget and canvas items that can be added to
+            the container.
+        axopy.gui.graph: Plotting widgets that can be added to the container.
+        """
         self.layout = QtWidgets.QGridLayout()
         self.setLayout(self.layout)
-        self.layout.addWidget(view, 0, 0)
+        self.layout.addWidget(widget, 0, 0)
 
 
-class SessionConfig(QtWidgets.QDialog):
+class _SessionConfig(QtWidgets.QDialog):
     """Widget for configuring a session.
 
     Shows a form layout with the specified options. Options are passed as a
@@ -184,7 +195,7 @@ class SessionConfig(QtWidgets.QDialog):
 
     def __init__(self, options):
         app = get_qtapp()
-        super(SessionConfig, self).__init__()
+        super(_SessionConfig, self).__init__()
         self.options = options
         self.results = {}
         self.widgets = {}

@@ -102,14 +102,14 @@ class CursorFollowing(Task):
                 })
             block.shuffle()
 
-    def prepare_view(self, view):
+    def prepare_graphics(self, container):
         self.canvas = Canvas()
         self.cursor = Circle(0.05, color='#aa1212')
         self.target = Circle(0.1, color='#32b124')
         self.canvas.add_item(self.target)
         self.canvas.add_item(self.cursor)
         self.canvas.add_item(Cross())
-        view.set_view(self.canvas)
+        container.set_widget(self.canvas)
 
     def prepare_input_stream(self, input_stream):
         self.input_stream = input_stream

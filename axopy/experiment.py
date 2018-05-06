@@ -5,7 +5,7 @@ from axopy.storage import Storage
 from axopy.stream import InputStream
 from axopy.messaging import transmitter
 from axopy.messaging.base import BaseTransmitter
-from axopy.gui.main import MainWindow, SessionConfig
+from axopy.gui.main import _MainWindow, _SessionConfig
 from axopy.gui.canvas import Canvas, Text
 
 
@@ -30,8 +30,6 @@ class Experiment(object):
         If ``True``, overwrite protection in :class:`Storage` is disabled. This
         is mostly for experiment writing purposes.
     """
-
-    status_format = "subject: {subject}"
 
     def __init__(self, daq=None, data='data', subject=None,
                  allow_overwrite=False):
@@ -62,7 +60,7 @@ class Experiment(object):
         the experiment.
         """
         options['subject'] = str
-        config = SessionConfig(options).run()
+        config = _SessionConfig(options).run()
         self.subject = config['subject']
         return config
 
@@ -72,9 +70,8 @@ class Experiment(object):
             self.configure()
 
         # main screen
-        self.screen = MainWindow()
+        self.screen = _MainWindow()
         self.screen.key_pressed.connect(self.key_press)
-        self.screen.set_status(self.status)
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
@@ -91,7 +88,8 @@ class Experiment(object):
 
     @property
     def status(self):
-        return self.status_format.format(**self.__dict__)
+        return "subject: {} | task: {}".format(
+            self.subject, self.current_task.__class__.__name__)
 
     def _run_task(self):
         self._receive_keys = False
@@ -101,10 +99,12 @@ class Experiment(object):
         # forward key presses to the task
         self.key_pressed.connect(self.current_task.key_press)
 
+        self.screen.set_status(self.status)
+
         # add a task view
         con = self.screen.new_container()
 
-        self.current_task.prepare_view(con)
+        self.current_task.prepare_graphics(con)
         self.current_task.prepare_input_stream(self.input_stream)
         self.current_task.prepare_storage(self.storage)
         self.current_task.run()

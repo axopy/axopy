@@ -1,5 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+# TODO add wrapper for QGraphicsItemGroup
+
 
 class Canvas(QtWidgets.QGraphicsView):
     """A 2D canvas interface implemented using a QGraphicsView.
@@ -106,7 +108,7 @@ class Item(object):
     @property
     def pos(self):
         """X and Y coordinates of the item in the canvas."""
-        return self.x(), self.y()
+        return self.x, self.y
 
     @pos.setter
     def pos(self, pos):
@@ -114,6 +116,7 @@ class Item(object):
 
     @property
     def visible(self):
+        """Visibility of the item."""
         return self.qitem.visible()
 
     @visible.setter
@@ -122,6 +125,7 @@ class Item(object):
 
     @property
     def opacity(self):
+        """Opacity of the item (between 0 and 1)."""
         self.qitem.opacity()
 
     @opacity.setter
@@ -129,9 +133,11 @@ class Item(object):
         self.qitem.setOpacity(opacity)
 
     def show(self):
+        """Set the item to visible."""
         self.qitem.show()
 
     def hide(self):
+        """Set the item to invisible."""
         self.qitem.hide()
 
     def set(self, **kwargs):
@@ -140,6 +146,7 @@ class Item(object):
             self._qmeth(prop)(val)
 
     def get(self, prop, *args, **kwargs):
+        """Get any property of the underlying QGraphicsItem."""
         self._qmeth(prop)(*args, **kwargs)
 
     def collides_with(self, item):
@@ -167,6 +174,7 @@ class ColorableMixin(object):
 
 
 class Circle(Item, ColorableMixin):
+    """Circular item."""
 
     def __init__(self, size, color='#333333'):
         qitem = QtWidgets.QGraphicsEllipseItem(-size/2, -size/2, size, size)
@@ -175,29 +183,48 @@ class Circle(Item, ColorableMixin):
         self.color = color
 
 
-class Cross(Item, ColorableMixin):
+class Cross(Item):
+    """Collection of two lines oriented as a "plus sign"."""
 
     def __init__(self, size=0.05, linewidth=0.01, color='#333333'):
         qitem = QtWidgets.QGraphicsItemGroup()
-        lh = Line(-size/2, 0, size/2, 0, width=linewidth)
-        lv = Line(0, -size/2, 0, size/2, width=linewidth)
-        qitem.addToGroup(lh.qitem)
-        qitem.addToGroup(lv.qitem)
+        self._lh = Line(-size/2, 0, size/2, 0, width=linewidth, color=color)
+        self._lv = Line(0, -size/2, 0, size/2, width=linewidth, color=color)
+        qitem.addToGroup(self._lh.qitem)
+        qitem.addToGroup(self._lv.qitem)
         super(Cross, self).__init__(qitem)
+
+    @property
+    def color(self):
+        return self._lv.color
+
+    @color.setter
+    def color(self, color):
+        self._lh.color = color
+        self._lv.color = color
 
 
 class Line(Item):
+    """Line item."""
 
     def __init__(self, x1, y1, x2, y2, width=0.01, color='#333333'):
+        self.width = width
         qitem = QtWidgets.QGraphicsLineItem(x1, y1, x2, y2)
-        pen = QtGui.QPen(QtGui.QBrush(QtGui.QColor(color)),
-                         width,
-                         cap=QtCore.Qt.FlatCap)
-        qitem.setPen(pen)
         super(Line, self).__init__(qitem)
+        self.color = color
+
+    @property
+    def color(self):
+        return self.qitem.pen().color().getRgb()
+
+    @color.setter
+    def color(self, color):
+        self.qitem.setPen(QtGui.QPen(QtGui.QBrush(QtGui.QColor(color)),
+                                     self.width, cap=QtCore.Qt.FlatCap))
 
 
 class Text(Item, ColorableMixin):
+    """Text item."""
 
     def __init__(self, text, color='#333333'):
         qitem = QtWidgets.QGraphicsSimpleTextItem(text)
