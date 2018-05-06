@@ -11,7 +11,7 @@ from axopy.features.util import (ensure_2d, rolling_window, inverted_t_window,
                                  trapezoidal_window)
 
 
-def mean_absolute_value(x, weights='mav'):
+def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
     """Computes the mean absolute value (MAV) of each signal.
 
     Mean absolute value is a popular feature for obtaining amplitude
@@ -53,8 +53,8 @@ def mean_absolute_value(x, weights='mav'):
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
     weights : str or ndarray, optional
         Weights to use. Possible values:
 
@@ -68,6 +68,13 @@ def mean_absolute_value(x, weights='mav'):
             - [ndarray] : user-supplied weights to apply. Must be a 1D array
               with the same length as the signals received in the ``compute``
               method.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
@@ -88,8 +95,7 @@ def mean_absolute_value(x, weights='mav'):
        Reduction and Selection for EMG Signal Classification," Expert Systems
        with Applications, vol. 39, no. 8, pp.  7420-7431, 2012.
     """
-    x = ensure_2d(x)
-    n = x.shape[1]
+    n = x.shape[axis]
 
     if isinstance(weights, np.ndarray):
         w = weights
@@ -106,10 +112,16 @@ def mean_absolute_value(x, weights='mav'):
         raise ValueError("Weights not recognized: should be 'mav', "
                          "'mav1', 'mav2', or a numpy array.")
 
-    return np.mean(w * np.absolute(x), axis=1)
+    # reshape the window array so it multiplies along the correct axis
+    # https://stackoverflow.com/a/30032182
+    dims = np.ones(x.ndim, dtype=int)
+    dims[axis] = -1
+    w = w.reshape(dims)
+
+    return np.mean(w * np.absolute(x), axis=axis, keepdims=keepdims)
 
 
-def waveform_length(x):
+def waveform_length(x, axis=-1, keepdims=False):
     """Computes the waveform length (WL) of each signal.
 
     Waveform length is the sum of the absolute value of the deltas between
@@ -119,8 +131,8 @@ def waveform_length(x):
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
 
     Returns
     -------
@@ -133,11 +145,11 @@ def waveform_length(x):
        Multifunction Myoelectric Control," IEEE Transactions on Biomedical
        Engineering, vol. 40, no. 1, pp. 82-94, 1993.
     """
-    x = ensure_2d(x)
-    return np.sum(np.absolute(np.diff(x, axis=1)), axis=1)
+    return np.sum(np.absolute(np.diff(x, axis=axis)),
+                  axis=axis, keepdims=keepdims)
 
 
-def zero_crossings(x, threshold=0):
+def zero_crossings(x, threshold=0, axis=-1, keepdims=False):
     """Computes the number of zero crossings (ZC) of each signal.
 
     A zero crossing occurs when two adjacent values (in time) of the signal
@@ -146,12 +158,19 @@ def zero_crossings(x, threshold=0):
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
     threshold : float, optional
         A threshold for discriminating true zero crossings from those caused
         by low-level noise situated about zero. By default, no threshold is
         used, so every sign change in the signal is counted.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
@@ -164,20 +183,19 @@ def zero_crossings(x, threshold=0):
        Multifunction Myoelectric Control," IEEE Transactions on Biomedical
        Engineering, vol. 40, no. 1, pp. 82-94, 1993.
     """
-    x = ensure_2d(x)
-
     # sum to count boolean values which indicate slope sign changes
     return np.sum(
         # two conditions:
         np.logical_and(
             # 1. sign changes from one sample to the next
-            np.diff(np.signbit(x), axis=1),
+            np.diff(np.signbit(x), axis=axis),
             # 2. difference between adjacent samples bigger than threshold
-            np.absolute(np.diff(x, axis=1)) > threshold),
-        axis=1)
+            np.absolute(np.diff(x, axis=axis)) > threshold),
+        axis=axis,
+        keepdims=keepdims)
 
 
-def slope_sign_changes(x, threshold=0):
+def slope_sign_changes(x, threshold=0, axis=-1, keepdims=False):
     """Computes the number of slope sign changes (SSC) of each signal.
 
     A slope sign change occurs when the middle value of a group of three
@@ -186,13 +204,20 @@ def slope_sign_changes(x, threshold=0):
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
     threshold : float, optional
         A threshold for discriminating true slope sign changes from those
         caused by low-level noise fluctuating about a specific value. By
         default, no threshold is used, so every slope sign change in the signal
         is counted.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
@@ -205,21 +230,23 @@ def slope_sign_changes(x, threshold=0):
        Multifunction Myoelectric Control," IEEE Transactions on Biomedical
        Engineering, vol. 40, no. 1, pp. 82-94, 1993.
     """
-    x = ensure_2d(x)
+    diffs = np.diff(x, axis=axis)
+    # transpose the diffs so rolling window works
+    adj_diffs = rolling_window(np.swapaxes(np.absolute(diffs), -1, axis), 2)
 
     # sum to count boolean values which indicate slope sign changes
     return np.sum(
         # two conditions need to be met
         np.logical_and(
             # 1. sign of the diff changes from one pair of samples to the next
-            np.diff(np.signbit(np.diff(x, axis=1)), axis=1),
+            np.diff(np.signbit(diffs), axis=axis),
             # 2. the max of two adjacent diffs is bigger than threshold
-            np.max(rolling_window(
-                np.absolute(np.diff(x, axis=1)), 2), axis=-1) > threshold),
-        axis=1)
+            # the transpose here is to un-transpose adj_diffs
+            np.swapaxes(np.max(adj_diffs, axis=-1), -1, axis) > threshold),
+        axis=axis, keepdims=keepdims)
 
 
-def root_mean_square(x):
+def root_mean_square(x, axis=-1, keepdims=False):
     """Computes the root mean square of each signal.
 
     RMS is a commonly used feature for extracting amplitude information from
@@ -229,38 +256,50 @@ def root_mean_square(x):
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
     y : ndarray, shape (n_channels,)
         RMS of each channel.
     """
-    x = ensure_2d(x)
-    return np.sqrt(np.mean(np.square(x), axis=1))
+    return np.sqrt(np.mean(np.square(x), axis=axis, keepdims=keepdims))
 
 
-def integrated_emg(x):
+def integrated_emg(x, axis=-1, keepdims=False):
     """Sum over the rectified signal.
 
     .. math:: \\text{IEMG} = \\sum_{i=1}^{N} | x_{i} |
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
     y : ndarray, shape (n_channels,)
         IEMG of each channel.
     """
-    x = ensure_2d(x)
-    return np.sum(np.absolute(x), axis=1)
+    return np.sum(np.absolute(x), axis=axis, keepdims=keepdims)
 
 
-def logvar(x):
+def logvar(x, axis=-1, keepdims=False):
     """Log of the variance of the signal.
 
     .. math::
@@ -278,8 +317,15 @@ def logvar(x):
 
     Parameters
     ----------
-    x : ndarray, shape (n_channels, n_samples)
-        Input data.
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
@@ -294,5 +340,4 @@ def logvar(x):
        Control," IEEE Transactions on Neural Systems and Rehabilitation
        Engineering, vol. 22, no. 2, pp. 269–279, 2014.
     """
-    x = ensure_2d(x)
-    return np.log10(np.var(x, axis=1))
+    return np.log10(np.var(x, axis=axis, keepdims=keepdims))

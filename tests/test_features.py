@@ -58,6 +58,31 @@ def test_trapezoidal_window():
     assert_equal(w, truth)
 
 
+@pytest.mark.parametrize('func', [
+    features.mean_absolute_value,
+    features.waveform_length,
+    features.zero_crossings,
+    features.slope_sign_changes,
+    features.root_mean_square,
+    features.integrated_emg,
+    features.logvar
+])
+def test_feature_io(func):
+    """Make sure feature function gets 1D and 2D IO correct."""
+    n = 10
+    c = 3
+    x_n = np.random.randn(n)
+    x_cn = np.random.randn(c, n)
+    x_nc = np.random.randn(n, c)
+
+    assert not isinstance(func(x_n), np.ndarray)  # scalar
+    assert func(x_n, keepdims=True).shape == (1,)
+    assert func(x_cn).shape == (c,)
+    assert func(x_cn, keepdims=True).shape == (c, 1)
+    assert func(x_nc, axis=0).shape == (c,)
+    assert func(x_nc, axis=0, keepdims=True).shape == (1, c)
+
+
 def test_mav():
     x = np.array([[0, 2], [0, -4]])
     truth = np.array([1, 2])
