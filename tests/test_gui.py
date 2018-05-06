@@ -2,11 +2,11 @@ import pytest
 import os
 from PyQt5 import QtCore, QtWidgets
 from axopy import util
-from axopy.gui.main import MainWindow, Container, SessionConfig
+from axopy.gui.main import _MainWindow, Container, _SessionConfig
 
 
 def test_main_window(qtbot):
-    win = MainWindow()
+    win = _MainWindow()
 
     # create and set container manually
     c2 = Container()
@@ -32,7 +32,7 @@ def test_session_info_widget(qtbot, mock):
                       return_value=QtWidgets.QMessageBox.Ok)
 
     # single configuration session
-    w = SessionConfig({'subject': str, 'group': ('a', 'b')})
+    w = _SessionConfig({'subject': str, 'group': ('a', 'b')})
 
     # if no subject ID is entered, make sure warning is shown and finished
     # signal isn't emitted

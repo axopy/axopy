@@ -42,7 +42,7 @@ def test_base_task(simple_design):
             block.add_trial()
 
     # task prepare hooks run by Experiment
-    task.prepare_view(None)
+    task.prepare_graphics(None)
     task.prepare_input_stream(None)
     task.prepare_storage(None)
 
