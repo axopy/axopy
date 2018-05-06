@@ -120,23 +120,23 @@ class CursorFollowing(Task):
 
     def run_trial(self, trial):
         if not trial.attrs['training']:
-            self.target.set_color('#3224b1')
+            self.target.color = '#3224b1'
         self._reset()
-        self.target.setPos(trial.attrs['target_x'], trial.attrs['target_y'])
-        self.target.setVisible(True)
+        self.target.pos = trial.attrs['target_x'], trial.attrs['target_y']
+        self.target.show()
         self.pipeline.clear()
         self.connect(self.input_stream.updated, self.update)
 
     def update(self, data):
         xhat = self.pipeline.process(data)
-        self.cursor.setPos(xhat[0], xhat[1])
+        self.cursor.pos = xhat
 
         target_pos = numpy.array([self.trial.attrs['target_x'],
                                   self.trial.attrs['target_y']])
         if self.trial.attrs['training']:
             self.pipeline.named_blocks['RLSMapping'].update(target_pos)
 
-        if self.cursor.collidesWithItem(self.target):
+        if self.cursor.collides_with(self.target):
             self.finish_trial()
 
         self.timer.increment()
@@ -147,9 +147,9 @@ class CursorFollowing(Task):
         self.next_trial()
 
     def _reset(self):
-        self.cursor.setPos(0, 0)
+        self.cursor.pos = 0, 0
         self.timer.reset()
-        self.target.setVisible(False)
+        self.target.hide()
 
     def finish(self):
         self.input_stream.kill()
