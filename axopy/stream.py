@@ -2,7 +2,7 @@
 
 import time
 import numpy
-from PyQt5 import QtCore
+from PySide2 import QtCore
 from axopy.messaging import transmitter
 from axopy.gui.main import get_qtapp, qt_key_map
 from axopy.pipeline import Filter

@@ -1,10 +1,11 @@
 from axopy.messaging.base import BaseTransmitter
-from PyQt5.QtCore import QObject, pyqtSignal
+from PySide2.QtCore import QObject, Signal
 
 
 class _QtTransmitter(BaseTransmitter, QObject):
 
     def connect(self, receiver):
+        print("here")
         self.signal.connect(receiver)
 
     def disconnect(self, receiver):
@@ -24,5 +25,7 @@ def transmitter(function, data_format):
     else:
         types = []
     cls = type('QtTransmitter', (_QtTransmitter,),
-               dict(signal=pyqtSignal(*types)))
-    return cls(function, data_format)
+               dict(signal=Signal(*types)))
+    obj = cls(function, data_format)
+    obj.connect('hey')
+    return obj

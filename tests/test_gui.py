@@ -1,6 +1,6 @@
 import pytest
 import os
-from PyQt5 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from axopy import util
 from axopy.gui.main import _MainWindow, Container, _SessionConfig
 

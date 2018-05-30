@@ -2,7 +2,7 @@
 Some common widgets for prompting subject response.
 """
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PySide2 import QtCore, QtGui, QtWidgets
 
 
 class ImagePrompt(QtWidgets.QLabel):

@@ -1,5 +1,5 @@
 import sys
-from PyQt5 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets
 from axopy import util
 from axopy.messaging import transmitter
 import collections

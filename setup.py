@@ -12,12 +12,12 @@ install_requires = [
     'scipy',
     'pandas',
     'h5py',
-    'pyqtgraph'
+    #'pyqtgraph'
 ]
 # add pyqt5 to requirements for pip installs only
 # conda will complain because its package is just called "pyqt"
-if "CONDA_PREFIX" not in os.environ:
-    install_requires.append('pyqt5')
+#if "CONDA_PREFIX" not in os.environ:
+#    install_requires.append('pyqt5')
 
 
 setup(
