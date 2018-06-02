@@ -66,7 +66,7 @@ def test_base_task(simple_design):
             self.finish_received = True
 
     r = recv()
-    task.finished.connect(r.finish)
+    task.finished.link(r.finish)
     task.next_block()
     assert r.finish_received
 
@@ -94,27 +94,27 @@ def test_task_transmitters():
 
     # using "raw" connect, both t1.tx and t2.tx will connect since those are
     # the same underlying transmitter object
-    t1.tx.connect(t1.rx)
+    t1.tx.link(t1.rx)
     t1.tx()
     assert count == 1
     # here we neglect to disconnect t1.tx, so rx is called twice
-    t2.tx.connect(t2.rx)
+    t2.tx.link(t2.rx)
     t2.tx()
     assert count == 3
 
-    t1.tx.disconnect(t1.rx)
+    t1.tx.unlink(t1.rx)
     t2.tx()
     assert count == 4
 
     # now implement Experiment to ensure doesn't happen
-    t1.tx.disconnect(t1.rx)
-    t2.tx.disconnect(t2.rx)
+    t1.tx.unlink(t1.rx)
+    t2.tx.unlink(t2.rx)
 
-    t1.connect(t1.tx, t1.rx)
+    t1.link(t1.tx, t1.rx)
     t1.tx()
     assert count == 5
-    t1.disconnect_all()
+    t1.unlink()
 
-    t2.connect(t2.tx, t2.rx)
+    t2.link(t2.tx, t2.rx)
     t2.tx()
     assert count == 6

@@ -115,25 +115,25 @@ def eventtransmitter():
 
 def test_transmitter_connect(memblock, relayblock):
     """Ensure transmitters support `connect` and disconnect."""
-    relayblock.relay.connect(memblock.remember)
+    relayblock.relay.link(memblock.remember)
     relayblock.relay(4)
     assert memblock.last_received == 4
 
     relayblock.relay(8)
     assert memblock.last_received == 8
 
-    relayblock.relay.disconnect(memblock.remember)
+    relayblock.relay.unlink(memblock.remember)
     relayblock.relay(9.0)
     assert memblock.last_received == 8
 
 
 def test_receiver_connect(memblock, relayblock):
     """Ensure receivers support `connect` and `disconnect`."""
-    memblock.remember.connect(relayblock.relay)
+    memblock.remember.link(relayblock.relay)
     relayblock.relay(2)
     assert memblock.last_received == 2
 
-    memblock.remember.disconnect(relayblock.relay)
+    memblock.remember.unlink(relayblock.relay)
     relayblock.relay(9)
     assert memblock.last_received == 2
 
@@ -141,7 +141,7 @@ def test_receiver_connect(memblock, relayblock):
 def test_multidata(complicatedblock):
     """Ensure multiple things can be transmitted at once."""
     # transmitter data format specified as tuples
-    complicatedblock.tuple_transmitter.connect(complicatedblock.set_coords)
+    complicatedblock.tuple_transmitter.link(complicatedblock.set_coords)
     complicatedblock.tuple_transmitter(4, (2.1, 6.2), 42.1)
     assert complicatedblock.coords == (2.1, 6.2)
 
@@ -151,33 +151,33 @@ def test_multidata(complicatedblock):
 def test_transmitter_formats(complicatedblock):
     """Ensure newer data formats work for Python 3.6+."""
     # transmitter data format specified as multiple kwargs
-    complicatedblock.dict_transmitter.connect(complicatedblock.set_coords)
+    complicatedblock.dict_transmitter.link(complicatedblock.set_coords)
     complicatedblock.dict_transmitter(4, (4.2, 2.8), 9.8)
     assert complicatedblock.coords == (4.2, 2.8)
 
     # transmitter data format specified with mixture of args and kwargs
-    complicatedblock.mixed_transmitter.connect(complicatedblock.set_coords)
+    complicatedblock.mixed_transmitter.link(complicatedblock.set_coords)
     complicatedblock.mixed_transmitter(1, (7.1, 2.4), 59.1)
     assert complicatedblock.coords == (7.1, 2.4)
 
 
 def test_transmitter_receiver_functions():
     """Use functions (as opposed to methods) as transmitters and receivers."""
-    transmit_func.connect(recv_func)
+    transmit_func.link(recv_func)
     assert transmit_func() == 'message'
     assert message_with_suffix == 'messagesuffix'
 
 
 def test_chained_transmitters(chainedtransmitters):
     """Chain transmitters together, call the first, then check the result."""
-    chainedtransmitters.start.connect(chainedtransmitters.intermediate)
-    chainedtransmitters.intermediate.connect(chainedtransmitters.finish)
+    chainedtransmitters.start.link(chainedtransmitters.intermediate)
+    chainedtransmitters.intermediate.link(chainedtransmitters.finish)
     chainedtransmitters.start("hey")
     assert chainedtransmitters.message == "heytouchedoncetouchedtwice"
 
 
 def test_empty_transmitter(eventtransmitter):
-    eventtransmitter.trigger.connect(eventtransmitter.on_event)
+    eventtransmitter.trigger.link(eventtransmitter.on_event)
     assert not hasattr(eventtransmitter, 'event_occurred')
     eventtransmitter.trigger()
     assert hasattr(eventtransmitter, 'event_occurred')

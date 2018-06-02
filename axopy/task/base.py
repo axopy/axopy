@@ -40,7 +40,7 @@ class Task(object):
         self.iter = _TaskIter(design)
         self.prepare_design(design)
 
-    def connect(self, transmitter, receiver):
+    def link(self, transmitter, receiver):
         """Connect a transmitter to a receiver.
 
         This method helps the task keep track of connections so that all of the
@@ -49,14 +49,14 @@ class Task(object):
         """
         name = _connection_name(transmitter, receiver)
         self._connections[name] = (transmitter, receiver)
-        transmitter.connect(receiver)
+        transmitter.link(receiver)
 
-    def disconnect(self, transmitter, receiver):
+    def unlink(self, transmitter, receiver):
         """Disconnect a transmitter from a receiver."""
         name = _connection_name(transmitter, receiver)
         try:
             del self._connections[name]
-            transmitter.disconnect(receiver)
+            transmitter.unlink(receiver)
         except KeyError:
             # tx/rx pair already removed/disconnected
             pass
@@ -64,7 +64,7 @@ class Task(object):
     def disconnect_all(self):
         """Disconnect all of the task's manually-created connections."""
         for name, (tx, rx) in self._connections.items():
-            tx.disconnect(rx)
+            tx.unlink(rx)
         self._connections.clear()
 
     def prepare_design(self, design):

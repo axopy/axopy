@@ -116,7 +116,7 @@ class CursorFollowing(Task):
         self.input_stream.start()
 
         self.timer = Counter(50)
-        self.timer.timeout.connect(self.finish_trial)
+        self.timer.timeout.link(self.finish_trial)
 
     def run_trial(self, trial):
         if not trial.attrs['training']:
@@ -125,7 +125,7 @@ class CursorFollowing(Task):
         self.target.pos = trial.attrs['target_x'], trial.attrs['target_y']
         self.target.show()
         self.pipeline.clear()
-        self.connect(self.input_stream.updated, self.update)
+        self.link(self.input_stream.updated, self.update)
 
     def update(self, data):
         xhat = self.pipeline.process(data)
@@ -142,7 +142,7 @@ class CursorFollowing(Task):
         self.timer.increment()
 
     def finish_trial(self):
-        self.disconnect(self.input_stream.updated, self.update)
+        self.unlink(self.input_stream.updated, self.update)
         self._reset()
         self.next_trial()
 

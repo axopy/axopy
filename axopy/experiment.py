@@ -71,7 +71,7 @@ class Experiment(object):
 
         # main screen
         self.screen = _MainWindow()
-        self.screen.key_pressed.connect(self.key_press)
+        self.screen.key_pressed.link(self.key_press)
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
@@ -95,9 +95,9 @@ class Experiment(object):
         self._receive_keys = False
 
         # wait for task to finish
-        self.current_task.finished.connect(self._task_finished)
+        self.current_task.finished.link(self._task_finished)
         # forward key presses to the task
-        self.key_pressed.connect(self.current_task.key_press)
+        self.key_pressed.link(self.current_task.key_press)
 
         self.screen.set_status(self.status)
 
@@ -112,8 +112,8 @@ class Experiment(object):
     def _task_finished(self):
         if self.current_task is not None:
             self.current_task.disconnect_all()
-            self.current_task.finished.disconnect(self._task_finished)
-            self.key_pressed.disconnect(self.current_task.key_press)
+            self.current_task.finished.unlink(self._task_finished)
+            self.key_pressed.unlink(self.current_task.key_press)
 
         try:
             self.current_task = next(self.task_iter)

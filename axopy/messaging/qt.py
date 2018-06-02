@@ -4,14 +4,13 @@ from PySide2.QtCore import QObject, Signal
 
 class _QtTransmitter(BaseTransmitter, QObject):
 
-    def connect(self, receiver):
-        print("here")
+    def link(self, receiver):
         self.signal.connect(receiver)
 
-    def disconnect(self, receiver):
+    def unlink(self, receiver):
         try:
             self.signal.disconnect(receiver)
-        except TypeError:
+        except (TypeError, RuntimeError):
             # signal not connected, that's ok
             pass
 
@@ -27,5 +26,4 @@ def transmitter(function, data_format):
     cls = type('QtTransmitter', (_QtTransmitter,),
                dict(signal=Signal(*types)))
     obj = cls(function, data_format)
-    obj.connect('hey')
     return obj

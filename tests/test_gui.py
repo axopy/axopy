@@ -22,7 +22,7 @@ def test_main_window(qtbot):
     def on_key_press(key):
         assert key == util.key_a
 
-    win.key_pressed.connect(on_key_press)
+    win.key_pressed.link(on_key_press)
 
     qtbot.keyClicks(c, 'a')
 

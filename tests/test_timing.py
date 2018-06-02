@@ -14,7 +14,7 @@ class TimeoutReceiver(object):
 def test_incremental_timer():
     timer = Counter(2)
     recv = TimeoutReceiver()
-    timer.timeout.connect(recv.rx)
+    timer.timeout.link(recv.rx)
 
     assert timer.count == 0
 
@@ -34,7 +34,7 @@ def test_incremental_timer():
 def test_incremental_timer_float():
     timer = Counter(3.5)
     recv = TimeoutReceiver()
-    timer.timeout.connect(recv.rx)
+    timer.timeout.link(recv.rx)
 
     timer.increment()
     assert not recv.received

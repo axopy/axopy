@@ -18,7 +18,7 @@ class Oscilloscope(Task):
 
     def prepare_input_stream(self, input_stream):
         self.input_stream = input_stream
-        self.connect(self.input_stream.updated, self.update)
+        self.link(self.input_stream.updated, self.update)
 
     def run(self):
         self.input_stream.start()
