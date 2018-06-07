@@ -66,8 +66,8 @@ and the ``environment.yml`` file provided in this repository. An alternative
 might be to install Qt5 and PyQt5 manually (e.g. from source from
 `Riverbank`_), then run the above ``pip install`` command.
 
-Hello AxoPy
------------
+Hello, AxoPy
+------------
 
 Here's a minimal example to display some randomly generated signals in an
 "oscilloscope":
@@ -81,8 +81,8 @@ Here's a minimal example to display some randomly generated signals in an
     daq = NoiseGenerator(rate=1000, num_channels=4, read_size=100)
     Experiment(daq=daq).run(Oscilloscope())
 
-What Now?
----------
+Next Steps
+----------
 
 Check out the documentation_ for more information on creating experiments. Some
 examples are also located in the ``examples/`` folder.
@@ -90,11 +90,6 @@ examples are also located in the ``examples/`` folder.
 
 Contributing
 ============
-
-If you have cloned AxoPy locally and want to develop on the code and/or docs,
-set up a development environment with the following::
-
-    $ pip install -e .[dev]
 
 Please feel free to share any thoughts or opinions about the design and
 implementation of this software by `opening an issue on GitHub
@@ -114,7 +109,9 @@ change before spending significant time preparing the pull request.
 
 Ideally, new/changed functionality should come with tests and documentation. If
 you are new to contributing, it is perfectly fine to open a work-in-progress
-pull request and have it iteratively reviewed.
+pull request and have it iteratively reviewed. See the `development
+documentation`_ for instructions on setting up a development environment,
+running tests, and building the documentation.
 
 
 .. _pytrigno: https://github.com/ucdrascal/pytrigno
@@ -123,3 +120,4 @@ pull request and have it iteratively reviewed.
 .. _PyPI: https://pypi.org/
 .. _conda: https://conda.io/docs/
 .. _Riverbank: https://www.riverbankcomputing.com/software/pyqt/download5
+.. _development documentation: http://axopy.readthedocs.io/en/latest/development.html

@@ -49,3 +49,4 @@ Some terminology is defined here to make the rest of the documentation clear.
    user_guide
    tutorials
    api
+   development
