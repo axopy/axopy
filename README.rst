@@ -45,7 +45,7 @@ Pipeline processing
     Estimating intentions of the user from raw electrophysiological signals
     often involves a large number of processing operations. AxoPy facilitates
     flexible construction of pipelines that can be reused in different parts of
-    an experiment.
+    an experiment and re-used for offline post-processing, etc.
 
 
 Quickstart
@@ -54,15 +54,17 @@ Quickstart
 Installation
 ------------
 
-**TODO**: make this true
+AxoPy is not yet available on `PyPI`_, but I hope to package it and place it
+there soon. For now, you can install AxoPy by doing the following::
 
-AxoPy can be installed with either ``pip`` or ``conda``. For ``pip``, try::
+    $ pip install git://github.com/ucdrascal/axopy#egg=axopy
 
-    $ pip install axopy
-
-For ``conda``, use::
-
-    $ conda install -c conda-forge axopy
+*Note*: ``pip`` installation (the above command) will fail for Python versions
+older than 3.5 because PyQt5 is not packaged in wheels for Python <= 3.4. If
+you are using a Python version older than 3.5, you may consider using `conda`_
+and the ``environment.yml`` file provided in this repository. An alternative
+might be to install Qt5 and PyQt5 manually (e.g. from source from
+`Riverbank`_), then run the above ``pip install`` command.
 
 Hello AxoPy
 -----------
@@ -89,6 +91,11 @@ examples are also located in the ``examples/`` folder.
 Contributing
 ============
 
+If you have cloned AxoPy locally and want to develop on the code and/or docs,
+set up a development environment with the following::
+
+    $ pip install -e .[dev]
+
 Please feel free to share any thoughts or opinions about the design and
 implementation of this software by `opening an issue on GitHub
 <https://github.com/ucdrascal/axopy/issues/new>`_. Constructive feedback is
@@ -113,3 +120,6 @@ pull request and have it iteratively reviewed.
 .. _pytrigno: https://github.com/ucdrascal/pytrigno
 .. _pymcc: https://github.com/ucdrascal/pymcc
 .. _documentation: https://axopy.readthedocs.io
+.. _PyPI: https://pypi.org/
+.. _conda: https://conda.io/docs/
+.. _Riverbank: https://www.riverbankcomputing.com/software/pyqt/download5
