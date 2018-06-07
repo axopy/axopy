@@ -12,3 +12,4 @@ dist/
 htmlcov/
 .idea/
 .pytest_cache/
+build/
