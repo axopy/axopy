@@ -27,7 +27,7 @@ This will give you everything needed to run the tests and build the
 documentation.
 
 The Python Packaging Authority has much more detailed instructions here:
-`https://packaging.python.org/guides/installing-using-pip-and-virtualenv/`
+https://packaging.python.org/guides/installing-using-pip-and-virtualenv/
 
 
 Test

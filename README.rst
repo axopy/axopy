@@ -54,17 +54,37 @@ Quickstart
 Installation
 ------------
 
+pip
+^^^
+
 AxoPy is not yet available on `PyPI`_, but I hope to package it and place it
 there soon. For now, you can install AxoPy by doing the following::
 
     $ pip install git://github.com/ucdrascal/axopy#egg=axopy
 
-*Note*: ``pip`` installation (the above command) will fail for Python versions
-older than 3.5 because PyQt5 is not packaged in wheels for Python <= 3.4. If
-you are using a Python version older than 3.5, you may consider using `conda`_
-and the ``environment.yml`` file provided in this repository. An alternative
-might be to install Qt5 and PyQt5 manually (e.g. from source from
-`Riverbank`_), then run the above ``pip install`` command.
+conda
+^^^^^
+
+AxoPy is also not yet available on `conda-forge`, but like with ``pip``, it's
+not *too* bad to get it installed at the moment.
+
+Make sure you have a local copy of AxoPy. From the root directory of the
+repository, you can create the conda environment with AxoPy's dependencies
+installed::
+
+    $ conda env create -f environment.yml
+
+Now activate the environment:
+
+- on Windows: run ``activate axopy`` in Anaconda Prompt
+- on macOS or Linux: run ``source activate axopy`` in your terminal
+
+Finally, with the environment activated, install AxoPy itself::
+
+    (axopy) $ pip install .
+
+See the `development documentation`_ for information on setting up
+a development environment to work on AxoPy itself.
 
 Hello, AxoPy
 ------------
@@ -81,11 +101,13 @@ Here's a minimal example to display some randomly generated signals in an
     daq = NoiseGenerator(rate=1000, num_channels=4, read_size=100)
     Experiment(daq=daq).run(Oscilloscope())
 
+
 Next Steps
 ----------
 
-Check out the documentation_ for more information on creating experiments. Some
-examples are also located in the ``examples/`` folder.
+Check out the documentation_ for more information on creating experiments
+(note: documentation is currently being reworked). Some examples are also
+located in the ``examples/`` folder.
 
 
 Contributing
@@ -118,6 +140,7 @@ running tests, and building the documentation.
 .. _pymcc: https://github.com/ucdrascal/pymcc
 .. _documentation: https://axopy.readthedocs.io
 .. _PyPI: https://pypi.org/
+.. _conda-forge: https://conda-forge.org/
 .. _conda: https://conda.io/docs/
 .. _Riverbank: https://www.riverbankcomputing.com/software/pyqt/download5
 .. _development documentation: http://axopy.readthedocs.io/en/latest/development.html
