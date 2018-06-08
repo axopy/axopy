@@ -106,8 +106,8 @@ Next Steps
 ----------
 
 Check out the documentation_ for more information on creating experiments
-(note: documentation is currently being reworked). Some examples are also
-located in the ``examples/`` folder.
+(note: documentation is currently being reworked). Some `examples`_ are also
+available.
 
 
 Contributing
@@ -139,6 +139,7 @@ running tests, and building the documentation.
 .. _pytrigno: https://github.com/ucdrascal/pytrigno
 .. _pymcc: https://github.com/ucdrascal/pymcc
 .. _documentation: https://axopy.readthedocs.io
+.. _examples: https://github.com/ucdrascal/axopy/tree/master/examples
 .. _PyPI: https://pypi.org/
 .. _conda-forge: https://conda-forge.org/
 .. _conda: https://conda.io/docs/
