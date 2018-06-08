@@ -57,16 +57,16 @@ Installation
 pip
 ^^^
 
-AxoPy is not yet available on `PyPI`_, but I hope to package it and place it
-there soon. For now, you can install AxoPy by doing the following::
+AxoPy is available on `PyPI`_, so the following should get it installed if
+you're using a standard Python installation with ``pip``::
 
-    $ pip install git://github.com/ucdrascal/axopy#egg=axopy
+    $ pip install axopy
 
 conda
 ^^^^^
 
-AxoPy is also not yet available on `conda-forge`, but like with ``pip``, it's
-not *too* bad to get it installed at the moment.
+AxoPy is not yet available on `conda-forge`, but it's not *too* bad to get it
+installed at the moment.
 
 Make sure you have a local copy of AxoPy. From the root directory of the
 repository, you can create the conda environment with AxoPy's dependencies
