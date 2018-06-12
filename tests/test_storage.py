@@ -47,6 +47,30 @@ def test_storage(tmpdirpath):
     assert reader.pickle('somelist') == [1, 2, 3]
 
 
+def test_allow_overwrite(tmpdir_factory):
+    root = tmpdir_factory.mktemp('test')
+
+    storage = Storage(root=root)
+    storage.subject_id = 'p0'
+    writer = storage.create_task('task1')
+
+    # trying to create the task again raises error
+    with pytest.raises(ValueError):
+        storage.create_task('task1')
+
+    for i in range(2):
+        storage = Storage(root=root, allow_overwrite=True)
+        storage.subject_id = 'p0'
+
+        # with allow_overwrite, no more error
+        writer = storage.create_task('task1')
+
+        d = Design()
+        trial = d.add_block().add_trial(attrs={'var': 1})
+        trial.add_array('array', data=numpy.random.randn(10))
+        writer.write(trial)
+
+
 def test_storage_directories(tmpdir_factory):
     """Test that Storage can find and create the right directories."""
     # create a file structure:
