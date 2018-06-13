@@ -2,7 +2,7 @@
 
 from __future__ import division
 from PyQt5 import QtCore
-from axopy.messaging import transmitter, receiver
+from axopy.messaging import transmitter
 
 
 class Counter(object):
@@ -28,14 +28,12 @@ class Counter(object):
 
     >>> from axopy.timing import Counter
     >>> timer = Counter(2)
-    >>> timer.timeout.connect(lambda: print("timed out"))
     >>> timer.increment()
     >>> timer.count
     1
     >>> timer.progress
     0.5
     >>> timer.increment()
-    timed out
     >>> timer.count
     0
     """
@@ -55,11 +53,10 @@ class Counter(object):
         """Progress toward timeout, from 0 to 1."""
         return self.count / self.max_count
 
-    @receiver
     def increment(self):
         """Increment the counter.
 
-        If `max_count` is reached, the `timeout` event is transmitted. If
+        If `max_count` is reached, the ``timeout`` event is transmitted. If
         `reset_on_timeout` has been set to True (default), the timer is also
         reset.
         """
@@ -73,7 +70,7 @@ class Counter(object):
 
     @transmitter()
     def timeout(self):
-        """Transmitted when `max_count` is reached."""
+        """Transmitter fired when ``max_count`` is reached."""
         return
 
     def reset(self):
@@ -82,6 +79,13 @@ class Counter(object):
 
 
 class Timer(object):
+    """Real-time timer.
+
+    Parameters
+    ----------
+    duration : int
+        Duration of the timer in milliseconds.
+    """
 
     def __init__(self, duration):
         self.duration = duration
@@ -92,11 +96,14 @@ class Timer(object):
         self._qtimer.timeout.connect(self.timeout)
 
     def start(self):
+        """Start the timer."""
         self._qtimer.start()
 
     def stop(self):
+        """Stop the timer."""
         self._qtimer.stop()
 
     @transmitter()
     def timeout(self):
+        """Transmitter that is fired when the timer times out."""
         return

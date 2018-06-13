@@ -44,7 +44,7 @@ def rolling_window(array, n):
     Examples
     --------
     >>> import numpy as np
-    >>> from exgfeatures.util import rolling_window
+    >>> from axopy.features.util import rolling_window
     >>> x = np.array([1, 2, 3, 4, 5])
     >>> rolling_window(x, 2)
     array([[1, 2],
@@ -107,8 +107,8 @@ def inverted_t_window(n, p=0.25, a=0.5):
 
     Examples
     --------
-    >>> import exgfeatures as exg
-    >>> exg.util.inverted_t_window(8)
+    >>> from axopy.features.util import inverted_t_window 
+    >>> inverted_t_window(8)
     array([ 0.5,  1. ,  1. ,  1. ,  1. ,  1. ,  0.5,  0.5])
     """
     w = np.ones(n)
@@ -147,8 +147,8 @@ def trapezoidal_window(n, p=0.25):
 
     Examples
     --------
-    >>> import exgfeatures as exg
-    >>> exg.util.trapezoidal_window(9, p=1/3.)
+    >>> from axopy.features.util import trapezoidal_window
+    >>> trapezoidal_window(9, p=1/3.)
     array([ 0.33333333,  0.66666667,  1.        ,  1.        ,  1.        ,
             1.        ,  0.66666667,  0.33333333,  0.        ])
     """

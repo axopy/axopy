@@ -21,13 +21,6 @@ class InputStream(QtCore.QThread):
         Any object implementing the OutputDevice interface. See
         :class:`NoiseGenerator` for an example.
 
-    Attributes
-    ----------
-    updated : pyqtSignal
-        Emits the latest data from the data acquisition unit as processed by
-        the pipeline.
-    disconnected : pyqtSignal
-        Emitted when there is a problem with the data acquisition unit.
     """
 
     def __init__(self, device):

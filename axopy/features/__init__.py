@@ -10,9 +10,9 @@ __all__ = ['mean_absolute_value',
            'integrated_emg',
            'logvar']
 
-# # FIXME: fix string formatting in docstrings
-# import numpy
-# try:
-#     numpy.set_printoptions(legacy='1.13')
-# except TypeError:
-#     pass
+# FIXME: fix string formatting in docstrings
+import numpy
+try:
+    numpy.set_printoptions(legacy='1.13')
+except TypeError:
+    pass
