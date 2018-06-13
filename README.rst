@@ -74,7 +74,7 @@ a development environment to work on AxoPy itself.
 conda
 ^^^^^
 
-AxoPy is also available on `conda-forge`, so if you're using (Ana)conda with
+AxoPy is also available on `conda-forge`_, so if you're using (Ana)conda with
 any Python version, you can install it with::
 
     $ conda install -c conda-forge axopy
