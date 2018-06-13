@@ -62,29 +62,22 @@ you're using a standard Python installation with ``pip``::
 
     $ pip install axopy
 
-conda
-^^^^^
-
-AxoPy is not yet available on `conda-forge`, but it's not *too* bad to get it
-installed at the moment.
-
-Make sure you have a local copy of AxoPy. From the root directory of the
-repository, you can create the conda environment with AxoPy's dependencies
-installed::
-
-    $ conda env create -f environment.yml
-
-Now activate the environment:
-
-- on Windows: run ``activate axopy`` in Anaconda Prompt
-- on macOS or Linux: run ``source activate axopy`` in your terminal
-
-Finally, with the environment activated, install AxoPy itself::
-
-    (axopy) $ pip install .
+*Note*: if you have Python < 3.5, ``pip`` will not be able to install the
+``pyqt5`` package for you because wheels for ``pyqt5`` are only provided for
+Python >= 3.5. If you are stuck on an older version of Python, consider using
+``conda`` (described below, works for any Python version) or installing Qt5 and
+PyQt5 yourself before running the command above.
 
 See the `development documentation`_ for information on setting up
 a development environment to work on AxoPy itself.
+
+conda
+^^^^^
+
+AxoPy is also available on `conda-forge`, so if you're using (Ana)conda with
+any Python version, you can install it with::
+
+    $ conda install -c conda-forge axopy
 
 Hello, AxoPy
 ------------
@@ -143,5 +136,4 @@ running tests, and building the documentation.
 .. _PyPI: https://pypi.org/
 .. _conda-forge: https://conda-forge.org/
 .. _conda: https://conda.io/docs/
-.. _Riverbank: https://www.riverbankcomputing.com/software/pyqt/download5
 .. _development documentation: http://axopy.readthedocs.io/en/latest/development.html

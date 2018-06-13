@@ -61,12 +61,22 @@ the source and wheel distributions::
 
     (.venv-dev) $ python setup.py sdist bdist_wheel
 
+*Optional*: If you want to check first that all is well before pushing to PyPI,
+you can upload the release packages to the test PyPI server first::
+
+    (.venv-dev) $ twine upload --repository-url https://test.pypi.org/legacy dist/*
+
 Now make sure you have twine installed (*it's not in the dev dependencies*),
 and upload the release to PyPI::
 
     (.venv-dev) $ twine upload dist/*
 
-If you want to check first that all is well before pushing to PyPI, you can
-upload the release packages to the test PyPI server first::
+Once everything looks good, you can tag the version bump commit and push the
+tag.
 
-    (.venv-dev) $ twine upload --repository-url https://test.pypi.org/legacy dist/*
+Now you can prepare the release on conda-forge, where the metadata for the
+package is hosted at https://github.com/conda-forge/axopy-feedstock. Edit the
+``meta.yml`` file so its version string matches the PyPI version and copy the
+SHA256 hash for the source dist (sdist) package (tar.gz file) from PyPI and
+paste it into ``meta.yml`` as well. Commit the changes and submit as a pull
+request.
