@@ -47,8 +47,8 @@ def test_storage(tmpdirpath):
     assert reader.pickle('somelist') == [1, 2, 3]
 
 
-def test_allow_overwrite(tmpdir_factory):
-    root = tmpdir_factory.mktemp('test')
+def test_allow_overwrite(tmpdirpath):
+    root = os.path.join(tmpdirpath, 'overwrite')
 
     storage = Storage(root=root)
     storage.subject_id = 'p0'
