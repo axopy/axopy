@@ -2,7 +2,7 @@
 
 from __future__ import division
 from PySide2 import QtCore
-from axopy.messaging import transmitter, receiver
+from axopy.messaging import Transmitter
 
 
 class Counter(object):
@@ -40,6 +40,8 @@ class Counter(object):
     0
     """
 
+    timeout = Transmitter()
+
     def __init__(self, max_count=1, reset_on_timeout=True):
         max_count = int(max_count)
         if max_count < 1:
@@ -55,7 +57,6 @@ class Counter(object):
         """Progress toward timeout, from 0 to 1."""
         return self.count / self.max_count
 
-    @receiver
     def increment(self):
         """Increment the counter.
 
@@ -69,7 +70,7 @@ class Counter(object):
             if self.reset_on_timeout:
                 self.reset()
 
-            self.timeout()
+            self.timeout.emit()
 
     @transmitter()
     def timeout(self):
@@ -82,6 +83,8 @@ class Counter(object):
 
 
 class Timer(object):
+
+    timeout = Transmitter()
 
     def __init__(self, duration):
         self.duration = duration
@@ -96,7 +99,3 @@ class Timer(object):
 
     def stop(self):
         self._qtimer.stop()
-
-    @transmitter()
-    def timeout(self):
-        return

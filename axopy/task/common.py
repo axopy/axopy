@@ -2,7 +2,6 @@
 
 from axopy.task import Task
 from axopy import util
-from axopy.messaging import transmitter
 from axopy.gui.graph import SignalWidget
 
 
@@ -30,7 +29,8 @@ class Oscilloscope(Task):
 
     def key_press(self, key):
         if key == util.key_return:
-            self.finished()
+            self.finish()
 
     def finish(self):
         self.input_stream.kill()
+        super(Oscilloscope, self).finish()

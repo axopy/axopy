@@ -3,13 +3,13 @@
 from axopy import util
 from axopy.storage import Storage
 from axopy.stream import InputStream
-from axopy.messaging import transmitter
-from axopy.messaging.base import BaseTransmitter
+from axopy.messaging import Transmitter
 from axopy.gui.main import _MainWindow, _SessionConfig
 from axopy.gui.canvas import Canvas, Text
+from PySide2.QtCore import QObject
 
 
-class Experiment(object):
+class Experiment(QObject):
     """Experiment workflow manager.
 
     Presents the researcher with a prompt for entering session details and then
@@ -31,8 +31,11 @@ class Experiment(object):
         is mostly for experiment writing purposes.
     """
 
+    key_pressed = Transmitter(str)
+
     def __init__(self, daq=None, data='data', subject=None,
                  allow_overwrite=False):
+        super(Experiment, self).__init__()
         self.daq = daq
         self.input_stream = InputStream(daq)
         self.storage = Storage(data, allow_overwrite=allow_overwrite)
@@ -71,7 +74,7 @@ class Experiment(object):
 
         # main screen
         self.screen = _MainWindow()
-        self.screen.key_pressed.link(self.key_press)
+        self.screen.key_pressed.connect(self.key_press)
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
@@ -95,9 +98,9 @@ class Experiment(object):
         self._receive_keys = False
 
         # wait for task to finish
-        self.current_task.finished.link(self._task_finished)
+        self.current_task.finished.connect(self._task_finished)
         # forward key presses to the task
-        self.key_pressed.link(self.current_task.key_press)
+        self.key_pressed.connect(self.current_task.key_press)
 
         self.screen.set_status(self.status)
 
@@ -112,8 +115,8 @@ class Experiment(object):
     def _task_finished(self):
         if self.current_task is not None:
             self.current_task.disconnect_all()
-            self.current_task.finished.unlink(self._task_finished)
-            self.key_pressed.unlink(self.current_task.key_press)
+            self.current_task.finished.disconnect(self._task_finished)
+            self.key_pressed.disconnect(self.current_task.key_press)
 
         try:
             self.current_task = next(self.task_iter)
@@ -130,8 +133,4 @@ class Experiment(object):
             elif key == util.key_return:
                 self._run_task()
         else:
-            self.key_pressed(key)
-
-    @transmitter(('key', str))
-    def key_pressed(self, key):
-        return key
+            self.key_pressed.emit(key)

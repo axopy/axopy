@@ -1,11 +1,12 @@
 """Base task implementation."""
 
+from PySide2.QtCore import QObject
 from axopy import util
 from axopy.design import Design
-from axopy.messaging import transmitter, receiver
+from axopy.messaging import Transmitter
 
 
-class Task(object):
+class Task(QObject):
     """Base class for tasks.
 
     This base class handles iteration through the trials of the task in blocks.
@@ -30,10 +31,12 @@ class Task(object):
         set to ``None`` to disable the feature (next block starts immediately
         after one finishes).
     """
+    finished = Transmitter()
 
     advance_block_key = util.key_return
 
     def __init__(self):
+        super(Task, self).__init__()
         self._connections = {}
 
         design = Design()
@@ -49,14 +52,14 @@ class Task(object):
         """
         name = _connection_name(transmitter, receiver)
         self._connections[name] = (transmitter, receiver)
-        transmitter.link(receiver)
+        transmitter.connect(receiver)
 
     def unlink(self, transmitter, receiver):
         """Disconnect a transmitter from a receiver."""
         name = _connection_name(transmitter, receiver)
         try:
             del self._connections[name]
-            transmitter.unlink(receiver)
+            transmitter.disconnect(receiver)
         except KeyError:
             # tx/rx pair already removed/disconnected
             pass
@@ -64,7 +67,7 @@ class Task(object):
     def disconnect_all(self):
         """Disconnect all of the task's manually-created connections."""
         for name, (tx, rx) in self._connections.items():
-            tx.unlink(rx)
+            tx.disconnect(rx)
         self._connections.clear()
 
     def prepare_design(self, design):
@@ -139,7 +142,6 @@ class Task(object):
         block = self.iter.next_block()
         if block is None:
             self.finish()
-            self.finished()
             return
 
         self.block = block
@@ -193,20 +195,8 @@ class Task(object):
         This is a good time to disconnect transmitters. By default, nothing is
         done.
         """
-        pass
+        self.finished.emit()
 
-    @transmitter()
-    def finished(self):
-        """Signal that the last trial of the last block has run.
-
-        This method simply transmits an event, primarily for the
-        :class:`axopy.experiment.Experiment` to know when the task has finished
-        so it can run the next one. You shouldn't need to override or call this
-        method.
-        """
-        return
-
-    @receiver
     def key_press(self, key):
         """Handle key press events.
 
