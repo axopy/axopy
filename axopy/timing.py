@@ -78,7 +78,7 @@ class Counter(TransmitterBase):
         self.count = 0
 
 
-class Timer(object):
+class Timer(TransmitterBase):
     """Real-time timer.
 
     Parameters
@@ -95,6 +95,7 @@ class Timer(object):
     timeout = Transmitter()
 
     def __init__(self, duration):
+        super(Timer, self).__init__()
         self.duration = duration
 
         self._qtimer = QtCore.QTimer()

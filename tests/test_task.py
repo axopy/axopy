@@ -109,8 +109,13 @@ def test_task_transmitters():
     t1.connect(t1.tx, t1.rx)
     t1.tx.emit()
     assert count == 3
-    t1.disconnect_all()
+    # disconnect specific pair
+    t1.disconnect(t1.tx, t1.rx)
+    # try to disconnect again, fails silently
+    t1.disconnect(t1.tx, t1.rx)
 
     t2.connect(t2.tx, t2.rx)
     t2.tx.emit()
     assert count == 4
+
+    t2.disconnect_all()
