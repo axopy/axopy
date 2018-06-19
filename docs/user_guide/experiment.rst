@@ -1,135 +1,141 @@
-.. _user_interface:
+.. _experiment:
 
-==============
-User Interface
-==============
+================
+Experiment Setup
+================
 
-.. currentmodule:: axopy.application
+.. currentmodule:: axopy.experiment
 
-This is currently a sort of design document describing some musings on the
-design of the "application" portion of AxoPy.
+Before getting started writing experiments, it may be useful to see how AxoPy
+is put together. The overall structure of an AxoPy application is handled by
+the :class:`Experiment`. You can think of the experiment as a manager of
+a number of tasks that, run in succession, form an actual experimental
+protocol.
 
-
-Overview
---------
-
-The user interface is based on Qt_, implemented with PyQt5_. A base user
-interface is provided, which is really just a QMainWindow_ with some default
-functionality and a simple API added for easily building up a full experiment
-workflow. Implementing an experiment involves instantiating this base UI,
-adding tasks to it (which are represented as tabs in the UI), and running it.
-A task is just a `QWidget`_, again with a small API on top to standardize how
-the base UI interacts with it. Some common tasks are built into the library,
-but a full experiment implementation will most likely involve one or more
-custom task UI classes.
-
-
-Task Lifecycle
---------------
-
-All tasks should deal with the following events:
-
-- instantiated (by the user)
-- installed in base UI (by the user)
-- made visible
-- started
-- paused
-- complete
-
-AxoPy should handle much of the lifecycle based on a user-designed task
-inheriting from one of a few task base classes. The behavior can of course be
-overridden.
-
-
-Task Properties
----------------
-
-These are some of the properties that define how the base UI should handle
-switching to and away from a task.
-
-- **locking**: tasks that can't be navigated away from once started. Examples
-  include basically all tasks that collect data. Base UI should disable the tab
-  bar until the task is paused or completed.
-- **requires participant**: tasks that aren't useful without having
-  a participant selected. Examples include experiment tasks, experiment data
-  visualization tasks, data processing tasks. You can activate the task's tab,
-  but the tab is disabled with a message saying it requires a participant to be
-  selected.
-- **requires data read access**: tasks that require a participant *and* data
-  from a specific task for that participant. Examples include an experiment
-  task that relies on data generated from another experiment task and/or
-  processed data from another experiment task. You can activate this task's
-  tab, but the tab should be disabled with a message saying that it requires
-  data.
-- **requires data write access**: tasks that require the ability to write to
-  data storage. Examples include experiment tasks, processing tasks. Data
-  writing tasks are (I think) always going to also be locking, require
-  a participant. Most will also require data read access.
-- **requires DAQ**: tasks that need to access data from a data acquisition
-  device. Examples include oscilloscope-type tasks and experiment tasks. Not
-  necessarily locking.
-
-
-Task Types
-----------
-
-With the above properties taken into consideration, all tasks will fall into
-one of the following categories:
-
-`RealtimeVisualizationTask`
-  Reads data from a data acquisition device and displays it. May perform some
-  computation on the data but cannot write the processed data. Requires DAQ.
-`DataVisualizationTask`
-  Reads data from storage and displays it. May perform computation on the data
-  but cannot write it to storage. Use a `ProcessorTask` for that. Requires
-  participant, read access to storage.
-`ProcessingTask`
-  Similar to a `DataVisualizerTask`, but can write processed data. This means
-  the task locks while processing and writing. Requires participant, read
-  access to data storage, write access to data storage, locking.
-`ExperimentTask`
-  The most complex type of task, requiring implementation of all task
-  properties. These are tasks that might include training on data from other
-  tasks, reading data from a data acquisition device, and writing data to
-  storage. Requires participant, DAQ, read access to data storage write access
-  to data storage, locking.
-
-Interface idea: these base task classes have class attributes corresponding to
-the properties listed above, the base UI looks at these attributes to decide
-what methods to call on them, what to show if a requirement isn't met, etc.
-
-
-Task Creation Functions
------------------------
-
-Some experiments are probably simple enough that fully customized tasks aren't
-really necessary, but built-in tasks won't cut it either. For these cases,
-there should be some functions like ``create_processing_task`` that look
-something like:
-
-.. code:: python
-
-   def create_processing_task(name, input_task, pipeline, widget):
-       """Generates a ProcessingTask.
-
-       Parameters
-       ----------
-       name : str
-           Name of the task. Used as the location in storage for the output.
-       input_task : str
-           Name of the task for retrieving input data.
-       pipeline : Pipeline
-           Processing pipeline which accepts a trial of data from the
-           `input_task` and outputs the processed trial data.
-       widget : QWidget
-           A widget for displaying the data from each output trial.
-       """
-
-This specific example probably needs some more thought, such as handling which
-sessions/trials to process and what to display to the operator.
-
+The :class:`Experiment` manages a PyQt5_ application and is responsible for
+giving each task a graphical container within the Qt_ application, access to
+hardware inputs, and data storage. The task implementation is responsible for
+making use of these experiment-wide resources and then handing control back to
+the experiment so it can run the next task. When you work on implementing an
+experimental protocol, you'll spend most of your time implementing the task.
+For now, though, we'll just talk about getting the :class:`Experiment` running
+and some different ways it can be configured.
 
 .. _Qt: https://www.qt.io/
 .. _PyQt5: https://www.riverbankcomputing.com/software/pyqt/intro
-.. _QMainWindow: https://doc.qt.io/qt-5/qmainwindow.html
-.. _QWidget: https://doc.qt.io/qt-5/qwidget.html
+
+
+Hello, Experiment
+=================
+
+Pretty much all AxoPy experiments have in common that they need to collect data
+from a hardware input device and then produce feedback to the experiment
+participant. For most of our examples, we'll make use of the built-in
+:class:`~axopy.task.Oscilloscope` task and a built-in device, like the
+:class:`~axopy.stream.NoiseGenerator`. In this example, we'll do just that: run
+an experiment that consists of showing some random noise in an
+oscilloscope-like signal viewer.
+
+.. code-block:: python
+
+    from axopy.experiment import Experiment
+    from axopy.task import Oscilloscope
+    from axopy.stream import NoiseGenerator
+
+    exp = Experiment(daq=NoiseGenerator())
+    exp.run(Oscilloscope())
+
+In terms of lines of code, this is about the most straightforward experiment
+you can write that actually does something. We create the :class:`Experiment`
+object with a :class:`~axopy.stream.NoiseGenerator` as the input device, then
+run the experiment with :class:`~axopy.task.Oscilloscope` as the sole task to
+run.
+
+When you run this code, you'll notice the first thing that happens is a dialog
+window pops up prompting you to enter a subject ID. The :class:`Experiment`
+needs a subject ID so that it can set up :ref:`data storage <storage>`. Once
+the subject ID is entered and accepted, you'll see a screen that says "Ready".
+This screen is shown in between all tasks in the experiment---hit the ``Enter``
+or ``Return`` key to accept the prompt and start the task. You should then see
+an oscilloscope widget displaying a randomly generated signal in real time. You
+can press ``Enter`` again to finish the task (this is specific to
+:class:`Oscilloscope` which is a "free-running" task). When the task finishes,
+the :class:`Experiment` looks for the next task to run. Since there aren't any
+more, the application exits.
+
+
+Experiment Configuration
+========================
+
+It is very common in human-computer interface studies to need to do one or more
+of the following:
+
+- split subjects into groups
+- re-test a subject on one or more follow-up sessions
+- handle subjects of a specific class differently (e.g. mirror the screen
+  contents for left-hand dominant subjects)
+
+For these cases, :class:`Experiment` provides the option to run a configuration
+step between creation of the experiment object and running the tasks. This
+allows you to set options on your tasks before running them or even run an
+entirely different list of tasks.
+
+The :meth:`Experiment.configure()` method accepts as many configuration options
+as you want. You specify each one by providing a keyword argument with the
+option's type as the value.
+
+For example, say we want to input the subject's age. We can do that with an
+``int`` option called ``age``:
+
+.. code-block:: python
+
+    from axopy.experiment import Experiment
+
+    exp = Experiment()
+    config = exp.configure(age=int)
+
+    print(config['age'])
+
+If you run the code above, a dialog box will pop up just like it did for the
+first example, but now a text box for the subject ID *and* the age is shown.
+Note that you do not have to specify ``subject`` as an option---this is done
+for you. :meth:`Experiment.configure()` returns a dictionary mapping the
+option names to their values once the dialog is accepted. It's then up to you
+to handle these options and modify how the experiment runs based on them.
+
+Aside from primitive types like ``int``, ``str``, or ``float``, you can specify
+a number of possible values for a configuration option, and these will be
+available to select in a combo box (drop-down menu):
+
+.. code-block:: python
+
+    exp.configure(hand=('right', 'left'))
+
+
+Tips for Experiment Writing
+===========================
+
+The :class:`Experiment` class accepts a couple other keyword arguments that can
+be useful when debugging and/or developing an experiment application. You can
+specify a ``subject`` argument so that the configuration dialog isn't shown
+when the :class:`Experiment` is run:
+
+.. code-block:: python
+
+    from axopy.experiment import Experiment
+    from axopy.task import Oscilloscope
+    from axopy.stream import NoiseGenerator
+
+    exp = Experiment(daq=NoiseGenerator(), subject='test')
+    exp.run(Oscilloscope())
+
+By default, if you run any tasks that write data to storage, AxoPy will
+complain and exit if you attempt to overwrite any data that exists. This will
+happen if you repeatedly run the :class:`Experiment` with the same subject ID,
+so it can be useful (in conjunction with the ``subject`` keyword argument) to
+set ``allow_overwrite=True`` as well, quelling the error regarding overwriting
+data:
+
+.. code-block:: python
+
+    exp = Experiment(subject='test', allow_overwrite=True)

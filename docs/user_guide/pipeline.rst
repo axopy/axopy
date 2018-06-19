@@ -175,7 +175,9 @@ Pipeline blocks are simple to implement. It is only expected that you implement
 a ``process()`` method which takes one argument (``data``) and returns
 something. For multi-input blocks, you'll probably want to just expand the
 inputs right off the bat (e.g. ``in_a, in_b = data``). Usually, the output is
-some processed form of the input data::
+some processed form of the input data:
+
+.. code-block:: python
 
     import axopy.pipeline as pipeline
 
@@ -188,18 +190,22 @@ some processed form of the input data::
             return 2 * data
 
 With some blocks implemented, the list/tuple syntax described above is used for
-specifying how they are connected::
+specifying how they are connected:
+
+.. code-block:: python
 
     a = FooBlock()
     b = BarBlock()
     p = pipeline.Pipeline([a, b])
 
-Now, you just give the pipeline input and get its output::
+Now, you just give the pipeline input and get its output:
 
-    input = 3
-    result = p.process(input)
+.. code-block:: python
 
-In this case, the result would be ``2 * (input + 1) == 8``.
+    data = 3
+    result = p.process(data)
+
+In this case, the result would be ``2 * (data + 1) == 8``.
 
 
 Post-Process Hooks
@@ -217,7 +223,9 @@ You run some data through the pipeline to get the result from block ``b``, but
 you also want to run some function with the output of ``a``. ``Block`` takes
 a ``hooks`` keword argument which takes a list of functions to execute after
 the block's ``process`` method finishes. To use hooks, make sure your custom
-block calls the parent ``Block`` ``__init__`` method. For example::
+block calls the parent ``Block`` ``__init__`` method. For example:
+
+.. code-block:: python
 
     import axopy.pipeline as pipeline
 
