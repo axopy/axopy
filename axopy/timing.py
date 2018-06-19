@@ -2,10 +2,10 @@
 
 from __future__ import division
 from PyQt5 import QtCore
-from axopy.messaging import transmitter
+from axopy.messaging import Transmitter, TransmitterBase
 
 
-class Counter(object):
+class Counter(TransmitterBase):
     """Counts to a given number then transmits a timeout event.
 
     Parameters
@@ -21,6 +21,8 @@ class Counter(object):
     ----------
     count : int
         Current count.
+    timeout : Transmitter
+        Transmitted when ``max_count`` has been reached.
 
     Examples
     --------
@@ -38,7 +40,10 @@ class Counter(object):
     0
     """
 
+    timeout = Transmitter()
+
     def __init__(self, max_count=1, reset_on_timeout=True):
+        super(Counter, self).__init__()
         max_count = int(max_count)
         if max_count < 1:
             raise ValueError('max_count must be > 1')
@@ -66,12 +71,7 @@ class Counter(object):
             if self.reset_on_timeout:
                 self.reset()
 
-            self.timeout()
-
-    @transmitter()
-    def timeout(self):
-        """Transmitter fired when ``max_count`` is reached."""
-        return
+            self.timeout.emit()
 
     def reset(self):
         """Resets the count to 0 to start over."""
@@ -85,7 +85,14 @@ class Timer(object):
     ----------
     duration : int
         Duration of the timer in milliseconds.
+
+    Attributes
+    ----------
+    timeout : Transmitter
+        Transmitted when the timer has finished.
     """
+
+    timeout = Transmitter()
 
     def __init__(self, duration):
         self.duration = duration
@@ -102,8 +109,3 @@ class Timer(object):
     def stop(self):
         """Stop the timer."""
         self._qtimer.stop()
-
-    @transmitter()
-    def timeout(self):
-        """Transmitter that is fired when the timer times out."""
-        return

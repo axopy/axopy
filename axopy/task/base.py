@@ -2,10 +2,10 @@
 
 from axopy import util
 from axopy.design import Design
-from axopy.messaging import transmitter, receiver
+from axopy.messaging import Transmitter, TransmitterBase
 
 
-class Task(object):
+class Task(TransmitterBase):
     """Base class for tasks.
 
     This base class handles iteration through the trials of the task in blocks.
@@ -29,11 +29,18 @@ class Task(object):
         Key for the user to press in order to advance to the next block. Can
         set to ``None`` to disable the feature (next block starts immediately
         after one finishes).
+    finished : Transmitter
+        Emitted when the last trial of the last block has run. This is
+        primarily for the :class:`axopy.experiment.Experiment` to know when the
+        task has finished so it can run the next one. You shouldn't need to
+        use this transmitter at all.
     """
 
     advance_block_key = util.key_return
+    finished = Transmitter()
 
     def __init__(self):
+        super(Task, self).__init__()
         self._connections = {}
 
         design = Design()
@@ -139,7 +146,6 @@ class Task(object):
         block = self.iter.next_block()
         if block is None:
             self.finish()
-            self.finished()
             return
 
         self.block = block
@@ -190,23 +196,12 @@ class Task(object):
         """Clean up at the end of the task.
 
         Override if you need to clean up once the task is completely finished.
-        This is a good time to disconnect transmitters. By default, nothing is
-        done.
+        If you do override this method, you should call the base
+        :meth:`Task.finish()` method or call the ``finished`` transmitter
+        yourself.
         """
-        pass
+        self.finished.emit()
 
-    @transmitter()
-    def finished(self):
-        """Signal that the last trial of the last block has run.
-
-        This method simply transmits an event, primarily for the
-        :class:`axopy.experiment.Experiment` to know when the task has finished
-        so it can run the next one. You shouldn't need to override or call this
-        method.
-        """
-        return
-
-    @receiver
     def key_press(self, key):
         """Handle key press events.
 

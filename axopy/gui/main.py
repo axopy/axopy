@@ -1,7 +1,7 @@
 import sys
 from PyQt5 import QtCore, QtWidgets
 from axopy import util
-from axopy.messaging import transmitter
+from axopy.messaging import Transmitter
 import collections
 
 # This mapping from key names in the Qt namespace to axopy key names just
@@ -76,6 +76,8 @@ class _MainWindow(QtWidgets.QMainWindow):
     containers, which in turn house all of the interesting graphical content.
     """
 
+    key_pressed = Transmitter(str)
+
     def __init__(self):
         app = get_qtapp()
         super(_MainWindow, self).__init__()
@@ -139,27 +141,14 @@ class _MainWindow(QtWidgets.QMainWindow):
 
         This overrides the `QMainWindow` method. It does not need to be called
         directly and it doesn't need to be overriden. Connect to the
-        :meth:`key_pressed` transmitter to handle key press events.
+        ``key_pressed`` transmitter to handle key press events.
         """
         try:
             key = key_map[event.key()]
         except KeyError:
             return super().keyPressEvent(event)
 
-        self.key_pressed(key)
-
-    @transmitter(('key', str))
-    def key_pressed(self, key):
-        """Signal that a key has been pressed.
-
-        Key names are found in :mod:`axopy.util`.
-
-        Returns
-        -------
-        key : str
-            The key name.
-        """
-        return key
+        self.key_pressed.emit(key)
 
 
 class Container(QtWidgets.QWidget):
