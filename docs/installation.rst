@@ -4,54 +4,49 @@
 Installation
 ============
 
-Here are the main ways to get started with AxoPy. Once the project is more
-mature, it should be much easier through installing directly with pip and/or
-conda.
+There are two major options for installing AxoPy: pip and (Ana)conda.
+
+.. seealso:: If you're interested in developing AxoPy itself, see the
+   :ref:`development` documentation.
 
 
-Miniconda
----------
+pip
+===
 
-Install miniconda_, create an environment with the dependencies, then install
-AxoPy.
+If you like to use a systemwide Python installation (such as the Python
+provided by your package manager on Linux or the official installer for
+Windows), you can use pip to install AxoPy from PyPI_::
 
-::
+    $ pip install axopy
 
-    $ conda create -n axopy numpy scipy scikit-learn h5py pyqt
-    $ source activate axopy
-    (axopy)$ pip install git+https://github.com/pyqtgraph/pyqtgraph.git
-    (axopy)$ python setup.py install
+You may also want to make use of venv_ to create a virtual environment first.
+This would allow you to install several different versions of AxoPy for
+different projects, for example::
 
+    $ python -m venv .venv
+    $ source .venv/bin/activate
+    (.venv) $ pip install axopy
 
-venv
-----
+Note that the second command above depends on your platform. See the venv_
+documentation for more information.
 
-Here's how you can set up a virtual environment and install AxoPy using venv_.
-This installation will allow you to use most of AxoPy's features. Exceptions
-include interacting with some data acquisition devices (see the :ref:`User
-Guide <daq>` for details).
-
-::
-
-   $ python -m venv .venv
-   $ source .venv/bin/activate
-   (.venv) $ pip install numpy scipy scikit-learn h5py pyqt5
-   (.venv) $ pip intall git+https://github.com/pyqtgraph/pyqtgraph.git
-   (.venv) $ python setup.py install
+.. _PyPI: https://pypi.org/
+.. _venv: https://docs.python.org/3/tutorial/venv.html
 
 
-tox
----
+conda
+=====
 
-Testing is done with tox_. There is also a tox directive for creating a
-virtualenv that should have everything needed for developing and testing AxoPy.
+AxoPy can also be installed with miniconda_ or Anaconda_ via the conda-forge_
+channel::
 
-::
+    $ conda install -c conda-forge axopy
 
-   $ tox -e mkvenv
-   $ source .venv/bin/activate
+Similarly to the instructions above for pip installation, you may want to
+create a separate conda environment before installing::
 
+    $ conda create -c conda-forge -n axopy axopy
 
 .. _miniconda: http://conda.pydata.org/miniconda.html
-.. _venv: https://docs.python.org/3/library/venv.html
-.. _tox: https://tox.readthedocs.io/en/latest/
+.. _Anaconda: https://anaconda.org/
+.. _conda-forge: https://conda-forge.org/
