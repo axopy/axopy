@@ -1,8 +1,8 @@
 .. _pipeline:
 
-========
-Pipeline
-========
+===============
+Processing Data
+===============
 
 .. currentmodule:: axopy.pipeline
 
