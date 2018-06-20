@@ -3,7 +3,7 @@
 import time
 import numpy
 from PyQt5 import QtCore
-from axopy.messaging import transmitter
+from axopy.messaging import Transmitter
 from axopy.gui.main import get_qtapp, qt_key_map
 from axopy.pipeline import Filter
 
@@ -21,7 +21,22 @@ class InputStream(QtCore.QThread):
         Any object implementing the OutputDevice interface. See
         :class:`NoiseGenerator` for an example.
 
+    Attributes
+    ----------
+    updated : Transmitter
+        Transmitted when the latest chunk of data is available. The data type
+        depends on the underlying input device, but it is often a numpy
+        ndarray.
+    disconnected : Transmitter
+        Transmitted if the device cannot be read from (it has disconnected
+        somehow).
+    finished : Transmitter
+        Transmitted when the device has stopped and samping is finished.
     """
+
+    updated = Transmitter(object)
+    disconnected = Transmitter()
+    finished = Transmitter()
 
     def __init__(self, device):
         super(InputStream, self).__init__()
@@ -45,39 +60,19 @@ class InputStream(QtCore.QThread):
             try:
                 d = self.device.read()
             except IOError:
-                self.disconnected()
+                self.disconnected.emit()
                 return
 
             if self._running:
-                self.updated(d)
+                self.updated.emit(d)
 
         self.device.stop()
-        self.finished()
+        self.finished.emit()
 
     def kill(self, wait=True):
         self._running = False
         if wait:
             self.wait()
-
-    @transmitter(data=object)
-    def updated(self, data):
-        """Transmitted when the latest chunk of data is available.
-
-        Returns
-        -------
-        data : object
-            Data from the underlying device. See the device's documentation for
-            the ``read`` method.
-        """
-        return data
-
-    @transmitter()
-    def disconnected(self):
-        return
-
-    @transmitter()
-    def finished(self):
-        return
 
 
 class NoiseGenerator(object):

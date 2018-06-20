@@ -2,7 +2,7 @@ import pytest
 from axopy import util
 from axopy.task import Task
 from axopy.task.base import _TaskIter
-from axopy.messaging import transmitter
+from axopy.messaging import Transmitter
 
 
 @pytest.fixture
@@ -79,15 +79,13 @@ def test_task_transmitters():
 
     class CustomTask(Task):
 
-        @transmitter()
-        def tx(self):
-            return
+        tx = Transmitter()
 
         def rx(self):
             global count
             count += 1
 
-    # create two of hte same task, make sure rx is called the appropriate
+    # create two of the same task, make sure rx is called the appropriate
     # number of times
     t1 = CustomTask()
     t2 = CustomTask()
@@ -95,26 +93,29 @@ def test_task_transmitters():
     # using "raw" connect, both t1.tx and t2.tx will connect since those are
     # the same underlying transmitter object
     t1.tx.connect(t1.rx)
-    t1.tx()
+    t1.tx.emit()
     assert count == 1
-    # here we neglect to disconnect t1.tx, so rx is called twice
+
+    # firing the second tasks's transmitter doesn't call the receiver more than
+    # once
     t2.tx.connect(t2.rx)
-    t2.tx()
-    assert count == 3
+    t2.tx.emit()
+    assert count == 2
 
-    t1.tx.disconnect(t1.rx)
-    t2.tx()
-    assert count == 4
-
-    # now implement Experiment to ensure doesn't happen
     t1.tx.disconnect(t1.rx)
     t2.tx.disconnect(t2.rx)
 
+    # check task connect/disconnect
     t1.connect(t1.tx, t1.rx)
-    t1.tx()
-    assert count == 5
-    t1.disconnect_all()
+    t1.tx.emit()
+    assert count == 3
+    # disconnect specific pair
+    t1.disconnect(t1.tx, t1.rx)
+    # try to disconnect again, fails silently
+    t1.disconnect(t1.tx, t1.rx)
 
     t2.connect(t2.tx, t2.rx)
-    t2.tx()
-    assert count == 6
+    t2.tx.emit()
+    assert count == 4
+
+    t2.disconnect_all()

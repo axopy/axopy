@@ -1,5 +1,5 @@
 import pytest
-from axopy.timing import Counter
+from axopy.timing import Counter, Timer
 
 
 class TimeoutReceiver(object):
@@ -52,3 +52,18 @@ def test_incremental_timer_noreset():
     assert timer.count == 2
     timer.reset()
     assert timer.count == 0
+
+
+def test_timer(qtbot):
+    timer = Timer(100)
+    recv = TimeoutReceiver()
+    timer.timeout.connect(recv.rx)
+    assert not recv.received
+    with qtbot.waitSignal(timer.timeout):
+        timer.start()
+    assert recv.received
+
+    recv.received = False
+    timer.start()
+    timer.stop()
+    assert not recv.received
