@@ -209,7 +209,7 @@ class Task(TransmitterBase):
         found in :mod:`axopy.util` (named `key_<keyname>`, e.g. `key_k`).
 
         Important note: if relying on the ``advance_block_key`` to advance the
-        task, make sure to call this super implementaiton.
+        task, make sure to call this super implementation.
         """
         if getattr(self, '_awaiting_key', False) and \
                 key == self.advance_block_key:
