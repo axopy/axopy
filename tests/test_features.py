@@ -19,6 +19,15 @@ def test_ensure_2d(array_1d, array_2d):
     assert features.util.ensure_2d(array_1d).ndim == 2
 
 
+@pytest.mark.parametrize('func', [
+    features.util.inverted_t_window,
+    features.util.trapezoidal_window,
+])
+def test_window_func_length(func):
+    w = func(10)
+    assert len(w) == 10
+
+
 def test_rolling_window_1d(array_1d):
     out = np.array([[1, 2], [2, 3], [3, 4], [4, 5]])
     assert_equal(features.util.rolling_window(array_1d, 2), out)
