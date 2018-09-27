@@ -1,4 +1,10 @@
-"""Experiment data storage."""
+"""Experiment data storage.
+
+There are two main use cases for the functionality in this module:
+reading/writing data during an experiment session, and reading data once an
+experiment is complete (i.e. for analysis). See the :ref:`user guide <storage>`
+for information on these use cases/api.jpeg/api.jpeg/api.jpeg.
+"""
 
 import os
 import h5py
@@ -25,7 +31,7 @@ class Storage(object):
         Path to the root of the data storage filestructure. By default, 'data'
         is used. If the directory doesn't exist, it is created.
     allow_overwrite : bool, optional
-        Specified whether or not the storage interface allows you to overwrite
+        Specifies whether or not the storage interface allows you to overwrite
         a task's data for a subject if it already exists.
     """
 
@@ -83,7 +89,7 @@ class Storage(object):
                 yield name
 
     def create_task(self, task_id):
-        """Creates a task for the current subject.
+        """Create a task for the current subject.
 
         Parameters
         ----------
@@ -151,6 +157,9 @@ class Storage(object):
 class TaskWriter(object):
     """The main interface for storing data from a task.
 
+    Usually you get a :class:`Taskwriter` from :class:`Storage`, so you don't
+    normally need to create one yourself.
+
     Parameters
     ----------
     root : str
@@ -181,6 +190,9 @@ class TaskWriter(object):
             Tral data. See :meth:`TrialWriter.write` and :class:`Trial` for
             details.
         """
+        logging.info('saving trial {}:{}\n{}'.format(
+            trial.attrs['block'], trial.attrs['trial'], str(trial)))
+
         self.trials.write(trial.attrs)
 
         ind = self.trials.df.index[-1]
@@ -188,9 +200,6 @@ class TaskWriter(object):
             path = _array_path(self.root, name)
             write_hdf5(path, array.data, dataset=str(ind))
             array.clear()
-
-        logging.info('saving trial {}:{}\n{}'.format(
-            trial.attrs['block'], trial.attrs['trial'], str(trial)))
 
     def pickle(self, obj, name):
         """Write a generic object to storage.
@@ -205,7 +214,6 @@ class TaskWriter(object):
         Parameters
         ----------
         obj : object
-        return obj
             The object to pickle.
         name : str
             Name of the pickle to save (no extension).
@@ -222,11 +230,6 @@ class TaskReader(object):
     root : str
         Path to task's root directory. This is the directory specific to a task
         which contains a ``trials.csv`` file and HDF5 array files.
-
-    Attributes
-    ----------
-    trials : DataFrame
-        A Pandas DataFrame representing the trial data.
     """
 
     def __init__(self, root):
@@ -235,6 +238,7 @@ class TaskReader(object):
 
     @property
     def trials(self):
+        """A Pandas DataFrame representing the trial data."""
         if self._trials is None:
             self._trials = pandas.read_csv(_trials_path(self.root))
         return self._trials
@@ -329,7 +333,8 @@ def read_hdf5(filepath, dataset='data'):
     """Read the contents of a dataset.
 
     This function assumes the dataset in the HDF5 file exists at the root of
-    the file (i.e. at '/').
+    the file (i.e. at '/'). It is primarily for internal usage but you may find
+    it useful for quickly grabbing an array from an HDF5 file.
 
     Parameters
     ----------
@@ -352,7 +357,9 @@ def write_hdf5(filepath, data, dataset='data'):
     """Write data to an hdf5 file.
 
     The data is written to a new file with a single dataset called "data" in
-    the root group.
+    the root group. It is primarily for internal usage but you may find it
+    useful for quickly writing an array to an HDF5 file.
+
 
     Parameters
     ----------

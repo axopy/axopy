@@ -114,6 +114,44 @@ as simple as possible, while being flexible enough to accommodate different
 kinds of experimental design. If you are interested in processing data after an
 experiment has been run, see the :ref:`data-consolidation` documentation.
 
+Reading Data from Another Task
+------------------------------
+
+The :class:`TaskReader` is used for reading in data from another task. In the
+context of an experiment, you would access a reader with
+:meth:`Storage.require_task`, passing in the name of the task (i.e. the name of
+the directory corresponding to the task). You can then access the trial data
+(attrs) with the :attr:`trials <TaskReader.trials>` attribute, which returns
+a pandas ``DataFrame`` object. You can also access array data either by reading
+it all at once (arrays for each trial are stacked) or by iterating over each
+trial's array.
+
+Keeping with our example above, suppose we want to run the EMG data from the
+``contraction_level_task`` through a processing pipeline.
+
+.. code-block:: python
+
+    # storage can either be created for post-processing
+    # or it can be given to us if this is another task implementation
+    reader = storage.require_task('contraction_level_task')
+    for emg in reader.iterarray('emg'):
+        # emg holds the EMG data for a single trial
+        out = pipeline.process(emg)
+        ...
+
+It is also common to need the trial attributes while iterating over the trial
+arrays, and this can be achieved using ``zip`` and the ``DataFrame.iterrows``
+method:
+
+.. code-block:: python
+
+    for (i, trial_attrs), emg in zip(reader.trials.iterrows(),
+                                     reader.iterarray('emg')):
+        if trial_attrs['time_to_target'] > 5.0:
+            continue
+        out = pipeline.process(emg)
+        ...
+
 
 .. _data-consolidation:
 
@@ -146,14 +184,3 @@ specify an output file if you don't like the default::
 
     >>> from axopy.storage import storage_to_zip
     >>> storage_to_zip('experiment01_data', outfile='dataset.zip')
-
-Working Dataset
----------------
-
-In addition to archiving raw data, you'll probably want what I'll call
-a "working dataset," one in which you can read from, do some processing, write
-back to, etc. The main purpose here is to compactly and neatly store an entire
-dataset while allowing for more saved analysis to be done once the experiment
-is complete. The primary routine is :func:`storage_to_hdf5`, which traverses
-the data contained in the root storage directory and consolidates everything
-into a single HDF5 file.

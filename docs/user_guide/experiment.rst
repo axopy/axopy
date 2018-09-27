@@ -47,9 +47,9 @@ oscilloscope-like signal viewer.
 
 In terms of lines of code, this is about the most straightforward experiment
 you can write that actually does something. We create the :class:`Experiment`
-object with a :class:`~axopy.stream.NoiseGenerator` as the input device, then
-run the experiment with :class:`~axopy.task.Oscilloscope` as the sole task to
-run.
+object with a :class:`~axopy.stream.NoiseGenerator` as the input device (or
+DAQ, short for data acquisition), then run the experiment with
+:class:`~axopy.task.Oscilloscope` as the sole task to run.
 
 When you run this code, you'll notice the first thing that happens is a dialog
 window pops up prompting you to enter a subject ID. The :class:`Experiment`

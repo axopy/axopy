@@ -20,7 +20,9 @@
 Axo-Pythonic synapses are those in which an axon synapses upon a Python
 program. AxoPy aims to facilitate such connections between electrophysiolgical
 signals and machines by making it easy for researchers to develop
-human-computer interface experiments.
+human-computer interface experiments. If you've ever found yourself spending
+more time thinking about how to implement your experiments than thinking about
+*what the experiment should be*, AxoPy may be able to help.
 
 AxoPy consists of:
 
@@ -98,9 +100,8 @@ Here's a minimal example to display some randomly generated signals in an
 Next Steps
 ----------
 
-Check out the documentation_ for more information on creating experiments
-(note: documentation is currently being reworked). Some `examples`_ are also
-available.
+Check out the documentation_ for more information on creating experiments. Some
+`examples`_ are also available.
 
 
 Contributing
