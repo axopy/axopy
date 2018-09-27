@@ -8,7 +8,10 @@ class Canvas(QtWidgets.QGraphicsView):
 
     This view essentially just holds a QGraphicsScene that grows to fit the
     size of the view, keeping the aspect ratio square. The scene is displayed
-    with a gray border.
+    with a gray (by default) border.
+
+    See Qt's documentation for more information about working with
+    QGraphicsView (https://doc.qt.io/Qt-5/qgraphicsview.html).
     """
 
     scaler = 1
@@ -19,7 +22,7 @@ class Canvas(QtWidgets.QGraphicsView):
 
     def __init__(self, draw_border=True, bg_color=None, border_color=None,
                  parent=None, invert_x=False, invert_y=False):
-        super().__init__(parent=parent)
+        super(Canvas, self).__init__(parent=parent)
 
         if bg_color is None:
             bg_color = self.default_bg_color
@@ -66,7 +69,19 @@ class Canvas(QtWidgets.QGraphicsView):
             self.scene().addLine(line, pen)
 
     def add_item(self, item):
-        self.scene().addItem(item.qitem)
+        """Add an item to the canvas.
+
+        Parameters
+        ----------
+        item : Item or QGraphicsItem
+            The item to add to the canvas. This can be either one of AxoPy's
+            built-in items (:class:`Circle`, :class:`Text`, etc.) or any
+            QGraphicsItem.
+        """
+        if isinstance(item, Item):
+            self.scene().addItem(item.qitem)
+        else:
+            self.scene().addItem(item)
 
     def resizeEvent(self, event):
         # override resize event to keep the scene rect intact (everything
@@ -76,12 +91,20 @@ class Canvas(QtWidgets.QGraphicsView):
 
 
 class Item(object):
-    """Canvas item.
+    """Canvas item base class.
 
     This is simply a wrapper around any kind of ``QGraphicsItem``, adding the
     ability to set some properties of the underlying item with a more Pythonic
     API. You can always access the ``QGraphicsItem`` with the ``qitem``
     attribute.
+
+    Attributes
+    ----------
+    qitem : QGraphicsItem
+        The QGraphicsItem being wrapped. You can use this attribute to access
+        methods and properties of the item not exposed by the wrapper class. If
+        you find yourself routinely using a method of the QGraphicsItem,
+        consider recommending it for addition to AxoPy.
     """
 
     def __init__(self, qitem):
@@ -117,7 +140,7 @@ class Item(object):
     @property
     def visible(self):
         """Visibility of the item."""
-        return self.qitem.visible()
+        return self.qitem.isVisible()
 
     @visible.setter
     def visible(self, visible):
@@ -131,6 +154,15 @@ class Item(object):
     @opacity.setter
     def opacity(self, opacity):
         self.qitem.setOpacity(opacity)
+
+    @property
+    def color(self):
+        """Color of the item."""
+        return self.qitem.brush().color().getRgb()
+
+    @color.setter
+    def color(self, color):
+        self.qitem.setBrush(QtGui.QColor(color))
 
     def show(self):
         """Set the item to visible."""
@@ -162,18 +194,7 @@ def _to_camel_case(snake_str):
     return components[0] + ''.join(x.title() for x in components[1:])
 
 
-class ColorableMixin(object):
-
-    @property
-    def color(self):
-        return self.qitem.brush().color().getRgb()
-
-    @color.setter
-    def color(self, color):
-        self.qitem.setBrush(QtGui.QColor(color))
-
-
-class Circle(Item, ColorableMixin):
+class Circle(Item):
     """Circular item."""
 
     def __init__(self, size, color='#333333'):
@@ -196,6 +217,7 @@ class Cross(Item):
 
     @property
     def color(self):
+        """Color of the lines in the cross."""
         return self._lv.color
 
     @color.setter
@@ -223,7 +245,7 @@ class Line(Item):
                                      self.width, cap=QtCore.Qt.FlatCap))
 
 
-class Text(Item, ColorableMixin):
+class Text(Item):
     """Text item."""
 
     def __init__(self, text, color='#333333'):
@@ -240,3 +262,48 @@ class Text(Item, ColorableMixin):
     def _center(self):
         scene_bounds = self.qitem.sceneBoundingRect()
         self.pos = -scene_bounds.width() / 2, scene_bounds.height() / 2
+
+
+class Rectangle(Item):
+    """Rectangular item.
+
+    This is a filled retangle that allows you to set the size, color, position,
+    etc. By default, the item's position is its *center*.
+    """
+
+    def __init__(self, width, height, x=0, y=0, color='#333333',
+                 penwidth=0.01):
+        self.penwidth = penwidth
+
+        qitem = QtWidgets.QGraphicsRectItem(x, y, width, height)
+        qitem.setTransformOriginPoint(width/2, height/2)
+        qitem.setTransform(QtGui.QTransform().translate(-width/2, -height/2))
+        super(Rectangle, self).__init__(qitem)
+
+        self.pos = x, y
+        self.color = color
+
+    @property
+    def color(self):
+        """Color of the rectangle."""
+        return self.qitem.pen().color().getRgb()
+
+    @color.setter
+    def color(self, color):
+        """Color of the rectangle."""
+        br = QtGui.QBrush(QtGui.QColor(color))
+        self.qitem.setBrush(br)
+        self.qitem.setPen(QtGui.QPen(br, self.penwidth,
+                          cap=QtCore.Qt.FlatCap))
+
+    @property
+    def width(self):
+        return self.qitem.rect().width()
+
+    @width.setter
+    def width(self, width):
+        p = self.pos
+        rect = self.qitem.rect()
+        rect.setWidth(width)
+        self.qitem.setRect(rect)
+        self.pos = p

@@ -3,6 +3,7 @@ from PyQt5 import QtCore, QtWidgets
 from axopy import util
 from axopy.messaging import Transmitter
 import collections
+from contextlib import contextmanager
 
 # This mapping from key names in the Qt namespace to axopy key names just
 # allows users to write code without any Qt stuff in it
@@ -50,14 +51,31 @@ key_map = {
 
 qt_key_map = {v: k for k, v in key_map.items()}
 
-qtapp = None
-
 
 def get_qtapp():
-    """Get a `QApplication` instance running.
+    """Get a QApplication instance running.
 
-    Returns the current `QApplication` instance if it exists and creates it
+    Returns the current ``QApplication`` instance if it exists and creates it
     otherwise.
+
+    Examples
+    --------
+    This function is primarily for internal usage, but it is exposed to make it
+    convenient to test graphical code without all of the experiment/task
+    machinery.
+
+    .. code-block:: python
+
+        from axopy.gui.main import get_qtapp, Container
+
+        # get the application instance first, before creating widgets etc.
+        app = get_qtapp()
+
+        con = Container()
+
+        # call show() to show the widget, then run the application
+        con.show()
+        app.exec_()
     """
     global qtapp
     inst = QtWidgets.QApplication.instance()
@@ -66,6 +84,37 @@ def get_qtapp():
     else:
         qtapp = inst
     return qtapp
+
+
+@contextmanager
+def gui_check():
+    """Check graphical interface code interactively.
+
+    This function makes it convenient to test graphical code without all of the
+    experiment/task machinery. You can create a :class:`Container`, add things
+    to the container, and then call this function with the container to run the
+    GUI and try it out.
+
+    .. note::
+
+        Be sure to call :mod:`Container.show()` at the end to display the
+        container.
+
+    Examples
+    --------
+    Minimal example
+
+    .. code-block:: python
+
+        from axopy.gui.main import Container, gui_check
+
+        with gui_check():
+            con = Container()
+            con.show()
+    """
+    app = get_qtapp()
+    yield app
+    app.exec_()
 
 
 class _MainWindow(QtWidgets.QMainWindow):
@@ -172,6 +221,24 @@ class Container(QtWidgets.QWidget):
         self.setLayout(self.layout)
         self.layout.addWidget(widget, 0, 0)
 
+    def set_layout(self, layout):
+        """Set the layout of the container.
+
+        Parameters
+        ----------
+        layout : QLayout
+            Any QLayout is OK to add.
+        """
+        self.setLayout(layout)
+
+    def show(self):
+        """Show the container in the active application.
+
+        This is not normally needed, unless you're testing out a GUI and using
+        :func:`gui_check`.
+        """
+        super(Container, self).show()
+
 
 class _SessionConfig(QtWidgets.QDialog):
     """Widget for configuring a session.
@@ -218,8 +285,7 @@ class _SessionConfig(QtWidgets.QDialog):
         self.show()
 
     def run(self):
-        """Start the application."""
-        get_qtapp().exec_()
+        self.exec_()
         return self.results
 
     def _on_button_click(self):
