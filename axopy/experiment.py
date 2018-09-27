@@ -43,6 +43,9 @@ class Experiment(TransmitterBase):
 
         self.subject = subject
 
+        # main screen
+        self.screen = _MainWindow()
+
     def configure(self, **options):
         """Configure the experiment with custom options.
 
@@ -71,8 +74,6 @@ class Experiment(TransmitterBase):
         if self.subject is None:
             self.configure()
 
-        # main screen
-        self.screen = _MainWindow()
         self.screen.key_pressed.connect(self.key_press)
 
         # screen to show "Ready" between tasks
