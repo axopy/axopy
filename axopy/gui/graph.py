@@ -14,7 +14,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
     """
 
     def __init__(self):
-        super().__init__()
+        super(SignalWidget, self).__init__()
 
         self.plot_items = []
         self.plot_data_items = []
