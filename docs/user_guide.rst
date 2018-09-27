@@ -15,4 +15,5 @@ getting started implementing experiments.
    user_guide/task
    user_guide/daq
    user_guide/storage
+   user_guide/graphics
    user_guide/pipeline
