@@ -71,9 +71,9 @@ def test_session_info_bad_type():
         _SessionConfig({'obj': object})
 
 
-def test_session_info_no_subject(qtbot, mock):
-    mock.patch.object(QtWidgets.QMessageBox, 'warning',
-                      return_value=QtWidgets.QMessageBox.Ok)
+def test_session_info_no_subject(qtbot, mocker):
+    mocker.patch.object(QtWidgets.QMessageBox, 'warning',
+                        return_value=QtWidgets.QMessageBox.Ok)
 
     w = _SessionConfig({'subject': str})
     qtbot.add_widget(w)

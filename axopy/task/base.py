@@ -93,18 +93,23 @@ class Task(TransmitterBase):
         This method should be overridden if the task uses any graphics (which
         most do). It is important to defer initializing any graphical elements
         until this method is called so that the graphical backend has a chance
-        to start. This method is called automatically if the task is added to
-        a :class:`TaskManager`.
+        to start.
 
         Parameters
         ----------
-        container : axopy.gui.main.Container
+        container : axopy.gui.Container
             The graphical container you can add objects to.
         """
         pass
 
-    def prepare_input_stream(self, input_stream):
-        """Set up the input device, if applicable."""
+    def prepare_daq(self, daqstream):
+        """Set up the input device, if applicable.
+
+        Parameters
+        ----------
+        daqstream : DaqStream
+            Interface to the data acquisition device.
+        """
         pass
 
     def prepare_storage(self, storage):
@@ -118,7 +123,7 @@ class Task(TransmitterBase):
 
         Parameters
         ----------
-        storage : axopy.storage.Storage
+        storage : Storage
             The top-level storage object with which new storage can be
             allocated and existing data can be read.
         """
@@ -128,11 +133,11 @@ class Task(TransmitterBase):
         """Start running the task.
 
         Simply calls `next_block` to start running trials in the first block.
-        This method is called automatically if the task is added to a
-        :class:`TaskManager`. Tasks that have a block design shouldn't normally
-        need to override this method. Tasks that are "free-running" for
-        experimenter interaction (e.g. a plot visualization task that the
-        experimenter controls) should override and do nothing.
+        This method is called automatically if the task is added to an
+        :class:`~axopy.experiment.Experiment`. Tasks that have a block design
+        shouldn't normally need to override this method. Tasks that are
+        "free-running" for experimenter interaction (e.g. a plot visualization
+        task that the experimenter controls) should override.
         """
         self.next_block()
 

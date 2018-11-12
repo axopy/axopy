@@ -43,7 +43,7 @@ def test_base_task(simple_design):
 
     # task prepare hooks run by Experiment
     task.prepare_graphics(None)
-    task.prepare_input_stream(None)
+    task.prepare_daq(None)
     task.prepare_storage(None)
 
     task.run()

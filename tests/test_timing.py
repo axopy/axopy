@@ -55,7 +55,7 @@ def test_incremental_timer_noreset():
 
 
 def test_timer(qtbot):
-    timer = Timer(100)
+    timer = Timer(0.1)
     recv = TimeoutReceiver()
     timer.timeout.connect(recv.rx)
     assert not recv.received

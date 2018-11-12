@@ -26,29 +26,44 @@ to put together a simple but functioning experiment:
 
 .. code-block:: python
 
-    from axopy.experiment import Experiment
-    from axopy.task import Oscilloscope
-    from axopy.stream import NoiseGenerator
+    import axopy as ap
 
-    exp = Experiment(daq=NoiseGenerator())
-    exp.run(Oscilloscope())
+    daq = axopy.daq.NoiseGenerator()
+    exp = axopy.experiment.Experiment(daq=daq)
+    exp.run(axopy.task.Oscilloscope())
 
 We create the :class:`Experiment` object with
 a :class:`~axopy.stream.NoiseGenerator` as the input device (or DAQ, short for
 data acquisition), then run the experiment with
 :class:`~axopy.task.Oscilloscope` as the sole task to run.
 
-When you run this code, you'll notice the first thing that happens is a dialog
-window pops up prompting you to enter a subject ID. The :class:`Experiment`
-needs a subject ID so that it can set up :ref:`data storage <storage>`. Once
-the subject ID is entered and accepted, you'll see a screen that says "Ready".
-This screen is shown in between all tasks in the experiment---hit the ``Enter``
-or ``Return`` key to accept the prompt and start the task. You should then see
-an oscilloscope widget displaying a randomly generated signal in real time. You
-can press ``Enter`` again to finish the task (this is specific to
-:class:`Oscilloscope` which is a "free-running" task). When the task finishes,
-the :class:`Experiment` looks for the next task to run. Since there aren't any
-more, the application exits.
+It's worth noting here that AxoPy's submodules (e.g. experiment, daq, etc.) are
+useful for organizing the package into logical parts, but it can be annoying to
+type the module names repeatedly. You can write the above example with more
+verbose imports like the following so the code itself is a little more
+succinct:
+
+.. code-block:: python
+
+   from axopy.daq import NoiseGenerator
+   from axopy.experiment import Experiment
+   from axopy.task import Oscilloscope
+
+   daq = NoiseGenerator()
+   exp = Experiment(daq=daq)
+   exp.run(Oscilloscope())
+
+When you run this example, you'll notice the first thing that happens is
+a dialog window pops up prompting you to enter a subject ID. The
+:class:`Experiment` needs a subject ID so that it can set up :ref:`data storage
+<storage>`. Once the subject ID is entered and accepted, you'll see a screen
+that says "Ready". This screen is shown in between all tasks in the
+experiment---hit the ``Enter`` or ``Return`` key to accept the prompt and start
+the task. You should then see an oscilloscope widget displaying a randomly
+generated signal in real time. You can press ``Enter`` again to finish the task
+(this is specific to :class:`Oscilloscope` which is a "free-running" task).
+When the task finishes, the :class:`Experiment` looks for the next task to run.
+Since there aren't any more, the application exits.
 
 .. [#f1] At least visual. For now, AxoPy doesn't have a standardized way to
    talk to other kinds of feedback-producing devices (an audio output module

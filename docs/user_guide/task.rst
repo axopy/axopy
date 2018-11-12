@@ -51,9 +51,10 @@ The Task Lifecycle
 AxoPy experiments are event-driven, following the way graphical user interface
 frameworks tend to operate. This can be an unfamiliar way of writing programs,
 so it's important to understand the overall idea before seeing some of the
-details. Tasks in an experiment all go through the same lifecycle. First, the
-:class:`Task` instances are created (by you) and then they're handed off to an
-:class:`~axopy.experiment.Experiment`, like we saw in the previous section:
+details. Tasks in an experiment all go through the same lifecycle, shown below.
+First, the :class:`Task` instances are created (by you) and then they're handed
+off to an :class:`~axopy.experiment.Experiment`, like we saw in the previous
+section:
 
 .. code-block:: python
 
@@ -117,3 +118,7 @@ the flow of the task proceeds through it's :class:`Design` by calling
 
 There are two main ways for a task to end. One is by calling
 :meth:`Task.finished` somewhere in your task implementation. This 
+
+.. image:: images/task_flowchart.png
+   :align: center
+

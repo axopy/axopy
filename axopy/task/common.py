@@ -33,12 +33,12 @@ class Oscilloscope(Task):
         self.scope = SignalWidget()
         container.set_widget(self.scope)
 
-    def prepare_input_stream(self, input_stream):
-        self.input_stream = input_stream
-        self.connect(input_stream.updated, self.update)
+    def prepare_daq(self, daqstream):
+        self.daqstream = daqstream
+        self.connect(daqstream.updated, self.update)
 
     def run(self):
-        self.input_stream.start()
+        self.daqstream.start()
 
     def update(self, data):
         if self.pipeline is not None:
@@ -47,5 +47,5 @@ class Oscilloscope(Task):
 
     def key_press(self, key):
         if key == util.key_return:
-            self.input_stream.kill()
+            self.daqstream.stop()
             self.finish()

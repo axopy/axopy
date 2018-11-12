@@ -89,12 +89,11 @@ Here's a minimal example to display some randomly generated signals in an
 
 .. code-block:: python
 
-    from axopy.experiment import Experiment
-    from axopy.task import Oscilloscope
-    from axopy.stream import NoiseGenerator
+    import axopy
 
-    daq = NoiseGenerator(rate=1000, num_channels=4, read_size=100)
-    Experiment(daq=daq).run(Oscilloscope())
+    daq = axopy.daq.NoiseGenerator(rate=1000, num_channels=4, read_size=100)
+    exp = axopy.experiment.Experiment(daq=daq)
+    exp.run(axopy.task.Oscilloscope())
 
 
 Next Steps
