@@ -27,7 +27,7 @@ from axopy import pipeline
 from axopy.features import mean_absolute_value
 from axopy.experiment import Experiment
 from axopy import util
-from axopy.messaging import transmitter, receiver
+from axopy.messaging import Transmitter
 from axopy.task import Task, Oscilloscope
 from axopy.timing import Counter
 from axopy.stream import InputStream
@@ -164,7 +164,7 @@ class CursorFollowing(Task):
 if __name__ == '__main__':
     # from pytrigno import TrignoEMG
     # dev = TrignoEMG((0, 3), 200, host='192.168.1.114', units='normalized')
-    from axopy.stream import NoiseGenerator 
+    from axopy.stream import NoiseGenerator
     dev = NoiseGenerator(rate=2000, num_channels=4, read_size=200)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')
