@@ -189,6 +189,13 @@ def test_integrated_emg():
     assert_equal(features.integrated_emg(x), truth)
 
 
+def test_var():
+    x = np.array([[0, 2], [0, -4]])
+    truth = np.array([1., 4.])
+
+    assert_equal(features.var(x), truth)
+
+
 def test_logvar():
     features.logvar(np.random.randn(100))
     features.logvar(np.random.randn(2, 100))

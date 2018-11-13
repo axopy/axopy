@@ -324,6 +324,33 @@ def integrated_emg(x, axis=-1, keepdims=False):
     return np.sum(np.absolute(x), axis=axis, keepdims=keepdims)
 
 
+def var(x, axis=-1, keepdims=False):
+    """Variance of the signal.
+
+    .. math::
+        \\text{var} = \left( \\frac{1}{N}
+            \\sum_{i=1}^{N} \\left(x_i - \\mu \\right)^2 \\right)
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        var of each channel.
+    """
+    return np.var(x, axis=axis, keepdims=keepdims)
+
+
 def logvar(x, axis=-1, keepdims=False):
     """Log of the variance of the signal.
 

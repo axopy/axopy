@@ -1,7 +1,7 @@
 from axopy.features.time import (mean_absolute_value, mean_value,
                                  waveform_length, zero_crossings,
                                  slope_sign_changes, root_mean_square,
-                                 integrated_emg, logvar)
+                                 integrated_emg, var, logvar)
 
 __all__ = ['mean_absolute_value',
            'mean_value',
@@ -10,6 +10,7 @@ __all__ = ['mean_absolute_value',
            'slope_sign_changes',
            'root_mean_square',
            'integrated_emg',
+           'var',
            'logvar']
 
 # FIXME: fix string formatting in docstrings
