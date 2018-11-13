@@ -69,6 +69,7 @@ def test_trapezoidal_window():
 
 @pytest.mark.parametrize('func', [
     features.mean_absolute_value,
+    features.mean_value,
     features.waveform_length,
     features.zero_crossings,
     features.slope_sign_changes,
@@ -134,6 +135,13 @@ def test_mav_bad_custom_weights():
     w = np.zeros(5)
     with pytest.raises(ValueError):
         features.mean_absolute_value(x, weights=w)
+
+
+def test_mv():
+    x = np.array([[0, 2], [0, -4]])
+    truth = np.array([1, -2])
+
+    assert_equal(features.mean_value(x), truth)
 
 
 def test_wl():
