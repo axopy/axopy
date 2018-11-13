@@ -151,6 +151,13 @@ def test_wl():
     assert_equal(features.waveform_length(x), truth)
 
 
+def test_wamp():
+    x = np.array([[1., 1.3, 1.4, -0.4], [0.2, 0.8, -0.2, 0.2]])
+    thresh = 0.5
+    truth = np.array([1, 2])
+
+    assert_equal(features.wilson_amplitude(x, thresh), truth)
+
 def test_zc():
     x = np.array([[1, -1, -0.5, 0.2], [1, -1, 1, -1]])
 

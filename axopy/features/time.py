@@ -174,6 +174,48 @@ def waveform_length(x, axis=-1, keepdims=False):
                   axis=axis, keepdims=keepdims)
 
 
+def wilson_amplitude(x, threshold=5e-6, axis=-1, keepdims=False):
+    """Computes the Wilson amplitude of each signal.
+
+    The Wilson amplitude is the number of counts for each change in the EMG
+    signal amplitude that exceeds a predefined threshold.
+
+    .. math:: \\text{WAMP} = \sum_{i=1}^{N-1} f\left( \left| x_{i+1} -
+        x_i \right| \right)
+
+    .. math::
+       f\left(x\right) =
+       \begin{cases}
+            1, \text{if } x \geq \text{threshold},\\
+                0, \text{ otherwise}
+        \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    threshold : float, optional
+        The threshold used for the comparison between two consecutive samples.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        WAMP of each channel.
+
+    References
+    ----------
+    .. [1] M. Zardoshti-Kermani, B. C. Wheeler, K. Badie, R. M. Hashemi, "EMG
+        feature evaluation for movement control of upper extremity prostheses."
+        IEEE Transactions on Rehabilitation Engineering, vol. 3, no. 4, p.p
+        324-33, 1995.
+    """
+    return np.sum(np.abs(np.diff(x, n=1, axis=axis)) > threshold, axis=axis,
+                  keepdims=keepdims)
+
+
 def zero_crossings(x, threshold=0, axis=-1, keepdims=False):
     """Computes the number of zero crossings (ZC) of each signal.
 
