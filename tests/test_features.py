@@ -158,6 +158,7 @@ def test_wamp():
 
     assert_equal(features.wilson_amplitude(x, thresh), truth)
 
+
 def test_zc():
     x = np.array([[1, -1, -0.5, 0.2], [1, -1, 1, -1]])
 
@@ -206,3 +207,8 @@ def test_var():
 def test_logvar():
     features.logvar(np.random.randn(100))
     features.logvar(np.random.randn(2, 100))
+
+
+def test_kurtosis():
+    features.kurtosis(np.random.randn(100))
+    features.kurtosis(np.random.randn(2, 100))

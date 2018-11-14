@@ -6,9 +6,12 @@ Notation:
     - :math:`N` : length of the signal
 """
 
+from functools import partial
 import numpy as np
+from scipy import fftpack
+from scipy.stats import kurtosis as sp_kurtosis
 from axopy.features.util import (ensure_2d, rolling_window, inverted_t_window,
-                                 trapezoidal_window)
+                                 trapezoidal_window, levinson, nextpow2)
 
 
 def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
@@ -435,3 +438,55 @@ def logvar(x, axis=-1, keepdims=False):
        Engineering, vol. 22, no. 2, pp. 269–279, 2014.
     """
     return np.log10(np.var(x, axis=axis, keepdims=keepdims))
+
+
+def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
+             keepdims=False):
+    """Kurtosis of the signal.
+
+    .. math::
+        \\text{Kurtosis} = \\frac{\\frac{1}{n} \\sum_{i=1}^n \\left( x_i-
+            \\bar{x} \\right )^4}{\\left( \\frac{1}{n} \\sum_{i=1}^n
+                \\left( x_i-\\bar{x} \\right )^2\\right )^2} - 3
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    fisher : bool, optional
+        If True, Fisher's definition is used (normal ==> 0.0). If False,
+        Pearson's definition is used (normal ==> 3.0).
+    bias : bool, optional
+        If False, then the calculations are corrected for statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        kurtosis of each channel.
+    """
+    if x.ndim == 1:
+        kurt = sp_kurtosis(x, axis=axis, fisher=fisher, bias=bias,
+                           nan_policy=nan_policy)
+        if keepdims is True:
+            return np.array([kurt])
+        else:
+            return kurt
+    else:
+        kurt = np.apply_over_axes(partial(sp_kurtosis, fisher=fisher,
+                                          bias=bias, nan_policy=nan_policy), x,
+                                  axes=axis)
+        if keepdims is False:
+            return np.squeeze(kurt)
+        elif keepdims is True:
+            return kurt
