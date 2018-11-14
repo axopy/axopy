@@ -175,8 +175,7 @@ if __name__ == '__main__':
     ])
     main_pipeline = pipeline.Pipeline([
         preproc_pipeline,
-        pipeline.Callable(mean_absolute_value,
-        func_kwargs={'weights': 'mav', 'axis': -1, 'keepdims': False}),
+        pipeline.Callable(mean_absolute_value),
         RLSMapping(4, 2, 0.99)
     ])
 
