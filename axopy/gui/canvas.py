@@ -1,6 +1,6 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+"""2D canvas style graphics functionality backed by Qt's QGraphicsView."""
 
-# TODO add wrapper for QGraphicsItemGroup
+from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Canvas(QtWidgets.QGraphicsView):
@@ -96,7 +96,9 @@ class Item(object):
     This is simply a wrapper around any kind of ``QGraphicsItem``, adding the
     ability to set some properties of the underlying item with a more Pythonic
     API. You can always access the ``QGraphicsItem`` with the ``qitem``
-    attribute.
+    attribute. Once you know what kind of ``QGraphicsItem`` is being wrapped,
+    you can use the corresponding Qt documentation to make use of more complete
+    functionality.
 
     Attributes
     ----------
@@ -130,7 +132,7 @@ class Item(object):
 
     @property
     def pos(self):
-        """X and Y coordinates of the item in the canvas."""
+        """Both X and Y coordinates of the item in the canvas."""
         return self.x, self.y
 
     @pos.setter
@@ -195,17 +197,44 @@ def _to_camel_case(snake_str):
 
 
 class Circle(Item):
-    """Circular item."""
+    """Circular item.
 
-    def __init__(self, size, color='#333333'):
-        qitem = QtWidgets.QGraphicsEllipseItem(-size/2, -size/2, size, size)
+    The coordinates of this item correspond to the center of the circle.
+
+    Parameters
+    ----------
+    dia : float
+        Diameter of the circle with respect to the scene coordinate system.
+    color : str
+        Hex string to set the color of the circle. You can use the underlying
+        ``qitem`` attribute to get the underlying QGraphicsEllipseItem to set
+        stroke color vs. fill color, etc. if needed.
+    """
+
+    def __init__(self, diameter, color='#333333'):
+        qitem = QtWidgets.QGraphicsEllipseItem(-diameter/2, -diameter/2,
+                                               diameter, diameter)
         qitem.setPen(QtGui.QPen(QtGui.QBrush(), 0))
         super(Circle, self).__init__(qitem)
         self.color = color
 
 
 class Cross(Item):
-    """Collection of two lines oriented as a "plus sign"."""
+    """Collection of two lines oriented as a "plus sign".
+
+    The coordinates of this item correspond to the center of the cross. This
+    item's ``qitem`` attribute is a ``QGraphicsItemGroup`` (a group of two
+    lines).
+
+    Parameters
+    ----------
+    size : float
+        The size is the length of each line making up the cross.
+    linewidth : float
+        Thickness of each line making up the cross.
+    color : str
+        Color of the lines making up the cross.
+    """
 
     def __init__(self, size=0.05, linewidth=0.01, color='#333333'):
         qitem = QtWidgets.QGraphicsItemGroup()

@@ -21,19 +21,19 @@ AxoPy is written for experiments that involve collecting data from a hardware
 input device and producing visual [#f1]_ feedback to the subject. For most of
 our examples, we'll make use of the built-in :class:`~axopy.task.Oscilloscope`
 task and a built-in device that works without requiring special hardware, like
-the :class:`~axopy.stream.NoiseGenerator`. So here's how we use those two items
+the :class:`~axopy.daq.NoiseGenerator`. So here's how we use those two items
 to put together a simple but functioning experiment:
 
 .. code-block:: python
 
-    import axopy as ap
+    import axopy
 
     daq = axopy.daq.NoiseGenerator()
     exp = axopy.experiment.Experiment(daq=daq)
     exp.run(axopy.task.Oscilloscope())
 
 We create the :class:`Experiment` object with
-a :class:`~axopy.stream.NoiseGenerator` as the input device (or DAQ, short for
+a :class:`~axopy.daq.NoiseGenerator` as the input device (or DAQ, short for
 data acquisition), then run the experiment with
 :class:`~axopy.task.Oscilloscope` as the sole task to run.
 
@@ -74,13 +74,13 @@ Since there aren't any more, the application exits.
 Experiment Configuration
 ========================
 
-Human-computer interface studies are often designed with one or more of the
-following ideas:
+Human-computer interface study designs often include one or more of the
+following complications:
 
-- split subjects into groups
-- re-test a subject on one or more follow-up sessions
-- split subjects into groups with different configuration (e.g. mirror the
-  screen contents for left-hand dominant subjects)
+- subjects are split into groups
+- subjects are tested over multiple sessions
+- subjects fall into categories that require different configuration (e.g.
+  mirror the screen contents for left-hand dominant subjects)
 
 For these cases, :class:`Experiment` provides the option to run a configuration
 step between creation of the experiment object and running the tasks. The
@@ -137,7 +137,7 @@ when the :class:`Experiment` is run:
 
     from axopy.experiment import Experiment
     from axopy.task import Oscilloscope
-    from axopy.stream import NoiseGenerator
+    from axopy.daq import NoiseGenerator
 
     exp = Experiment(daq=NoiseGenerator(), subject='test')
     exp.run(Oscilloscope())

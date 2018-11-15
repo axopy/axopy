@@ -15,6 +15,14 @@ class DaqStream(QtCore.QThread):
     data. When the data becomes available, it is emitted and the loop
     continues.
 
+    There are effectively two methods of this class: start and stop. These
+    methods do as their names suggest -- they start and stop the underlying
+    device from sampling new data.
+
+    The device used to create the DaqStream is also accessible via the
+    ``device`` attribute so you can change settings on the underlying device
+    any time (e.g. sampling rate, number of samples per update, etc.).
+
     Parameters
     ----------
     device : daq
