@@ -8,7 +8,7 @@ Notation:
 
 from functools import partial
 import numpy as np
-from scipy import fftpack
+from scipy.fftpack import fft, ifft
 from scipy.stats import kurtosis as sp_kurtosis
 from axopy.features.util import (ensure_2d, rolling_window, inverted_t_window,
                                  trapezoidal_window, levinson, nextpow2)
@@ -497,3 +497,39 @@ def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
             return np.squeeze(kurt)
         elif keepdims is True:
             return kurt
+
+
+def ar(x, order, axis=-1):
+    """Auto-regressive (linear prediction filter) coefficients.
+
+    .. math::
+        x_n = \\sum_{i=1}^p a_i x_{n-i}
+
+    .. math::
+        \text{AR} = [a_1 \\ldots a_p]
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    order : int
+        Order (p) of the autoregressive linear process.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels, order) or (order, n_channels)
+        The AR coefficients. The shape of the output will be determined by the
+        input format. If x has shape(n_channels, n_samples), then the output
+        shape will be (n_channels, order), otherwise it will be
+        (order, n_channels).
+    """
+
+    x = np.asarray(x)
+    m = x.shape[axis]
+    X = fft(x, n=nextpow2(m), axis=axis)
+    R = np.real(ifft(np.abs(X)**2, axis=axis))  # Auto-correlation matrix
+    R = R/m
+    return np.apply_along_axis(levinson, axis=axis, arr=R, order=order)

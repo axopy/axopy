@@ -212,3 +212,13 @@ def test_logvar():
 def test_kurtosis():
     features.kurtosis(np.random.randn(100))
     features.kurtosis(np.random.randn(2, 100))
+
+def test_ar_io():
+    n = 100
+    c = 3
+    p = 3
+    assert(features.ar(np.random.randn(n), order=p).shape == (p,))
+    assert(features.ar(np.random.randn(c, n), order=p, axis=-1).shape == \
+           (c, p))
+    assert(features.ar(np.random.randn(n, c), order=p, axis=0).shape == \
+           (p, c))
