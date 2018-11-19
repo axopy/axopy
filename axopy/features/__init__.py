@@ -2,7 +2,7 @@ from axopy.features.time import (mean_absolute_value, mean_value,
                                  waveform_length, wilson_amplitude,
                                  zero_crossings, slope_sign_changes,
                                  root_mean_square, integrated_emg, var, logvar,
-                                 kurtosis)
+                                 kurtosis, ar)
 
 __all__ = ['mean_absolute_value',
            'mean_value',
@@ -14,7 +14,8 @@ __all__ = ['mean_absolute_value',
            'integrated_emg',
            'var',
            'logvar',
-           'kurtosis']
+           'kurtosis',
+           'ar']
 
 # FIXME: fix string formatting in docstrings
 import numpy
