@@ -71,11 +71,14 @@ def test_trapezoidal_window():
     features.mean_absolute_value,
     features.mean_value,
     features.waveform_length,
+    features.wilson_amplitude,
     features.zero_crossings,
     features.slope_sign_changes,
     features.root_mean_square,
     features.integrated_emg,
-    features.logvar
+    features.var,
+    features.logvar,
+    features.kurtosis
 ])
 def test_feature_io(func):
     """Make sure feature function gets 1D and 2D IO correct."""
