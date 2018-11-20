@@ -78,6 +78,7 @@ def test_trapezoidal_window():
     features.integrated_emg,
     features.var,
     features.logvar,
+    features.skewness,
     features.kurtosis
 ])
 def test_feature_io(func):
@@ -212,9 +213,15 @@ def test_logvar():
     features.logvar(np.random.randn(2, 100))
 
 
+def test_skewness():
+    features.skewness(np.random.randn(100))
+    features.skewness(np.random.randn(2, 100))
+
+
 def test_kurtosis():
     features.kurtosis(np.random.randn(100))
     features.kurtosis(np.random.randn(2, 100))
+
 
 def test_ar_io():
     n = 100

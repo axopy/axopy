@@ -9,6 +9,7 @@ Notation:
 from functools import partial
 import numpy as np
 from scipy.fftpack import fft, ifft
+from scipy.stats import skew as sp_skewness
 from scipy.stats import kurtosis as sp_kurtosis
 from axopy.features.util import (ensure_2d, rolling_window, inverted_t_window,
                                  trapezoidal_window, levinson, nextpow2)
@@ -445,6 +446,54 @@ def logvar(x, axis=-1, keepdims=False):
        Engineering, vol. 22, no. 2, pp. 269–279, 2014.
     """
     return np.log10(np.var(x, axis=axis, keepdims=keepdims))
+
+
+def skewness(x, bias=True, nan_policy='propagate', axis=-1,
+             keepdims=False):
+    """Skewness of the signal.
+
+    .. math::
+        \\text{Skewness} = \\frac{\\frac{1}{n} \\sum_{i=1}^n \\left( x_i-
+            \\bar{x} \\right )^3}{\\left( \\frac{1}{n} \\sum_{i=1}^n
+                \\left( x_i-\\bar{x} \\right )^2\\right )^\\frac{3}{2}}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    bias : bool, optional
+        If False, then the calculations are corrected for statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        skewness of each channel.
+    """
+    if x.ndim == 1:
+        skew = sp_skewness(x, axis=axis, bias=bias, nan_policy=nan_policy)
+        if keepdims is True:
+            return np.array([skew])
+        else:
+            return skew
+    else:
+        skew = np.apply_over_axes(partial(sp_skewness, bias=bias,
+                                          nan_policy=nan_policy), x,
+                                  axes=axis)
+        if keepdims is False:
+            return np.squeeze(skew)
+        elif keepdims is True:
+            return skew
 
 
 def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
