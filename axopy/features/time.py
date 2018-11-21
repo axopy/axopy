@@ -8,8 +8,7 @@ Notation:
 
 import numpy as np
 from scipy.fftpack import fft, ifft
-from scipy.stats import skew as sp_skewness
-from scipy.stats import kurtosis as sp_kurtosis
+from scipy.stats import skew as sp_skewness, kurtosis as sp_kurtosis
 from axopy.features.util import (ensure_2d, shape_output, rolling_window,
                                  inverted_t_window, trapezoidal_window)
 
@@ -671,7 +670,7 @@ def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
 
     Returns
     ------
-    out : array
+    y : array
         Sample entropy of each channel.
 
     References
