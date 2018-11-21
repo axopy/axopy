@@ -644,3 +644,76 @@ def ar(x, order=None, axis=-1, keepdims=False):
                               allow_singularity=False)
 
     return shape_output(ar_, axis=axis, keepdims=keepdims)
+
+
+def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
+    """
+    Multiscale sample entropy.
+
+    Parameters
+    ----------
+    x : array
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    m : int, optional
+        blah blah. Default is 2.
+    r : float, optional
+        Tolerance level. Default is 0.2 * np.std(x).
+    delta : int, optional
+        Skipping parameter (downsampling factor). Default is 1, which
+        corresponds to no skipping.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    ------
+    out : array
+        Sample entropy of each channel.
+
+    References
+    ----------
+    .. [1] J. S. Richman, J. R. Moorman, "Physiological time-series analysis
+        using approximate entropy and sample entropy," American Journal of
+        Physiology-Heart and Circulatory Physiology, vol. 278, no. 6, pp.
+        H2039--H2049, 2000.
+    """
+    def sample_entropy_1d(x, m, r, delta):
+        """Core algorithm for computing sample entropy of 1D time-series data.
+        """
+        def _maxdist(x_i, x_j):
+            """Computes the Chebyshev distance between two points in the
+            embedded space.
+            """
+            result = np.max([np.abs(ua - va) for ua, va in zip(x_i, x_j)])
+            return result
+
+        def _phi(m):
+            """Computes the number of template vector pairs having a distance
+            smaller than r.
+            """
+            x_ = [[x[j] for j in range(i, i + m - 1 + 1)] for i in range(
+                N - m + 1)]
+            C = [len([1 for j in range(len(x_)) if i != j
+                      and _maxdist(x_[i], x_[j]) <= r]) for i in range(len(x_))]
+            return np.sum(C)
+
+        x = x[::delta]
+        N = len(x)
+        return -np.log(_phi(m+1) / _phi(m))
+
+    if r is None:
+        r = 0.2 * np.std(x)
+
+    samp_en = np.apply_along_axis(
+        sample_entropy_1d,
+        axis=axis,
+        arr=x,
+        m=m,
+        r=r,
+        delta=delta)
+
+    return shape_output(samp_en, axis=axis, keepdims=keepdims)

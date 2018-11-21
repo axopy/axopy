@@ -79,7 +79,8 @@ def test_trapezoidal_window():
     features.var,
     features.logvar,
     features.skewness,
-    features.kurtosis
+    features.kurtosis,
+    features.sample_entropy
 ])
 def test_feature_io(func):
     """Make sure feature function gets 1D and 2D IO correct."""
