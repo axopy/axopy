@@ -3,7 +3,7 @@ from axopy.features.time import (mean_absolute_value, mean_value,
                                  zero_crossings, slope_sign_changes,
                                  root_mean_square, integrated_emg, var, logvar,
                                  skewness, kurtosis, ar, sample_entropy,
-                                 hjorth)
+                                 hjorth, histogram)
 
 __all__ = ['mean_absolute_value',
            'mean_value',
@@ -19,7 +19,8 @@ __all__ = ['mean_absolute_value',
            'kurtosis',
            'ar',
            'sample_entropy',
-           'hjorth']
+           'hjorth',
+           'histogram']
 
 # FIXME: fix string formatting in docstrings
 import numpy

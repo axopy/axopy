@@ -252,3 +252,20 @@ def test_hjorth_io():
     assert(features.hjorth(x_cn, keepdims=True).shape == (c, 3, 1))
     assert(features.hjorth(x_nc, axis=0).shape == (3, c))
     assert(features.hjorth(x_nc, axis=0, keepdims=True).shape == (1, 3, c))
+
+
+def test_histogram_io():
+    n = 100
+    c = 4
+    bins = 10
+    x_n = np.random.randn(n)
+    x_cn = np.random.randn(c, n)
+    x_nc = np.random.randn(n, c)
+    assert(features.histogram(x_n, bins=bins).shape == (bins,))
+    assert(features.histogram(x_n, bins=bins, keepdims=True).shape == (bins, 1))
+    assert(features.histogram(x_cn, bins=bins).shape == (c, bins))
+    assert(features.histogram(x_cn, bins=bins, keepdims=True).shape == \
+           (c, bins, 1))
+    assert(features.histogram(x_nc, bins=bins, axis=0).shape == (bins, c))
+    assert(features.histogram(x_nc, bins=bins, axis=0, keepdims=True).shape == \
+           (1, bins, c))
