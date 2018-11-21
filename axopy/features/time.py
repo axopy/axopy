@@ -11,8 +11,7 @@ from scipy.fftpack import fft, ifft
 from scipy.stats import skew as sp_skewness
 from scipy.stats import kurtosis as sp_kurtosis
 from axopy.features.util import (ensure_2d, shape_output, rolling_window,
-                                 inverted_t_window, trapezoidal_window,
-                                 levinson, nextpow2)
+                                 inverted_t_window, trapezoidal_window)
 
 
 def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
@@ -526,7 +525,7 @@ def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
     return shape_output(kurtosis_, axis=axis, keepdims=keepdims)
 
 
-def ar(x, order, axis=-1, keepdims=False):
+def ar(x, order=None, axis=-1, keepdims=False):
     """Auto-regressive (linear prediction filter) coefficients.
 
     .. math::
@@ -557,10 +556,98 @@ def ar(x, order, axis=-1, keepdims=False):
         (order, n_channels).
     """
 
+    def _levinson(r, order, allow_singularity):
+        """Levinson-Durbin recursion.
+
+        Find the coefficients of an autoregressive linear process using the
+        Levinson-Durbin recursion.
+
+        Parameters
+        ----------
+        r : 1D array or list
+            Autocorrelation sequence (first element is the zero-lag
+            autocorrelation).
+        order : int
+            The order (p) of the auto-regressive model.
+        allow_singularity : bool, optional
+            Whether to allow singular matrices.
+
+        Returns
+        -------
+        A : array, shape = (order,)
+            The AR coefficients :math:`A=(a_1...a_p)`.
+        """
+        T0 = np.real(r[0])
+        T = r[1:]
+        M = len(T)
+
+        if M <= order:
+            raise ValueError("Order must be less than size of the input "
+                             "data.")
+        M = order
+
+        realdata = np.isrealobj(r)
+        if realdata is True:
+            A = np.zeros(M, dtype=float)
+            ref = np.zeros(M, dtype=float)
+        else:
+            A = np.zeros(M, dtype=complex)
+            ref = np.zeros(M, dtype=complex)
+
+        P = T0
+
+        for k in range(0, M):
+            save = T[k]
+            if k == 0:
+                temp = -save / P
+            else:
+                for j in range(0, k):
+                    save = save + A[j] * T[k-j-1]
+                temp = -save / P
+            if realdata:
+                P = P * (1. - temp**2.)
+            else:
+                P = P * (1. - (temp.real**2+temp.imag**2))
+            if P <= 0 and allow_singularity == False:
+                raise ValueError("Singular matrix provided while "
+                                 "allow_singularity parameter was set to "
+                                 "False.")
+            A[k] = temp
+            ref[k] = temp
+            if k == 0:
+                continue
+
+            khalf = int((k+1)/2)
+            if realdata is True:
+                for j in range(0, khalf):
+                    kj = k-j-1
+                    save = A[j]
+                    A[j] = save + temp * A[kj]
+                    if j != kj:
+                        A[kj] += temp*save
+            else:
+                for j in range(0, khalf):
+                    kj = k-j-1
+                    save = A[j]
+                    A[j] = save + temp * A[kj].conjugate()
+                    if j != kj:
+                        A[kj] = A[kj] + temp * save.conjugate()
+
+        return A
+
+    def _nextpow2(n):
+        """Returns the smaller power of 2 greater than or equal to n."""
+        return 2**(np.ceil(np.log2(n))).astype(np.int)
+
     x = np.asarray(x)
     m = x.shape[axis]
-    X = fft(x, n=nextpow2(m), axis=axis)
+    if order is None:
+        order = m
+
+    X = fft(x, n=_nextpow2(m), axis=axis)
     R = np.real(ifft(np.abs(X)**2, axis=axis))  # Auto-correlation matrix
     R = R/m
-    ar_ = np.apply_along_axis(levinson, axis=axis, arr=R, order=order)
+    ar_ = np.apply_along_axis(_levinson, axis=axis, arr=R, order=order,
+                              allow_singularity=False)
+
     return shape_output(ar_, axis=axis, keepdims=keepdims)
