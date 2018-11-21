@@ -3,6 +3,34 @@
 import numpy as np
 
 
+def shape_output(array, axis, keepdims):
+    """Make sure the output has the desired type and shape. Scalar outputs
+    will be converted into numpy.float64. The ``keepdims`` parameter
+    determines whether the array will be expanded along the given axis. This
+    function is useful when features have been computed by calling functions
+    that implicitly reduce the dimensionality (e.g. numpy.apply_along_axis).
+
+    Parameters
+    ----------
+    array : array or float
+        The array with the computed feature.
+    axis : int
+        The axis along which the feature has been computed.
+    keepdims : bool
+        When True the dimensionality of the input will be retained by expanding
+        the output.
+
+    Returns
+    -------
+    out : array
+    """
+    if keepdims is False:
+        # For a scalar ouput make sure it is returned as np.float64
+        return np.float64(array)
+    else:
+        return np.expand_dims(array, axis)
+
+
 def ensure_2d(array):
     """Make sure an array has at least 2 dimensions.
 

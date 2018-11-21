@@ -6,13 +6,13 @@ Notation:
     - :math:`N` : length of the signal
 """
 
-from functools import partial
 import numpy as np
 from scipy.fftpack import fft, ifft
 from scipy.stats import skew as sp_skewness
 from scipy.stats import kurtosis as sp_kurtosis
-from axopy.features.util import (ensure_2d, rolling_window, inverted_t_window,
-                                 trapezoidal_window, levinson, nextpow2)
+from axopy.features.util import (ensure_2d, shape_output, rolling_window,
+                                 inverted_t_window, trapezoidal_window,
+                                 levinson, nextpow2)
 
 
 def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
@@ -473,20 +473,9 @@ def skewness(x, bias=True, nan_policy='propagate', axis=-1,
     y : ndarray, shape (n_channels,)
         skewness of each channel.
     """
-    if x.ndim == 1:
-        skew = sp_skewness(x, axis=axis, bias=bias, nan_policy=nan_policy)
-        if keepdims is True:
-            return np.array([skew])
-        else:
-            return skew
-    else:
-        skew = np.apply_over_axes(partial(sp_skewness, bias=bias,
-                                          nan_policy=nan_policy), x,
-                                  axes=axis)
-        if keepdims is False:
-            return np.squeeze(skew)
-        elif keepdims is True:
-            return skew
+    skewness_ = np.apply_along_axis(sp_skewness, axis=axis, arr=x,
+                                    bias=bias, nan_policy=nan_policy)
+    return shape_output(skewness_, axis=axis, keepdims=keepdims)
 
 
 def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
@@ -524,24 +513,13 @@ def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
     y : ndarray, shape (n_channels,)
         kurtosis of each channel.
     """
-    if x.ndim == 1:
-        kurt = sp_kurtosis(x, axis=axis, fisher=fisher, bias=bias,
-                           nan_policy=nan_policy)
-        if keepdims is True:
-            return np.array([kurt])
-        else:
-            return kurt
-    else:
-        kurt = np.apply_over_axes(partial(sp_kurtosis, fisher=fisher,
-                                          bias=bias, nan_policy=nan_policy), x,
-                                  axes=axis)
-        if keepdims is False:
-            return np.squeeze(kurt)
-        elif keepdims is True:
-            return kurt
+    kurtosis_ = np.apply_along_axis(sp_kurtosis, axis=axis, arr=x,
+                                    fisher=fisher, bias=bias,
+                                    nan_policy=nan_policy)
+    return shape_output(kurtosis_, axis=axis, keepdims=keepdims)
 
 
-def ar(x, order, axis=-1):
+def ar(x, order, axis=-1, keepdims=False):
     """Auto-regressive (linear prediction filter) coefficients.
 
     .. math::
@@ -559,12 +537,15 @@ def ar(x, order, axis=-1):
     axis : int, optional
         The axis to compute the feature along. By default, it is computed along
         rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. If True and
+        ``order`` > 1, the output will have one more dimension than the input.
 
     Returns
     -------
     y : ndarray, shape (n_channels, order) or (order, n_channels)
         The AR coefficients. The shape of the output will be determined by the
-        input format. If x has shape(n_channels, n_samples), then the output
+        input format. If x has shape (n_channels, n_samples), then the output
         shape will be (n_channels, order), otherwise it will be
         (order, n_channels).
     """
@@ -574,4 +555,5 @@ def ar(x, order, axis=-1):
     X = fft(x, n=nextpow2(m), axis=axis)
     R = np.real(ifft(np.abs(X)**2, axis=axis))  # Auto-correlation matrix
     R = R/m
-    return np.apply_along_axis(levinson, axis=axis, arr=R, order=order)
+    ar_ = np.apply_along_axis(levinson, axis=axis, arr=R, order=order)
+    return shape_output(ar_, axis=axis, keepdims=keepdims)

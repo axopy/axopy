@@ -225,10 +225,13 @@ def test_kurtosis():
 
 def test_ar_io():
     n = 100
-    c = 3
+    c = 4
     p = 3
-    assert(features.ar(np.random.randn(n), order=p).shape == (p,))
-    assert(features.ar(np.random.randn(c, n), order=p, axis=-1).shape == \
-           (c, p))
-    assert(features.ar(np.random.randn(n, c), order=p, axis=0).shape == \
-           (p, c))
+    assert(features.ar(np.random.randn(n), order=p,
+                       keepdims=False).shape == (p,))
+    assert(features.ar(np.random.randn(n), order=p,
+                       keepdims=True).shape == (p, 1))
+    assert(features.ar(np.random.randn(c, n), order=p, axis=-1,
+                       keepdims=False).shape == (c, p))
+    assert(features.ar(np.random.randn(c, n), order=p, axis=-1,
+                       keepdims=True).shape == (c, p, 1))
