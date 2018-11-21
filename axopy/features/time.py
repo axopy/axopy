@@ -757,3 +757,42 @@ def hjorth(x, axis=-1, keepdims=False):
     res = np.concatenate((activity[0], mobility[0], complexity), axis=axis)
 
     return shape_output(res, axis, keepdims=keepdims)
+
+
+def histogram(x, bins, axis=-1, keepdims=False):
+    """Computes the histogram of the signal.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    bins : int or sequence of scalars or str, optional
+        If ``bins`` is an int, it defines the number of equal-width
+        bins in the given range. If ``bins`` is a sequence, it defines the bin
+        edges, including the rightmost edge, allowing for non-uniform bin
+        widths.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. If True, the
+        output will have one more dimension than the input.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels, bins) or (bins, n_channels)
+        The shape of the output will be determined by the input format. If x
+        has shape (n_channels, n_samples), then the output shape will be
+        (n_channels, bins), otherwise it will be (bins, n_channels).
+    """
+    def _histogram_hist(a, bins):
+        """Wrapper around numpy.histogram which only returns the ``hist``
+        output (i.e. values of the histogram), thus omitting the ``bin_edges``
+        output. This is useful for calling the function using
+        numpy.apply_along_axis.
+        """
+        return np.histogram(a, bins)[0]
+
+    hist = np.apply_along_axis(_histogram_hist, axis=axis, arr=x, bins=bins)
+
+    return shape_output(hist, axis=axis, keepdims=keepdims)
