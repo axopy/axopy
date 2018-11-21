@@ -228,22 +228,27 @@ def test_ar_io():
     n = 100
     c = 4
     p = 3
-    assert(features.ar(np.random.randn(n), order=p,
-                       keepdims=False).shape == (p,))
-    assert(features.ar(np.random.randn(n), order=p,
-                       keepdims=True).shape == (p, 1))
-    assert(features.ar(np.random.randn(c, n), order=p, axis=-1,
-                       keepdims=False).shape == (c, p))
-    assert(features.ar(np.random.randn(c, n), order=p, axis=-1,
-                       keepdims=True).shape == (c, p, 1))
+    x_n = np.random.randn(n)
+    x_cn = np.random.randn(c, n)
+    x_nc = np.random.randn(n, c)
+    assert(features.ar(x_n, order=p).shape == (p,))
+    assert(features.ar(x_n, order=p, keepdims=True).shape == (p, 1))
+    assert(features.ar(x_cn, order=p).shape == (c, p))
+    assert(features.ar(x_cn, order=p, keepdims=True).shape == (c, p, 1))
+    assert(features.ar(x_nc, order=p, axis=0).shape == (p, c))
+    assert(features.ar(x_nc, order=p, axis=0, keepdims=True).shape == (1, p, c))
+
 
 
 def test_hjorth_io():
     n = 100
     c = 4
-    assert(features.hjorth(np.random.randn(n), keepdims=False).shape == (3,))
-    assert(features.hjorth(np.random.randn(n), keepdims=True).shape == (3, 1))
-    assert(features.hjorth(np.random.randn(c, n), axis=-1,
-                           keepdims=False).shape == (c, 3))
-    assert(features.hjorth(np.random.randn(c, n), axis=-1,
-                           keepdims=True).shape == (c, 3, 1))
+    x_n = np.random.randn(n)
+    x_cn = np.random.randn(c, n)
+    x_nc = np.random.randn(n, c)
+    assert(features.hjorth(x_n).shape == (3,))
+    assert(features.hjorth(x_n, keepdims=True).shape == (3, 1))
+    assert(features.hjorth(x_cn).shape == (c, 3))
+    assert(features.hjorth(x_cn, keepdims=True).shape == (c, 3, 1))
+    assert(features.hjorth(x_nc, axis=0).shape == (3, c))
+    assert(features.hjorth(x_nc, axis=0, keepdims=True).shape == (1, 3, c))
