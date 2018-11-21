@@ -236,3 +236,14 @@ def test_ar_io():
                        keepdims=False).shape == (c, p))
     assert(features.ar(np.random.randn(c, n), order=p, axis=-1,
                        keepdims=True).shape == (c, p, 1))
+
+
+def test_hjorth_io():
+    n = 100
+    c = 4
+    assert(features.hjorth(np.random.randn(n), keepdims=False).shape == (3,))
+    assert(features.hjorth(np.random.randn(n), keepdims=True).shape == (3, 1))
+    assert(features.hjorth(np.random.randn(c, n), axis=-1,
+                           keepdims=False).shape == (c, 3))
+    assert(features.hjorth(np.random.randn(c, n), axis=-1,
+                           keepdims=True).shape == (c, 3, 1))
