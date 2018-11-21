@@ -704,8 +704,8 @@ def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
             """
             x_ = [[x[j] for j in range(i, i + m - 1 + 1)] for i in range(
                 N - m + 1)]
-            C = [len([1 for j in range(len(x_)) if i != j
-                      and _maxdist(x_[i], x_[j]) <= r]) for i in range(len(x_))]
+            C = [len([1 for j in range(len(x_)) if i != j and
+                      _maxdist(x_[i], x_[j]) <= r]) for i in range(len(x_))]
             return np.sum(C)
 
         x = x[::delta]
@@ -724,3 +724,44 @@ def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
         delta=delta)
 
     return shape_output(samp_en, axis=axis, keepdims=keepdims)
+
+
+def hjorth(x, axis=-1, keepdims=False):
+    """Computes the Hjorth parameters.
+
+    The following Hjorth parameters are computed: Activity, Mobility, and
+    Complexity.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. If True, the
+        output will have one more dimension than the input.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels, 3) or (3, n_channels)
+        The Hjorth parameters are returned in the following order: Activity,
+        Mobility, and Complexity. The shape of the output will be determined by
+        the input format. If x has shape (n_channels, n_samples), then the
+        output shape will be (n_channels, 3), otherwise it will be
+        (3, n_channels).
+
+    References
+    ----------
+    .. [1] B. Hjorth, "EEG analysis based on time domain properties,"
+      Electroencephalography and clinical neurophysiology, vol. 29, no. 3, pp.
+      306-310, 1970.
+    """
+    activity = [np.var(x_, axis=axis, keepdims=True) for x_ in
+                [np.diff(x, i, axis=axis) for i in range(3)]]
+    mobility = [np.sqrt(activity[i+1] / activity[i]) for i in range(2)]
+    complexity = mobility[1] / mobility[0]
+    res = np.concatenate((activity[0], mobility[0], complexity), axis=axis)
+
+    return shape_output(res, axis, keepdims=keepdims)
