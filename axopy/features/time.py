@@ -133,6 +133,13 @@ def waveform_length(x, axis=-1, keepdims=False):
     ----------
     x : ndarray
         Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
 
     Returns
     -------
