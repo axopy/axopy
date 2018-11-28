@@ -232,9 +232,9 @@ def test_ar_io():
     x_cn = np.random.randn(c, n)
     x_nc = np.random.randn(n, c)
     assert(features.ar(x_n, order=p).shape == (p,))
-    assert(features.ar(x_n, order=p, keepdims=True).shape == (p, 1))
+    assert(features.ar(x_n, order=p, keepdims=True).shape == (1, p))
     assert(features.ar(x_cn, order=p).shape == (c, p))
-    assert(features.ar(x_cn, order=p, keepdims=True).shape == (c, p, 1))
+    assert(features.ar(x_cn, order=p, keepdims=True).shape == (c, 1, p))
     assert(features.ar(x_nc, order=p, axis=0).shape == (p, c))
     assert(features.ar(x_nc, order=p, axis=0, keepdims=True).shape == (1, p, c))
 
@@ -247,9 +247,9 @@ def test_hjorth_io():
     x_cn = np.random.randn(c, n)
     x_nc = np.random.randn(n, c)
     assert(features.hjorth(x_n).shape == (3,))
-    assert(features.hjorth(x_n, keepdims=True).shape == (3, 1))
+    assert(features.hjorth(x_n, keepdims=True).shape == (1, 3))
     assert(features.hjorth(x_cn).shape == (c, 3))
-    assert(features.hjorth(x_cn, keepdims=True).shape == (c, 3, 1))
+    assert(features.hjorth(x_cn, keepdims=True).shape == (c, 1, 3))
     assert(features.hjorth(x_nc, axis=0).shape == (3, c))
     assert(features.hjorth(x_nc, axis=0, keepdims=True).shape == (1, 3, c))
 
@@ -262,10 +262,10 @@ def test_histogram_io():
     x_cn = np.random.randn(c, n)
     x_nc = np.random.randn(n, c)
     assert(features.histogram(x_n, bins=bins).shape == (bins,))
-    assert(features.histogram(x_n, bins=bins, keepdims=True).shape == (bins, 1))
+    assert(features.histogram(x_n, bins=bins, keepdims=True).shape == (1, bins))
     assert(features.histogram(x_cn, bins=bins).shape == (c, bins))
     assert(features.histogram(x_cn, bins=bins, keepdims=True).shape == \
-           (c, bins, 1))
+           (c, 1, bins))
     assert(features.histogram(x_nc, bins=bins, axis=0).shape == (bins, c))
     assert(features.histogram(x_nc, bins=bins, axis=0, keepdims=True).shape == \
            (1, bins, c))
