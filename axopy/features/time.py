@@ -648,7 +648,7 @@ def ar(x, order=None, axis=-1, keepdims=False):
     R = R/m
     ar_ = np.apply_along_axis(_levinson, axis=axis, arr=R, order=order,
                               allow_singularity=False)
-
+    axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
     return shape_output(ar_, axis=axis, keepdims=keepdims)
 
 
@@ -762,6 +762,7 @@ def hjorth(x, axis=-1, keepdims=False):
     mobility = [np.sqrt(activity[i+1] / activity[i]) for i in range(2)]
     complexity = mobility[1] / mobility[0]
     res = np.concatenate((activity[0], mobility[0], complexity), axis=axis)
+    axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
 
     return shape_output(res, axis, keepdims=keepdims)
 
@@ -801,5 +802,6 @@ def histogram(x, bins, axis=-1, keepdims=False):
         return np.histogram(a, bins)[0]
 
     hist = np.apply_along_axis(_histogram_hist, axis=axis, arr=x, bins=bins)
+    axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
 
     return shape_output(hist, axis=axis, keepdims=keepdims)
