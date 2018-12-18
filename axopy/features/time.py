@@ -13,6 +13,127 @@ from axopy.features.util import (ensure_2d, shape_output, rolling_window,
                                  inverted_t_window, trapezoidal_window)
 
 
+def _nextpow2(n):
+    """Returns the smaller power of 2 greater than or equal to n."""
+    return 2**(np.ceil(np.log2(n))).astype(np.int)
+
+
+def _levinson(r, order, allow_singularity):
+    """Levinson-Durbin recursion. Required for AR estimation.
+
+    Find the coefficients of an autoregressive linear process using the
+    Levinson-Durbin recursion.
+
+    Parameters
+    ----------
+    r : 1D array or list
+        Autocorrelation sequence (first element is the zero-lag
+        autocorrelation).
+    order : int
+        The order (p) of the auto-regressive model.
+    allow_singularity : bool, optional
+        Whether to allow singular matrices.
+
+    Returns
+    -------
+    A : array, shape = (order,)
+        The AR coefficients :math:`A=(a_1...a_p)`.
+    """
+    T0 = np.real(r[0])
+    T = r[1:]
+    M = len(T)
+
+    if M <= order:
+        raise ValueError("Order must be less than size of the input "
+                         "data.")
+    M = order
+
+    realdata = np.isrealobj(r)
+    if realdata is True:
+        A = np.zeros(M, dtype=float)
+        ref = np.zeros(M, dtype=float)
+    else:
+        A = np.zeros(M, dtype=complex)
+        ref = np.zeros(M, dtype=complex)
+
+    P = T0
+
+    for k in range(0, M):
+        save = T[k]
+        if k == 0:
+            temp = -save / P
+        else:
+            for j in range(0, k):
+                save = save + A[j] * T[k-j-1]
+            temp = -save / P
+        if realdata:
+            P = P * (1. - temp**2.)
+        else:
+            P = P * (1. - (temp.real**2+temp.imag**2))
+        if P <= 0 and allow_singularity == False:
+            raise ValueError("Singular matrix provided while "
+                             "allow_singularity parameter was set to "
+                             "False.")
+        A[k] = temp
+        ref[k] = temp
+        if k == 0:
+            continue
+
+        khalf = int((k+1)/2)
+        if realdata is True:
+            for j in range(0, khalf):
+                kj = k-j-1
+                save = A[j]
+                A[j] = save + temp * A[kj]
+                if j != kj:
+                    A[kj] += temp*save
+        else:
+            for j in range(0, khalf):
+                kj = k-j-1
+                save = A[j]
+                A[j] = save + temp * A[kj].conjugate()
+                if j != kj:
+                    A[kj] = A[kj] + temp * save.conjugate()
+
+    return A
+
+
+def _maxdist(x_i, x_j):
+    """Computes the Chebyshev distance between two points in the
+    embedded space. Required for sample entropy estimation.
+    """
+    result = np.max([np.abs(ua - va) for ua, va in zip(x_i, x_j)])
+    return result
+
+
+def _phi(x, m, r):
+    """Computes the number of template vector pairs having a smaller distance
+    than tolerance. Required for sample entropy estimation.
+    """
+    N = len(x)
+    x_ = [[x[j] for j in range(i, i + m - 1 + 1)] for i in range(
+        N - m + 1)]
+    C = [len([1 for j in range(len(x_)) if i != j
+              and _maxdist(x_[i], x_[j]) <= r]) for i in range(len(x_))]
+    return np.sum(C)
+
+
+def _sample_entropy_1d(x, m, r, delta):
+    """Core algorithm for computing sample entropy of 1D time-series data.
+    """
+    x = x[::delta]
+    return -np.log(_phi(x, m + 1, r) / _phi(x, m, r))
+
+
+def _histogram_hist(a, bins):
+    """Wrapper around numpy.histogram which only returns the ``hist``
+    output (i.e. values of the histogram), thus omitting the ``bin_edges``
+    output. This is useful for calling the function using
+    numpy.apply_along_axis.
+    """
+    return np.histogram(a, bins)[0]
+
+
 def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
     """Computes the mean absolute value (MAV) of each signal.
 
@@ -554,90 +675,6 @@ def ar(x, order=None, axis=-1, keepdims=False):
         shape will be (n_channels, order), otherwise it will be
         (order, n_channels).
     """
-
-    def _levinson(r, order, allow_singularity):
-        """Levinson-Durbin recursion.
-
-        Find the coefficients of an autoregressive linear process using the
-        Levinson-Durbin recursion.
-
-        Parameters
-        ----------
-        r : 1D array or list
-            Autocorrelation sequence (first element is the zero-lag
-            autocorrelation).
-        order : int
-            The order (p) of the auto-regressive model.
-        allow_singularity : bool, optional
-            Whether to allow singular matrices.
-
-        Returns
-        -------
-        A : array, shape = (order,)
-            The AR coefficients :math:`A=(a_1...a_p)`.
-        """
-        T0 = np.real(r[0])
-        T = r[1:]
-        M = len(T)
-
-        if M <= order:
-            raise ValueError("Order must be less than size of the input "
-                             "data.")
-        M = order
-
-        realdata = np.isrealobj(r)
-        if realdata is True:
-            A = np.zeros(M, dtype=float)
-            ref = np.zeros(M, dtype=float)
-        else:
-            A = np.zeros(M, dtype=complex)
-            ref = np.zeros(M, dtype=complex)
-
-        P = T0
-
-        for k in range(0, M):
-            save = T[k]
-            if k == 0:
-                temp = -save / P
-            else:
-                for j in range(0, k):
-                    save = save + A[j] * T[k-j-1]
-                temp = -save / P
-            if realdata:
-                P = P * (1. - temp**2.)
-            else:
-                P = P * (1. - (temp.real**2+temp.imag**2))
-            if P <= 0 and allow_singularity == False:
-                raise ValueError("Singular matrix provided while "
-                                 "allow_singularity parameter was set to "
-                                 "False.")
-            A[k] = temp
-            ref[k] = temp
-            if k == 0:
-                continue
-
-            khalf = int((k+1)/2)
-            if realdata is True:
-                for j in range(0, khalf):
-                    kj = k-j-1
-                    save = A[j]
-                    A[j] = save + temp * A[kj]
-                    if j != kj:
-                        A[kj] += temp*save
-            else:
-                for j in range(0, khalf):
-                    kj = k-j-1
-                    save = A[j]
-                    A[j] = save + temp * A[kj].conjugate()
-                    if j != kj:
-                        A[kj] = A[kj] + temp * save.conjugate()
-
-        return A
-
-    def _nextpow2(n):
-        """Returns the smaller power of 2 greater than or equal to n."""
-        return 2**(np.ceil(np.log2(n))).astype(np.int)
-
     x = np.asarray(x)
     m = x.shape[axis]
     if order is None:
@@ -661,7 +698,7 @@ def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
     x : array
         Input data. Use the ``axis`` argument to specify the "time axis".
     m : int, optional
-        blah blah. Default is 2.
+        Embedding dimension. Default is 2.
     r : float, optional
         Tolerance level. Default is 0.2 * np.std(x).
     delta : int, optional
@@ -687,35 +724,11 @@ def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
         Physiology-Heart and Circulatory Physiology, vol. 278, no. 6, pp.
         H2039--H2049, 2000.
     """
-    def sample_entropy_1d(x, m, r, delta):
-        """Core algorithm for computing sample entropy of 1D time-series data.
-        """
-        def _maxdist(x_i, x_j):
-            """Computes the Chebyshev distance between two points in the
-            embedded space.
-            """
-            result = np.max([np.abs(ua - va) for ua, va in zip(x_i, x_j)])
-            return result
-
-        def _phi(m):
-            """Computes the number of template vector pairs having a distance
-            smaller than r.
-            """
-            x_ = [[x[j] for j in range(i, i + m - 1 + 1)] for i in range(
-                N - m + 1)]
-            C = [len([1 for j in range(len(x_)) if i != j and
-                      _maxdist(x_[i], x_[j]) <= r]) for i in range(len(x_))]
-            return np.sum(C)
-
-        x = x[::delta]
-        N = len(x)
-        return -np.log(_phi(m+1) / _phi(m))
-
     if r is None:
         r = 0.2 * np.std(x)
 
     samp_en = np.apply_along_axis(
-        sample_entropy_1d,
+        _sample_entropy_1d,
         axis=axis,
         arr=x,
         m=m,
@@ -793,14 +806,6 @@ def histogram(x, bins, axis=-1, keepdims=False):
         has shape (n_channels, n_samples), then the output shape will be
         (n_channels, bins), otherwise it will be (bins, n_channels).
     """
-    def _histogram_hist(a, bins):
-        """Wrapper around numpy.histogram which only returns the ``hist``
-        output (i.e. values of the histogram), thus omitting the ``bin_edges``
-        output. This is useful for calling the function using
-        numpy.apply_along_axis.
-        """
-        return np.histogram(a, bins)[0]
-
     hist = np.apply_along_axis(_histogram_hist, axis=axis, arr=x, bins=bins)
     axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
 
