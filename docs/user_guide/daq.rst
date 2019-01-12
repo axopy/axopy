@@ -82,5 +82,5 @@ An example of setting up a :class:`DaqStream` in the context of a custom
 <recipe_daq_basic>`.
 
 
-.. _pymcc: https://github.com/ucdrascal/pymcc
-.. _pytrigno: https://github.com/ucdrascal/pytrigno
+.. _pymcc: https://github.com/axopy/pymcc
+.. _pytrigno: https://github.com/axopy/pytrigno

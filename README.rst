@@ -3,16 +3,16 @@
 
 |
 
-.. image:: https://travis-ci.org/ucdrascal/axopy.svg?branch=master
-    :target: https://travis-ci.org/ucdrascal/axopy
+.. image:: https://travis-ci.org/axopy/axopy.svg?branch=master
+    :target: https://travis-ci.org/axopy/axopy
     :alt: Travis CI Status
 
 .. image:: https://readthedocs.org/projects/axopy/badge/?version=latest
    :target: http://axopy.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
-.. image:: https://codecov.io/gh/ucdrascal/axopy/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/ucdrascal/axopy
+.. image:: https://codecov.io/gh/axopy/axopy/branch/master/graph/badge.svg
+   :target: https://codecov.io/gh/axopy/axopy
    :alt: Codecov test coverage
 
 |
@@ -108,7 +108,7 @@ Contributing
 
 Please feel free to share any thoughts or opinions about the design and
 implementation of this software by `opening an issue on GitHub
-<https://github.com/ucdrascal/axopy/issues/new>`_. Constructive feedback is
+<https://github.com/axopy/axopy/issues/new>`_. Constructive feedback is
 welcomed and appreciated.
 
 GitHub issues also serve as the support channel, at least for now. Questions
@@ -129,10 +129,10 @@ documentation`_ for instructions on setting up a development environment,
 running tests, and building the documentation.
 
 
-.. _pytrigno: https://github.com/ucdrascal/pytrigno
-.. _pymcc: https://github.com/ucdrascal/pymcc
+.. _pytrigno: https://github.com/axopy/pytrigno
+.. _pymcc: https://github.com/axopy/pymcc
 .. _documentation: https://axopy.readthedocs.io
-.. _examples: https://github.com/ucdrascal/axopy/tree/master/examples
+.. _examples: https://github.com/axopy/axopy/tree/master/examples
 .. _PyPI: https://pypi.org/
 .. _conda-forge: https://conda-forge.org/
 .. _conda: https://conda.io/docs/

@@ -10,7 +10,7 @@ Install
 
 Retrieve the source code::
 
-    $ git clone git@github.com:ucdrascal/axopy.git
+    $ git clone git@github.com:axopy/axopy.git
     $ cd axopy
 
 A virtual environment is a good way to set up a development environment::

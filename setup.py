@@ -53,7 +53,7 @@ setup(
     ],
     keywords='human computer interface control electrophysiology',
 
-    url='https://github.com/ucdrascal/axopy',
+    url='https://github.com/axopy/axopy',
     author='Kenneth Lyons',
     author_email='ixjlyons@gmail.com',
     license='MIT',
