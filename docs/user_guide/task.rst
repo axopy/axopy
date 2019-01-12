@@ -117,8 +117,14 @@ the flow of the task proceeds through it's :class:`Design` by calling
 :class:`Task.next_trial``.
 
 There are two main ways for a task to end. One is by calling
-:meth:`Task.finished` somewhere in your task implementation. This 
+:meth:`Task.finished` somewhere in your task implementation. This signals to
+the :class:`~axopy.experiment.Experiment` that the task is done, then the
+:meth:`Task.finish` method is called so you can clean up anything you need to
+before the next task runs. A common example of cleanup is to make sure the
+:ref:`DAQ <daq>` is stopped.
+
+The flowchart below shows the lifecycle of a :class:`Task` when it's run by an
+:class:`~axopy.experiment.Experiment`.
 
 .. image:: images/task_flowchart.png
    :align: center
-

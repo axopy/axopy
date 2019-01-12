@@ -9,7 +9,8 @@ Data Acquisition
 Traditionally, data acquisition (DAQ) refers to the process of capturing and
 conditioning signals for recording by a computer. In AxoPy, any source of data
 generated or influenced by the subject of the experiment is referred to as
-a DAQ.
+a DAQ. AxoPy doesn't include built-in support for hardware aside from things
+commonly available with just a desktop computer (mouse, keyboard).
 
 AxoPy assumes a fairly simple model for collecting data, based on polling.
 First, the interface is set up -- this might involve initializing a USB

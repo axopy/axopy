@@ -87,7 +87,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="2.8284271"
-     inkscape:cx="143.15452"
+     inkscape:cx="125.47685"
      inkscape:cy="15.52687"
      inkscape:document-units="cm"
      inkscape:current-layer="layer1"
@@ -98,9 +98,9 @@
      fit-margin-right="0.1"
      fit-margin-bottom="0.1"
      inkscape:window-width="1436"
-     inkscape:window-height="877"
+     inkscape:window-height="843"
      inkscape:window-x="0"
-     inkscape:window-y="19"
+     inkscape:window-y="55"
      inkscape:window-maximized="0">
     <inkscape:grid
        type="xygrid"
@@ -119,7 +119,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -173,7 +173,7 @@
          x="19.239244"
          y="294.74112"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.52777743px;line-height:1em;font-family:'Times New Roman';-inkscape-font-specification:'Times New Roman, ';text-align:end;text-anchor:end;stroke-width:0.26458332px"
-         id="tspan5023-9">InputStream</tspan></text>
+         id="tspan5023-9">DaqStream</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Mend-0)"
        d="m 20,294.00001 h 9"
