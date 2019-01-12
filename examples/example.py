@@ -27,10 +27,9 @@ from axopy import pipeline
 from axopy.features import mean_absolute_value
 from axopy.experiment import Experiment
 from axopy import util
-from axopy.messaging import Transmitter
 from axopy.task import Task, Oscilloscope
+from axopy.daq import NoiseGenerator
 from axopy.timing import Counter
-from axopy.stream import InputStream
 from axopy.gui.canvas import Canvas, Circle, Cross
 
 
@@ -111,9 +110,9 @@ class CursorFollowing(Task):
         self.canvas.add_item(Cross())
         container.set_widget(self.canvas)
 
-    def prepare_input_stream(self, input_stream):
-        self.input_stream = input_stream
-        self.input_stream.start()
+    def prepare_daq(self, daqstream):
+        self.daqstream = daqstream
+        self.daqstream.start()
 
         self.timer = Counter(50)
         self.timer.timeout.connect(self.finish_trial)
@@ -125,7 +124,7 @@ class CursorFollowing(Task):
         self.target.pos = trial.attrs['target_x'], trial.attrs['target_y']
         self.target.show()
         self.pipeline.clear()
-        self.connect(self.input_stream.updated, self.update)
+        self.connect(self.daqstream.updated, self.update)
 
     def update(self, data):
         xhat = self.pipeline.process(data)
@@ -142,7 +141,7 @@ class CursorFollowing(Task):
         self.timer.increment()
 
     def finish_trial(self):
-        self.disconnect(self.input_stream.updated, self.update)
+        self.disconnect(self.daqstream.updated, self.update)
         self._reset()
         self.next_trial()
 
@@ -152,7 +151,7 @@ class CursorFollowing(Task):
         self.target.hide()
 
     def finish(self):
-        self.input_stream.kill()
+        self.daqstream.stop()
 
     def key_press(self, key):
         if key == util.key_escape:
@@ -164,7 +163,6 @@ class CursorFollowing(Task):
 if __name__ == '__main__':
     # from pytrigno import TrignoEMG
     # dev = TrignoEMG((0, 3), 200, host='192.168.1.114', units='normalized')
-    from axopy.stream import NoiseGenerator
     dev = NoiseGenerator(rate=2000, num_channels=4, read_size=200)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')

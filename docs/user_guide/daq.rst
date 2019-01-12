@@ -6,10 +6,11 @@ Data Acquisition
 
 .. currentmodule:: axopy.daq
 
-Traditionally, a data acquisition (DAQ) refers to the process of capturing and
+Traditionally, data acquisition (DAQ) refers to the process of capturing and
 conditioning signals for recording by a computer. In AxoPy, any source of data
 generated or influenced by the subject of the experiment is referred to as
-a DAQ.
+a DAQ. AxoPy doesn't include built-in support for hardware aside from things
+commonly available with just a desktop computer (mouse, keyboard).
 
 AxoPy assumes a fairly simple model for collecting data, based on polling.
 First, the interface is set up -- this might involve initializing a USB
@@ -22,7 +23,9 @@ request the next batch of data with another request. It is important to make
 sure consecutive requests occur frequently enough that you don't fall behind.
 
 For example, imagine you set up a device to acquire data at 1000 Hz in bunches
-of 100 samples::
+of 100 samples:
+
+.. code-block:: python
 
     from axopy.daq import NoiseGenerator
 
@@ -41,6 +44,43 @@ at which it is generated.
 Some DAQs are built in to AxoPy, but of course not all of them can be. Check
 out pymcc_ and pytrigno_ for a couple examples of working with real data
 acquisition hardware.
+
+The DaqStream
+=============
+
+One thing to notice about the code above is that every time the ``daq.read()``
+operation occurs, *no other code is being run while waiting for the device to
+return the new data.* This is sometimes referred to as a blocking operation. In
+AxoPy, we usually want some things to be happening *while* the device is
+reading in data in the background. This where the :class:`DaqStream` comes in
+-- a threaded interface to the underlying hardware.
+
+You'll usually set up your DAQ as above (e.g. ``daq = NoiseGenerator(...)``),
+pass it to the :class:`~axopy.experiment.Experiment` as a shared resource, then
+make use of the :class:`DaqStream` object made available by the Experiment in
+your Task implementation. The :class:`DaqStream` has a uniform interface so no
+matter what kind of hardware you're using, your task implementation doesn't
+need to care about how that all works. You just start/stop and
+connect/disconnect from the stream. In order to facilitate this uniform
+interface, the device the :class:`DaqStream` wraps needs to expose a specific
+API as well. This is defined below:
+
+.. code-block:: text
+
+   Daq
+      start - Called once before the first read.
+      read  - Request a new buffer of data from the hardware. Parameters (like
+              the size of the buffer or number of samples to read should be
+              set up in the daq constructor.
+      stop  - Called when the user wants the device to stop reading data.
+
+In addition, the DAQ implementation should raise an ``IOError`` if something
+goes wrong during data acquisition.
+
+An example of setting up a :class:`DaqStream` in the context of a custom
+:class:`~axopy.task.Task` is given in the :ref:`recipes page
+<recipe_daq_basic>`.
+
 
 .. _pymcc: https://github.com/ucdrascal/pymcc
 .. _pytrigno: https://github.com/ucdrascal/pytrigno

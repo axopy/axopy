@@ -17,7 +17,7 @@ import argparse
 import numpy as np
 from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
-from axopy.stream import NoiseGenerator, Keyboard, Mouse
+from axopy.daq import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter
 
 

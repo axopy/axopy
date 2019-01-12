@@ -17,3 +17,4 @@ getting started implementing experiments.
    user_guide/storage
    user_guide/graphics
    user_guide/pipeline
+   user_guide/task_recipes
