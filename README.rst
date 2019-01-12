@@ -1,4 +1,4 @@
-.. image:: https://github.com/ucdrascal/axopy/raw/master/docs/_static/axopy.png
+.. image:: docs/_static/axopy.png
    :alt: AxoPy Logo
 
 |
