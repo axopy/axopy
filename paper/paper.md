@@ -75,6 +75,6 @@ AxoPy provides the following core functionality:
 
 AxoPy has been used to implement research experiments involving the use of
 surface electromyography for applications like prosthesis control
-[@LyonsJoshi-EMBC2018] and communication devices [@OmearaEtAl-2018].
+[@LyonsJoshi-EMBC2018] and communication devices [@OmearaEtAl-NER2019].
 
 # References
