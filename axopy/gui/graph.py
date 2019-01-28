@@ -56,6 +56,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
             plot_item.showAxis('bottom', False)
             plot_item.showGrid(y=True, alpha=0.5)
             plot_item.setMouseEnabled(x=False)
+            plot_item.setMenuEnabled(False)
 
             if self.n_channels > 1:
                 label = "ch {}".format(i)
