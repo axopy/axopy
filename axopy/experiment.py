@@ -78,7 +78,7 @@ class Experiment(TransmitterBase):
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
-        self.confirm_screen.add_item(Text("Ready"))
+        self.confirm_screen.add_item(Text("Ready (enter to start)"))
 
         self.storage.subject_id = self.subject
         self.tasks = tasks
