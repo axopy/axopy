@@ -1,4 +1,9 @@
--r requirements.txt
+numpy
+scipy
+pandas
+h5py
+pyqt5
+pyqtgraph>=0.10
 pytest>=3.6
 pytest-cov
 pytest-qt
