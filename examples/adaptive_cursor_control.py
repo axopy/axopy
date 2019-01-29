@@ -1,4 +1,6 @@
-"""Adaptive cursor control mapping example.
+"""
+Adaptive Cursor Control Mapping
+===============================
 
 This example contains a 2D cursor-to-target task which processes input signals
 from a data acquisition device (e.g. from EMG hardware) and adaptively learns a
@@ -13,11 +15,6 @@ to cursor position. Once this training procedure is finished, the target
 changes color and the subject can attempt to hit the targets with the mapping
 now fixed.
 """
-
-# TODO split this into two tasks (a "training" task and a "practice" task).
-# This would involve storing the RLS weights and loading them for the practice
-# task. Probably a good idea to write a simple cursor interface class to share
-# common code between the two tasks.
 
 import numpy
 import random
@@ -81,6 +78,10 @@ class RLSMapping(pipeline.Block):
 
 
 class CursorFollowing(Task):
+    # TODO split this into two tasks (a "training" task and a "practice" task).
+    # This would involve storing the RLS weights and loading them for the
+    # practice task. Probably a good idea to write a simple cursor interface
+    # class to share common code between the two tasks.
 
     target_dist = 0.8
 
@@ -161,8 +162,6 @@ class CursorFollowing(Task):
 
 
 if __name__ == '__main__':
-    # from pytrigno import TrignoEMG
-    # dev = TrignoEMG((0, 3), 200, host='192.168.1.114', units='normalized')
     dev = NoiseGenerator(rate=2000, num_channels=4, read_size=200)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')

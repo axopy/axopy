@@ -1,4 +1,9 @@
-"""Examples of input devices built into AxoPy for testing.
+"""
+Built-In Devices
+================
+
+This example demonstrates some input devices built into AxoPy for testing. Pass
+the following options to try out different devices:
 
 rainbow
     Basic use of an NoiseGenerator to show lots of colorful random data.
@@ -9,8 +14,6 @@ keystick
 mouse
     Basic use of a Mouse for velocity input.
 """
-
-# TODO use the above as docstrings for each function and generate the help
 
 import sys
 import argparse

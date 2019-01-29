@@ -1,12 +1,20 @@
-"""Demonstration of several ways to instantiate an experiment.
+"""
+Experiment Setup Options
+========================
+
+Demonstration of several ways to instantiate an experiment.
 
 simple
     The most straightforward usage. You pass the hardware device to create the
     experiment, then run a task. Subject configuration is handled
     automatically.
 customized
+    A customized experiment setup. A "config" step is used before
+    ``Experiment.run()`` to allow the researcher to select the subject group
+    for the current session ("A" or "B").
 """
 
+import argparse
 from axopy.experiment import Experiment
 from axopy.task import Oscilloscope
 from axopy.daq import NoiseGenerator
@@ -30,8 +38,7 @@ def customized():
     # optional config step, subject field is implied
     config = exp.configure(group=('A', 'B'))
 
-    if config['group'] == 'A':
-        print("group A!")
+    # here you can retrieve the selected group via `config['group']`
 
     # run list of tasks
     exp.run(Oscilloscope())
@@ -44,4 +51,19 @@ def debug():
 
 
 if __name__ == '__main__':
-    run()
+    functions = {
+        'simple': simple,
+        'customized': customized,
+    }
+
+    parser = argparse.ArgumentParser(usage=__doc__)
+    parser.add_argument(
+        'function',
+        help='Function in the example script to run.')
+    args = parser.parse_args()
+
+    if args.function not in functions:
+        print("{} isn't a function in the example.".format(args.function))
+        sys.exit(-1)
+    else:
+        functions[args.function]()
