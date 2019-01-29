@@ -8,14 +8,24 @@
     :alt: Travis CI Status
 
 .. image:: https://readthedocs.org/projects/axopy/badge/?version=latest
-   :target: http://axopy.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+    :target: http://axopy.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
 .. image:: https://codecov.io/gh/axopy/axopy/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/axopy/axopy
-   :alt: Codecov test coverage
+    :target: https://codecov.io/gh/axopy/axopy
+    :alt: Codecov test coverage
+
+.. image:: https://img.shields.io/pypi/v/axopy.svg
+    :target: https://pypi.org/project/axopy/
+    :alt: PyPI package
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/axopy.svg
+    :target: https://anaconda.org/conda-forge/axopy
+    :alt: Anaconda package
 
 |
+
+**Documentation**: https://axopy.readthedocs.io
 
 Axo-Pythonic synapses are those in which an axon synapses upon a Python
 program. AxoPy aims to facilitate such connections between electrophysiolgical
