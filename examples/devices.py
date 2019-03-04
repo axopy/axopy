@@ -76,7 +76,7 @@ def emgsim():
         Windower(osc_view_time * update_rate * samp_per_input),
     ])
 
-    dev = Keyboard(rate=20, keys=list('wasd'))
+    dev = Keyboard(rate=update_rate, keys=list('wasd'))
     run(dev, pipeline)
 
 
