@@ -23,3 +23,4 @@ Documentation Contents
    auto_examples/index
    api
    development
+   about

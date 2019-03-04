@@ -3,6 +3,10 @@
 
 |
 
+.. image:: http://joss.theoj.org/papers/10.21105/joss.01191/status.svg
+    :target: https://doi.org/10.21105/joss.01191
+    :alt: JOSS Paper
+
 .. image:: https://travis-ci.org/axopy/axopy.svg?branch=master
     :target: https://travis-ci.org/axopy/axopy
     :alt: Travis CI Status
@@ -113,6 +117,13 @@ Check out the documentation_ for more information on creating experiments. Some
 `examples`_ are also available.
 
 
+Citing
+======
+
+If you use AxoPy in your research and want to acknowledge us, see our
+instructions for `citing AxoPy`_.
+
+
 Contributing
 ============
 
@@ -146,4 +157,5 @@ running tests, and building the documentation.
 .. _PyPI: https://pypi.org/
 .. _conda-forge: https://conda-forge.org/
 .. _conda: https://conda.io/docs/
+.. _citing AxoPy: https://axopy.readthedocs.io/en/latest/about.html#citing-axopy
 .. _development documentation: http://axopy.readthedocs.io/en/latest/development.html
