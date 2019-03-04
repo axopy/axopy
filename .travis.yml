@@ -8,8 +8,10 @@ python:
   - "3.5"
   - "3.6"
 
+before_install:
+  - sudo apt-get install -y libxkbcommon-x11-0
+
 install:
-  - sudo apt-get update
   - |
     if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       # python<=3.4
