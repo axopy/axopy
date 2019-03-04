@@ -73,6 +73,7 @@ in the dev requirements which are for every-day development and CI).
 Start by bumping the version number in the ``axopy.version`` module, then build
 the source and wheel distributions::
 
+    (.venv-dev) $ rm dist/*
     (.venv-dev) $ python setup.py sdist bdist_wheel
 
 *Optional*: If you want to check first that all is well before pushing to PyPI,
@@ -80,14 +81,15 @@ you can upload the release packages to the test PyPI server first::
 
     (.venv-dev) $ twine upload --repository-url https://test.pypi.org/legacy dist/*
 
-Now you can use twine to upload the release to PyPI. Note that you should
-either remove everything from ``dist/`` first (if just using the command below)
-or specify which files to upload::
+Now you can use twine to upload the release to PyPI::
 
     (.venv-dev) $ twine upload dist/*
 
 Once everything looks good, you can tag the version bump commit and push the
-tag up to GitHub.
+tag up to GitHub::
+
+    (.venv-dev) $ git tag -a axopy-x.x.x -m axopy-x.x.x
+    (.venv-dev) $ git push origin --tags
 
 conda-forge
 -----------
@@ -104,3 +106,7 @@ from PyPI and paste it into the line below that. Commit the changes to your
 fork then make a pull request against the conda-forge repository. If you're
 a maintainer, you have push access to the repository so once CI passes, go
 ahead and merge. The rest is automated.
+
+.. note::
+   As of 2019-02-12, a bot (regro-cf-autotick-bot) submits a pull request to
+   the axopy-feedstock repository for you.
