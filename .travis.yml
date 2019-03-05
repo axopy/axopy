@@ -36,7 +36,7 @@ install:
     else
       # python>=3.5
       # exclude 5.10 on travis https://bugreports.qt.io/browse/QTBUG-64928
-      pip install "pyqt5!=5.10,!=5.12.0"
+      pip install "pyqt5!=5.10"
     fi
   - pip install -e .[dev]
   - pip install codecov
