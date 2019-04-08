@@ -1,4 +1,9 @@
-"""Examples of input devices built into AxoPy for testing.
+"""
+Built-In Devices
+================
+
+This example demonstrates some input devices built into AxoPy for testing. Pass
+the following options to try out different devices:
 
 rainbow
     Basic use of an NoiseGenerator to show lots of colorful random data.
@@ -6,18 +11,19 @@ keyboard
     Basic use of a Keyboard to show roughly-timed keyboard inputs.
 keystick
     Neat use of a filter to get joystick-like inputs from a keyboard.
+emgsim
+    A silly EMG simulator that uses smoothed 'wasd' key presses to modulate the
+    amplitude of Gaussian noise -- they kinda look like EMG signals!
 mouse
     Basic use of a Mouse for velocity input.
 """
-
-# TODO use the above as docstrings for each function and generate the help
 
 import sys
 import argparse
 import numpy as np
 from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
-from axopy.stream import NoiseGenerator, Keyboard, Mouse
+from axopy.daq import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter
 
 
@@ -46,6 +52,34 @@ def keystick():
     run(dev, pipeline)
 
 
+def emgsim():
+    # sampling rate of the simulated EMG data
+    fs = 2000
+    # update rate of the generated data
+    update_rate = 20
+    # gain to use in noise generation
+    gain = 0.25
+    # number of seconds of data the oscilloscope shows
+    osc_view_time = 5
+
+    samp_per_input = int(fs / update_rate)
+
+    pipeline = Pipeline([
+        # get keyboard inputs of past second
+        Windower(update_rate),
+        # take mean over last second and apply a gain
+        Callable(lambda x: np.mean(x, axis=1, keepdims=True)),
+        # generate noise with amplitude of previous output
+        Callable(lambda x, k: gain * x * np.random.randn(x.shape[0], k),
+                 func_args=(samp_per_input,)),
+        # window for pretty display in oscilloscope
+        Windower(osc_view_time * update_rate * samp_per_input),
+    ])
+
+    dev = Keyboard(rate=update_rate, keys=list('wasd'))
+    run(dev, pipeline)
+
+
 def mouse():
     dev = Mouse(rate=20)
     pipeline = Pipeline([
@@ -67,6 +101,7 @@ if __name__ == '__main__':
         'rainbow': rainbow,
         'keyboard': keyboard,
         'keystick': keystick,
+        'emgsim': emgsim,
         'mouse': mouse,
     }
 

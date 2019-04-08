@@ -2,7 +2,7 @@
 
 from axopy import util
 from axopy.storage import Storage
-from axopy.stream import InputStream
+from axopy.daq import DaqStream
 from axopy.messaging import Transmitter, TransmitterBase
 from axopy.gui.main import _MainWindow, _SessionConfig
 from axopy.gui.canvas import Canvas, Text
@@ -18,7 +18,7 @@ class Experiment(TransmitterBase):
     ----------
     daq : object, optional
         A data acquisition device that follows the AxoPy DAQ protocol. See
-        :mod:`axopy.stream`.
+        :mod:`axopy.daq`.
     data : str, optional
         Path to the data. The directory is created for you if it doesn't exist.
     subject : str, optional
@@ -36,7 +36,7 @@ class Experiment(TransmitterBase):
                  allow_overwrite=False):
         super(Experiment, self).__init__()
         self.daq = daq
-        self.input_stream = InputStream(daq)
+        self.daqstream = DaqStream(daq)
         self.storage = Storage(data, allow_overwrite=allow_overwrite)
 
         self._receive_keys = False
@@ -78,7 +78,7 @@ class Experiment(TransmitterBase):
 
         # screen to show "Ready" between tasks
         self.confirm_screen = Canvas(draw_border=False)
-        self.confirm_screen.add_item(Text("Ready"))
+        self.confirm_screen.add_item(Text("Ready (enter to start)"))
 
         self.storage.subject_id = self.subject
         self.tasks = tasks
@@ -108,7 +108,7 @@ class Experiment(TransmitterBase):
         con = self.screen.new_container()
 
         self.current_task.prepare_graphics(con)
-        self.current_task.prepare_input_stream(self.input_stream)
+        self.current_task.prepare_daq(self.daqstream)
         self.current_task.prepare_storage(self.storage)
         self.current_task.run()
 

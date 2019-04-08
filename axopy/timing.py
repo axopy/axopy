@@ -79,12 +79,18 @@ class Counter(TransmitterBase):
 
 
 class Timer(TransmitterBase):
-    """Real-time timer.
+    """Real-time one-shot timer.
+
+    This is useful in situations where you want to wait for some amount of time
+    and locking the timing to data acquisition updates is not important. For
+    example, inserting a waiting period between trials of a task can be done by
+    connecting the ``timeout`` transmitter to your task's
+    :meth:`~axopy.task.Task.next_trial` method.
 
     Parameters
     ----------
-    duration : int
-        Duration of the timer in milliseconds.
+    duration : float
+        Duration of the timer, in seconds.
 
     Attributes
     ----------
@@ -99,7 +105,7 @@ class Timer(TransmitterBase):
         self.duration = duration
 
         self._qtimer = QtCore.QTimer()
-        self._qtimer.setInterval(self.duration)
+        self._qtimer.setInterval(int(1000*self.duration))
         self._qtimer.setSingleShot(True)
         self._qtimer.timeout.connect(self.timeout)
 
@@ -108,5 +114,8 @@ class Timer(TransmitterBase):
         self._qtimer.start()
 
     def stop(self):
-        """Stop the timer."""
+        """Stop the timer.
+
+        If you stop the timer early, the timeout event won't be transmitted.
+        """
         self._qtimer.stop()

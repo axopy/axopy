@@ -4,13 +4,12 @@
 Development
 ===========
 
-
 Install
 =======
 
 Retrieve the source code::
 
-    $ git clone git@github.com:ucdrascal/axopy.git
+    $ git clone git@github.com:axopy/axopy.git
     $ cd axopy
 
 A virtual environment is a good way to set up a development environment::
@@ -23,8 +22,10 @@ along with the development dependencies::
 
     (.venv-dev) $ pip intall -e .[dev]
 
-This will give you everything needed to run the tests and build the
-documentation.
+If you take a look at the ``setup.py`` file, you'll see that this installs
+everything from the ``requirements.txt`` file as well as the
+``requirements-dev.txt`` file. This should be everything needed to run the
+tests and build the documentation.
 
 The Python Packaging Authority has much more detailed instructions here:
 https://packaging.python.org/guides/installing-using-pip-and-virtualenv/
@@ -52,13 +53,27 @@ Look in the ``docs/Makefile`` to be sure, but it should be something like::
 
     (.venv-dev) $ sphinx-build -b html . _build/html
 
+Once the build completes, you can open ``_build/html/index.html`` with your
+browser to check the output.
+
 
 Release
 =======
 
-To cut a release, bump the version in the ``axopy.version`` module, then build
+This section is relevant only if you're an AxoPy maintainer. If you're just
+interested in contributing to AxoPy, you can stop here.
+
+PyPI
+----
+
+To cut a release, you'll need the `wheel <https://pypi.org/project/wheel/>`_
+and `twine <https://pypi.org/project/twine/>`_ packages (these are not included
+in the dev requirements which are for every-day development and CI).
+
+Start by bumping the version number in the ``axopy.version`` module, then build
 the source and wheel distributions::
 
+    (.venv-dev) $ rm dist/*
     (.venv-dev) $ python setup.py sdist bdist_wheel
 
 *Optional*: If you want to check first that all is well before pushing to PyPI,
@@ -66,17 +81,32 @@ you can upload the release packages to the test PyPI server first::
 
     (.venv-dev) $ twine upload --repository-url https://test.pypi.org/legacy dist/*
 
-Now make sure you have twine installed (*it's not in the dev dependencies*),
-and upload the release to PyPI::
+Now you can use twine to upload the release to PyPI::
 
     (.venv-dev) $ twine upload dist/*
 
 Once everything looks good, you can tag the version bump commit and push the
-tag.
+tag up to GitHub::
 
-Now you can prepare the release on conda-forge, where the metadata for the
-package is hosted at https://github.com/conda-forge/axopy-feedstock. Edit the
-``meta.yml`` file so its version string matches the PyPI version and copy the
-SHA256 hash for the source dist (sdist) package (tar.gz file) from PyPI and
-paste it into ``meta.yml`` as well. Commit the changes and submit as a pull
-request.
+    (.venv-dev) $ git tag -a axopy-x.x.x -m axopy-x.x.x
+    (.venv-dev) $ git push origin --tags
+
+conda-forge
+-----------
+
+After releasing on PyPI, you can update the release on conda-forge. Check
+`their docs <https://conda-forge.org/docs/>`_ for insight into their process,
+but the following is sufficient now that the infrastructure is in place.
+
+Start by forking the `axopy-feedstock
+<https://github.com/conda-forge/axopy-feedstock>`_ repo on GitHub. Edit the
+``recipe/meta.yml`` file so its version string matches the PyPI version and
+copy the SHA256 hash for the source dist (sdist) package (the ``tar.gz`` file)
+from PyPI and paste it into the line below that. Commit the changes to your
+fork then make a pull request against the conda-forge repository. If you're
+a maintainer, you have push access to the repository so once CI passes, go
+ahead and merge. The rest is automated.
+
+.. note::
+   As of 2019-02-12, a bot (regro-cf-autotick-bot) submits a pull request to
+   the axopy-feedstock repository for you.

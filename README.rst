@@ -1,21 +1,35 @@
-.. image:: https://github.com/ucdrascal/axopy/raw/master/docs/_static/axopy.png
+.. image:: docs/_static/axopy.png
    :alt: AxoPy Logo
 
 |
 
-.. image:: https://travis-ci.org/ucdrascal/axopy.svg?branch=master
-    :target: https://travis-ci.org/ucdrascal/axopy
+.. image:: http://joss.theoj.org/papers/10.21105/joss.01191/status.svg
+    :target: https://doi.org/10.21105/joss.01191
+    :alt: JOSS Paper
+
+.. image:: https://travis-ci.org/axopy/axopy.svg?branch=master
+    :target: https://travis-ci.org/axopy/axopy
     :alt: Travis CI Status
 
 .. image:: https://readthedocs.org/projects/axopy/badge/?version=latest
-   :target: http://axopy.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+    :target: http://axopy.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
-.. image:: https://codecov.io/gh/ucdrascal/axopy/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/ucdrascal/axopy
-   :alt: Codecov test coverage
+.. image:: https://codecov.io/gh/axopy/axopy/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/axopy/axopy
+    :alt: Codecov test coverage
+
+.. image:: https://img.shields.io/pypi/v/axopy.svg
+    :target: https://pypi.org/project/axopy/
+    :alt: PyPI package
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/axopy.svg
+    :target: https://anaconda.org/conda-forge/axopy
+    :alt: Anaconda package
 
 |
+
+**Documentation**: https://axopy.readthedocs.io
 
 Axo-Pythonic synapses are those in which an axon synapses upon a Python
 program. AxoPy aims to facilitate such connections between electrophysiolgical
@@ -89,12 +103,11 @@ Here's a minimal example to display some randomly generated signals in an
 
 .. code-block:: python
 
-    from axopy.experiment import Experiment
-    from axopy.task import Oscilloscope
-    from axopy.stream import NoiseGenerator
+    import axopy
 
-    daq = NoiseGenerator(rate=1000, num_channels=4, read_size=100)
-    Experiment(daq=daq).run(Oscilloscope())
+    daq = axopy.daq.NoiseGenerator(rate=1000, num_channels=4, read_size=100)
+    exp = axopy.experiment.Experiment(daq=daq)
+    exp.run(axopy.task.Oscilloscope())
 
 
 Next Steps
@@ -104,12 +117,19 @@ Check out the documentation_ for more information on creating experiments. Some
 `examples`_ are also available.
 
 
+Citing
+======
+
+If you use AxoPy in your research and want to acknowledge us, see our
+instructions for `citing AxoPy`_.
+
+
 Contributing
 ============
 
 Please feel free to share any thoughts or opinions about the design and
 implementation of this software by `opening an issue on GitHub
-<https://github.com/ucdrascal/axopy/issues/new>`_. Constructive feedback is
+<https://github.com/axopy/axopy/issues/new>`_. Constructive feedback is
 welcomed and appreciated.
 
 GitHub issues also serve as the support channel, at least for now. Questions
@@ -130,11 +150,12 @@ documentation`_ for instructions on setting up a development environment,
 running tests, and building the documentation.
 
 
-.. _pytrigno: https://github.com/ucdrascal/pytrigno
-.. _pymcc: https://github.com/ucdrascal/pymcc
+.. _pytrigno: https://github.com/axopy/pytrigno
+.. _pymcc: https://github.com/axopy/pymcc
 .. _documentation: https://axopy.readthedocs.io
-.. _examples: https://github.com/ucdrascal/axopy/tree/master/examples
+.. _examples: https://github.com/axopy/axopy/tree/master/examples
 .. _PyPI: https://pypi.org/
 .. _conda-forge: https://conda-forge.org/
 .. _conda: https://conda.io/docs/
+.. _citing AxoPy: https://axopy.readthedocs.io/en/latest/about.html#citing-axopy
 .. _development documentation: http://axopy.readthedocs.io/en/latest/development.html

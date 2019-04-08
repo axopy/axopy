@@ -1,4 +1,10 @@
-pytest
+numpy
+scipy
+pandas
+h5py
+pyqt5
+pyqtgraph>=0.10
+pytest>=3.6
 pytest-cov
 pytest-qt
 pytest-mock
@@ -6,3 +12,6 @@ pytest-xvfb
 flake8
 sphinx
 sphinx_rtd_theme
+sphinx-gallery
+matplotlib
+pillow
