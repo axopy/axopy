@@ -26,6 +26,7 @@ from axopy.experiment import Experiment
 from axopy.daq import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter
 
+from pytrigno import TrignoEMG, TrignoACC
 
 def rainbow():
     dev = NoiseGenerator(rate=2000, num_channels=16, read_size=200)
@@ -79,6 +80,17 @@ def emgsim():
     dev = Keyboard(rate=update_rate, keys=list('wasd'))
     run(dev, pipeline)
 
+def trignoemg():
+    dev = TrignoEMG(channels=[0,1], samples_per_read=1)
+    pipeline = Pipeline([Windower(20000)])
+    run(dev, pipeline)
+
+
+def trignoacc():
+    dev = TrignoACC(channels=[0,1], samples_per_read=1)
+    pipeline = Pipeline([Windower(1000)])
+    run(dev, pipeline)
+
 
 def mouse():
     dev = Mouse(rate=20)
@@ -103,6 +115,8 @@ if __name__ == '__main__':
         'keystick': keystick,
         'emgsim': emgsim,
         'mouse': mouse,
+        'trignoemg': trignoemg,
+        'trignoacc': trignoacc,
     }
 
     parser = argparse.ArgumentParser(usage=__doc__)

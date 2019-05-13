@@ -39,8 +39,10 @@ class RLTask(Task):
 
     def update(self, data):
         if data[0] == 1:
+            self.hand.stop_all()
             self.hand.close_fingers()
         elif data[1] == 1:
+            self.hand.stop_all()
             self.hand.open_fingers()
 
     def key_press(self, key):
