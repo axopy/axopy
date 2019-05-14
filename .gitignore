@@ -13,3 +13,6 @@ htmlcov/
 .idea/
 .pytest_cache/
 build/
+
+*.hdf5
+*.csv
