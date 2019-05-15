@@ -1,5 +1,8 @@
 """
 Display scaled average of MAV across channels.
+
+This is a minimal example demonstrating how Tasks should be designed and
+which methods they should implement.
 """
 
 import numpy as np
