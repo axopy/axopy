@@ -36,7 +36,13 @@ class Experiment(TransmitterBase):
                  allow_overwrite=False):
         super(Experiment, self).__init__()
         self.daq = daq
-        self.daqstream = DaqStream(daq)
+        if isinstance(self.daq, (list, tuple)):
+            self.daqstream = []
+            for daq_ in self.daq:
+                self.daqstream.append(daq_)
+        else:
+            self.daqstream = DaqStream(daq)
+
         self.storage = Storage(data, allow_overwrite=allow_overwrite)
 
         self._receive_keys = False
