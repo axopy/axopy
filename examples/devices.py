@@ -24,7 +24,7 @@ import numpy as np
 from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
 from axopy.daq import NoiseGenerator, Keyboard, Mouse
-from axopy.pipeline import Pipeline, Callable, Windower, Filter
+from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D
 
 
 def rainbow():
@@ -93,6 +93,13 @@ def trignoacc():
     run(dev, pipeline)
 
 
+def cyberglove():
+    from cyberglove import CyberGlove
+    dev = CyberGlove(18, 'COM3', samples_per_read=1,
+                     cal_path=r"C:\Users\nak142\tmp\glove.cal")
+    pipeline = Pipeline([Ensure2D('col'), Windower(1000)])
+    run(dev, pipeline)
+
 def mouse():
     dev = Mouse(rate=20)
     pipeline = Pipeline([
@@ -118,6 +125,7 @@ if __name__ == '__main__':
         'mouse': mouse,
         'trignoemg': trignoemg,
         'trignoacc': trignoacc,
+        'cyberglove': cyberglove
     }
 
     parser = argparse.ArgumentParser(usage=__doc__)
