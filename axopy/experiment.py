@@ -39,7 +39,7 @@ class Experiment(TransmitterBase):
         if isinstance(self.daq, (list, tuple)):
             self.daqstream = []
             for daq_ in self.daq:
-                self.daqstream.append(daq_)
+                self.daqstream.append(DaqStream(daq_))
         else:
             self.daqstream = DaqStream(daq)
 
