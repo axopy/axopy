@@ -14,5 +14,4 @@ htmlcov/
 .pytest_cache/
 build/
 
-*.hdf5
-*.csv
+data/
