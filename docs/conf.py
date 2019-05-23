@@ -38,6 +38,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.napoleon',
+    'sphinx.ext.viewcode',
+    'sphinx_gallery.gen_gallery',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -58,8 +60,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'axopy'
-copyright = '2016, Kenneth Lyons'
-author = 'Kenneth Lyons'
+copyright = 'AxoPy Developers'
+author = 'AxoPy developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -89,7 +91,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = []
+exclude_patterns = ['joss']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -271,7 +273,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'axopy.tex', 'axopy Documentation',
-     'Kenneth Lyons', 'manual'),
+     'AxoPy developers', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -346,4 +348,9 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None)
+}
+
+sphinx_gallery_conf = {
+    'examples_dirs': '../examples',
+    'gallery_dirs': 'auto_examples',
 }

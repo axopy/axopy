@@ -1,4 +1,4 @@
-"""Threaded interfaces for input and output devices."""
+"""Protocol and threaded interface for data acquisition."""
 
 import time
 import numpy
@@ -8,17 +8,25 @@ from axopy.gui.main import get_qtapp, qt_key_map
 from axopy.pipeline import Filter
 
 
-class InputStream(QtCore.QThread):
+class DaqStream(QtCore.QThread):
     """Asynchronous interface to an input device.
 
     Runs a persistent while loop wherein the device is repeatedly polled for
     data. When the data becomes available, it is emitted and the loop
     continues.
 
+    There are effectively two methods of this class: start and stop. These
+    methods do as their names suggest -- they start and stop the underlying
+    device from sampling new data.
+
+    The device used to create the DaqStream is also accessible via the
+    ``device`` attribute so you can change settings on the underlying device
+    any time (e.g. sampling rate, number of samples per update, etc.).
+
     Parameters
     ----------
-    device : InputDevice
-        Any object implementing the OutputDevice interface. See
+    device : daq
+        Any object implementing the AxoPy data acquisition interface. See
         :class:`NoiseGenerator` for an example.
 
     Attributes
@@ -39,16 +47,25 @@ class InputStream(QtCore.QThread):
     finished = Transmitter()
 
     def __init__(self, device):
-        super(InputStream, self).__init__()
+        super(DaqStream, self).__init__()
         self.device = device
 
         self._running = False
 
     @property
     def running(self):
+        """Boolean value indicating whether or not the stream is running."""
         return self._running
 
+    def start(self):
+        """Start the device and begin reading from it."""
+        super(DaqStream, self).start()
+
     def run(self):
+        """Implementation for the underlying QThread.
+
+        Don't call this method directly -- use :meth:`start` instead.
+        """
         self._running = True
 
         self.device.start()
@@ -69,15 +86,22 @@ class InputStream(QtCore.QThread):
         self.device.stop()
         self.finished.emit()
 
-    def kill(self, wait=True):
+    def stop(self, wait=True):
+        """Stop the stream.
+
+        Parameters
+        ----------
+        wait : bool, optional
+            Whether or not to wait for the underlying device to stop before
+            returning.
+        """
         self._running = False
         if wait:
             self.wait()
 
 
 class NoiseGenerator(object):
-    """
-    An emulated data acquisition device which generates random data.
+    """An emulated data acquisition device which generates random data.
 
     Each sample of the generated data is sampled from a zero-mean Gaussian
     distribution with variance determined by the amplitude specified, which
@@ -114,6 +138,7 @@ class NoiseGenerator(object):
         self.sleeper = _Sleeper(float(self.read_size/self.rate))
 
     def start(self):
+        """Does nothing for this device. Implemented to follow device API."""
         pass
 
     def read(self):
@@ -137,9 +162,11 @@ class NoiseGenerator(object):
         return data
 
     def stop(self):
+        """Does nothing for this device. Implemented to follow device API."""
         pass
 
     def reset(self):
+        """Reset the device back to its initialized state."""
         self.sleeper.reset()
 
 

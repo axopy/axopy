@@ -20,5 +20,7 @@ Documentation Contents
 
    installation
    user_guide
+   auto_examples/index
    api
    development
+   about

@@ -13,3 +13,5 @@ htmlcov/
 .idea/
 .pytest_cache/
 build/
+
+data/
