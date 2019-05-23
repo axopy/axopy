@@ -25,7 +25,6 @@ from axopy import util
 from axopy.gui.graph import SignalWidget
 from axopy.timing import Counter, Timer
 from axopy.pipeline import Windower, Filter, Callable, Pipeline
-from axopy.design import Array
 
 class MyTask(Task):
     def __init__(self):
