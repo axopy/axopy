@@ -158,9 +158,9 @@ if __name__ == '__main__':
     from pytrigno import TrignoEMG
     from cyberglove import CyberGlove
 
-    dev_1 = TrignoEMG(channels=[0,1], samples_per_read=20)
+    dev_1 = TrignoEMG(channels=[0,1], samples_per_read=200)
 
-    dev_2 = CyberGlove(18, 'COM3', samples_per_read=1,
+    dev_2 = CyberGlove(18, 'COM3', samples_per_read=4,
                      cal_path=r"C:\Users\nak142\tmp\glove.cal")
 
 
