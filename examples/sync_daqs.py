@@ -144,19 +144,29 @@ class MyTask(Task):
 
 
 if __name__ == '__main__':
-    from axopy.daq import NoiseGenerator
-    dev_1 = NoiseGenerator(
-        rate=2000,
-        num_channels=4,
-        amplitude=1.0,
-        read_size=200)
-    dev_2 = NoiseGenerator(
-        rate=1000,
-        num_channels=2,
-        amplitude=1.0,
-        read_size=100)
+    # from axopy.daq import NoiseGenerator
+    # dev_1 = NoiseGenerator(
+    #     rate=2000,
+    #     num_channels=4,
+    #     amplitude=1.0,
+    #     read_size=200)
+    # dev_2 = NoiseGenerator(
+    #     rate=1000,
+    #     num_channels=2,
+    #     amplitude=1.0,
+    #     read_size=100)
+    from pytrigno import TrignoEMG
+    from cyberglove import CyberGlove
+
+    dev_1 = TrignoEMG(channels=[0,1], samples_per_read=20)
+
+    dev_2 = CyberGlove(18, 'COM3', samples_per_read=1,
+                     cal_path=r"C:\Users\nak142\tmp\glove.cal")
+
+
+
 
     exp = Experiment(daq=[dev_1, dev_2],
-                     subject='test',
+                     subject='test_',
                      allow_overwrite=True)
     exp.run(MyTask())
