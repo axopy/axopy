@@ -84,7 +84,7 @@ def test_trapezoidal_window():
 ])
 def test_feature_io(func):
     """Make sure feature function gets 1D and 2D IO correct."""
-    n = 10
+    n = 100
     c = 3
     x_n = np.random.randn(n)
     x_cn = np.random.randn(c, n)
@@ -225,47 +225,46 @@ def test_kurtosis():
 
 
 def test_ar_io():
-    n = 100
+    n = 10
     c = 4
-    p = 3
+    p = 3 # AR order
     x_n = np.random.randn(n)
     x_cn = np.random.randn(c, n)
     x_nc = np.random.randn(n, c)
     assert(features.ar(x_n, order=p).shape == (p,))
-    assert(features.ar(x_n, order=p, keepdims=True).shape == (1, p))
-    assert(features.ar(x_cn, order=p).shape == (c, p))
-    assert(features.ar(x_cn, order=p, keepdims=True).shape == (c, 1, p))
-    assert(features.ar(x_nc, order=p, axis=0).shape == (p, c))
-    assert(features.ar(x_nc, order=p, axis=0, keepdims=True).shape == (1, p, c))
+    assert(features.ar(x_n, order=p, axis=0, keepdims=True).shape == (1, p))
+    assert(features.ar(x_cn, order=p).shape == (p * c,))
+    assert(features.ar(x_cn, order=p, keepdims=True).shape == (p * c, 1))
+    assert(features.ar(x_nc, order=p, axis=0).shape == (p * c,))
+    assert(features.ar(x_nc, order=p, axis=0, keepdims=True).shape == (1, p * c))
 
 
 
 def test_hjorth_io():
-    n = 100
+    n = 10
     c = 4
     x_n = np.random.randn(n)
     x_cn = np.random.randn(c, n)
     x_nc = np.random.randn(n, c)
-    assert(features.hjorth(x_n).shape == (3,))
-    assert(features.hjorth(x_n, keepdims=True).shape == (1, 3))
-    assert(features.hjorth(x_cn).shape == (c, 3))
-    assert(features.hjorth(x_cn, keepdims=True).shape == (c, 1, 3))
-    assert(features.hjorth(x_nc, axis=0).shape == (3, c))
-    assert(features.hjorth(x_nc, axis=0, keepdims=True).shape == (1, 3, c))
+    assert(features.hjorth(x_n, axis=0).shape == (3,))
+    assert(features.hjorth(x_n, axis=0, keepdims=True).shape == (1, 3))
+    assert(features.hjorth(x_cn).shape == (3 * c,))
+    assert(features.hjorth(x_cn, keepdims=True).shape == (3 * c, 1))
+    assert(features.hjorth(x_nc, axis=0).shape == (3 * c,))
+    assert(features.hjorth(x_nc, axis=0, keepdims=True).shape == (1, 3 * c))
 
 
 def test_histogram_io():
-    n = 100
+    n = 10
     c = 4
-    bins = 10
+    b = 10
     x_n = np.random.randn(n)
     x_cn = np.random.randn(c, n)
     x_nc = np.random.randn(n, c)
-    assert(features.histogram(x_n, bins=bins).shape == (bins,))
-    assert(features.histogram(x_n, bins=bins, keepdims=True).shape == (1, bins))
-    assert(features.histogram(x_cn, bins=bins).shape == (c, bins))
-    assert(features.histogram(x_cn, bins=bins, keepdims=True).shape == \
-           (c, 1, bins))
-    assert(features.histogram(x_nc, bins=bins, axis=0).shape == (bins, c))
-    assert(features.histogram(x_nc, bins=bins, axis=0, keepdims=True).shape == \
-           (1, bins, c))
+    assert(features.histogram(x_n, bins=b).shape == (b,))
+    assert(features.histogram(x_n, bins=b, axis=0, keepdims=True).shape == (1, b))
+    assert(features.histogram(x_cn, bins=b).shape == (b *c,))
+    assert(features.histogram(x_cn, bins=b, keepdims=True).shape == (b * c, 1))
+    assert(features.histogram(x_nc, bins=b, axis=0).shape == (b * c,))
+    assert(features.histogram(x_nc, bins=b, axis=0, keepdims=True).shape == \
+           (1, b * c))

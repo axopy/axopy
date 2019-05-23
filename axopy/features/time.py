@@ -7,131 +7,12 @@ Notation:
 """
 
 import numpy as np
-from scipy.fftpack import fft, ifft
 from scipy.stats import skew as sp_skewness, kurtosis as sp_kurtosis
-from axopy.features.util import (ensure_2d, shape_output, rolling_window,
+
+from axopy.features.util import (flatten_2d, check_output, rolling_window,
                                  inverted_t_window, trapezoidal_window)
-
-
-def _nextpow2(n):
-    """Returns the smaller power of 2 greater than or equal to n."""
-    return 2**(np.ceil(np.log2(n))).astype(np.int)
-
-
-def _levinson(r, order, allow_singularity):
-    """Levinson-Durbin recursion. Required for AR estimation.
-
-    Find the coefficients of an autoregressive linear process using the
-    Levinson-Durbin recursion.
-
-    Parameters
-    ----------
-    r : 1D array or list
-        Autocorrelation sequence (first element is the zero-lag
-        autocorrelation).
-    order : int
-        The order (p) of the auto-regressive model.
-    allow_singularity : bool, optional
-        Whether to allow singular matrices.
-
-    Returns
-    -------
-    A : array, shape = (order,)
-        The AR coefficients :math:`A=(a_1...a_p)`.
-    """
-    T0 = np.real(r[0])
-    T = r[1:]
-    M = len(T)
-
-    if M <= order:
-        raise ValueError("Order must be less than size of the input "
-                         "data.")
-    M = order
-
-    realdata = np.isrealobj(r)
-    if realdata is True:
-        A = np.zeros(M, dtype=float)
-        ref = np.zeros(M, dtype=float)
-    else:
-        A = np.zeros(M, dtype=complex)
-        ref = np.zeros(M, dtype=complex)
-
-    P = T0
-
-    for k in range(0, M):
-        save = T[k]
-        if k == 0:
-            temp = -save / P
-        else:
-            for j in range(0, k):
-                save = save + A[j] * T[k-j-1]
-            temp = -save / P
-        if realdata:
-            P = P * (1. - temp**2.)
-        else:
-            P = P * (1. - (temp.real**2+temp.imag**2))
-        if P <= 0 and allow_singularity == False:
-            raise ValueError("Singular matrix provided while "
-                             "allow_singularity parameter was set to "
-                             "False.")
-        A[k] = temp
-        ref[k] = temp
-        if k == 0:
-            continue
-
-        khalf = int((k+1)/2)
-        if realdata is True:
-            for j in range(0, khalf):
-                kj = k-j-1
-                save = A[j]
-                A[j] = save + temp * A[kj]
-                if j != kj:
-                    A[kj] += temp*save
-        else:
-            for j in range(0, khalf):
-                kj = k-j-1
-                save = A[j]
-                A[j] = save + temp * A[kj].conjugate()
-                if j != kj:
-                    A[kj] = A[kj] + temp * save.conjugate()
-
-    return A
-
-
-def _maxdist(x_i, x_j):
-    """Computes the Chebyshev distance between two points in the
-    embedded space. Required for sample entropy estimation.
-    """
-    result = np.max([np.abs(ua - va) for ua, va in zip(x_i, x_j)])
-    return result
-
-
-def _phi(x, m, r):
-    """Computes the number of template vector pairs having a smaller distance
-    than tolerance. Required for sample entropy estimation.
-    """
-    N = len(x)
-    x_ = [[x[j] for j in range(i, i + m - 1 + 1)] for i in range(
-        N - m + 1)]
-    C = [len([1 for j in range(len(x_)) if i != j
-              and _maxdist(x_[i], x_[j]) <= r]) for i in range(len(x_))]
-    return np.sum(C)
-
-
-def _sample_entropy_1d(x, m, r, delta):
-    """Core algorithm for computing sample entropy of 1D time-series data.
-    """
-    x = x[::delta]
-    return -np.log(_phi(x, m + 1, r) / _phi(x, m, r))
-
-
-def _histogram_hist(a, bins):
-    """Wrapper around numpy.histogram which only returns the ``hist``
-    output (i.e. values of the histogram), thus omitting the ``bin_edges``
-    output. This is useful for calling the function using
-    numpy.apply_along_axis.
-    """
-    return np.histogram(a, bins)[0]
+from axopy.features.external.sample_entropy import sample_entropy_1d
+from axopy.features.external.ar import autocorrelation, levinson
 
 
 def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
@@ -599,9 +480,9 @@ def skewness(x, bias=True, nan_policy='propagate', axis=-1,
     y : ndarray, shape (n_channels,)
         skewness of each channel.
     """
-    skewness_ = np.apply_along_axis(sp_skewness, axis=axis, arr=x,
-                                    bias=bias, nan_policy=nan_policy)
-    return shape_output(skewness_, axis=axis, keepdims=keepdims)
+    skewness_ = np.apply_along_axis(sp_skewness, axis=axis, arr=x, bias=bias,
+                                    nan_policy=nan_policy)
+    return check_output(skewness_, axis=axis, keepdims=keepdims)
 
 
 def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
@@ -642,10 +523,10 @@ def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
     kurtosis_ = np.apply_along_axis(sp_kurtosis, axis=axis, arr=x,
                                     fisher=fisher, bias=bias,
                                     nan_policy=nan_policy)
-    return shape_output(kurtosis_, axis=axis, keepdims=keepdims)
+    return check_output(kurtosis_, axis=axis, keepdims=keepdims)
 
 
-def ar(x, order=None, axis=-1, keepdims=False):
+def ar(x, order, axis=-1, keepdims=False):
     """Auto-regressive (linear prediction filter) coefficients.
 
     .. math::
@@ -675,18 +556,12 @@ def ar(x, order=None, axis=-1, keepdims=False):
         shape will be (n_channels, order), otherwise it will be
         (order, n_channels).
     """
-    x = np.asarray(x)
-    m = x.shape[axis]
-    if order is None:
-        order = m
 
-    X = fft(x, n=_nextpow2(m), axis=axis)
-    R = np.real(ifft(np.abs(X)**2, axis=axis))  # Auto-correlation matrix
-    R = R/m
-    ar_ = np.apply_along_axis(_levinson, axis=axis, arr=R, order=order,
+    R = autocorrelation(x, axis=axis)
+    ar_ = np.apply_along_axis(levinson, axis=axis, arr=R, order=order,
                               allow_singularity=False)
-    axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
-    return shape_output(ar_, axis=axis, keepdims=keepdims)
+    ar_ = flatten_2d(ar_, axis=axis)
+    return check_output(ar_, axis=axis, keepdims=keepdims)
 
 
 def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
@@ -727,15 +602,10 @@ def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
     if r is None:
         r = 0.2 * np.std(x)
 
-    samp_en = np.apply_along_axis(
-        _sample_entropy_1d,
-        axis=axis,
-        arr=x,
-        m=m,
-        r=r,
-        delta=delta)
+    samp_en = np.apply_along_axis(sample_entropy_1d, axis=axis, arr=x, m=m, r=r,
+                                  delta=delta)
 
-    return shape_output(samp_en, axis=axis, keepdims=keepdims)
+    return check_output(samp_en, axis=axis, keepdims=keepdims)
 
 
 def hjorth(x, axis=-1, keepdims=False):
@@ -770,14 +640,13 @@ def hjorth(x, axis=-1, keepdims=False):
       Electroencephalography and clinical neurophysiology, vol. 29, no. 3, pp.
       306-310, 1970.
     """
-    activity = [np.var(x_, axis=axis, keepdims=True) for x_ in
+    activity = [np.var(x_, axis=axis, keepdims=True).reshape(-1,) for x_ in
                 [np.diff(x, i, axis=axis) for i in range(3)]]
-    mobility = [np.sqrt(activity[i+1] / activity[i]) for i in range(2)]
+    mobility = [np.sqrt(activity[i+1] / activity[i]).reshape(-1,) for i in
+                range(2)]
     complexity = mobility[1] / mobility[0]
-    res = np.concatenate((activity[0], mobility[0], complexity), axis=axis)
-    axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
-
-    return shape_output(res, axis, keepdims=keepdims)
+    hjorth_ = np.concatenate((activity[0], mobility[0], complexity))
+    return check_output(hjorth_, axis, keepdims=keepdims)
 
 
 def histogram(x, bins, axis=-1, keepdims=False):
@@ -806,7 +675,8 @@ def histogram(x, bins, axis=-1, keepdims=False):
         has shape (n_channels, n_samples), then the output shape will be
         (n_channels, bins), otherwise it will be (bins, n_channels).
     """
-    hist = np.apply_along_axis(_histogram_hist, axis=axis, arr=x, bins=bins)
-    axis = np.core.multiarray.normalize_axis_index(axis, x.ndim)
-
-    return shape_output(hist, axis=axis, keepdims=keepdims)
+    # numpy histogram returns counts and edges but we only need the counts
+    hist = np.apply_along_axis(lambda x: np.histogram(x, bins)[0], axis=axis,
+                               arr=x)
+    hist = flatten_2d(hist, axis=axis)
+    return check_output(hist, axis=axis, keepdims=keepdims)
