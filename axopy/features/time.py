@@ -480,8 +480,8 @@ def skewness(x, bias=True, nan_policy='propagate', axis=-1,
     y : ndarray, shape (n_channels,)
         skewness of each channel.
     """
-    skewness_ = np.apply_along_axis(sp_skewness, axis=axis, arr=x, bias=bias,
-                                    nan_policy=nan_policy)
+    skewness_ = sp_skewness(x, axis=axis, bias=bias,
+                            nan_policy=nan_policy)
     return check_output(skewness_, axis=axis, keepdims=keepdims)
 
 
@@ -520,9 +520,8 @@ def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
     y : ndarray, shape (n_channels,)
         kurtosis of each channel.
     """
-    kurtosis_ = np.apply_along_axis(sp_kurtosis, axis=axis, arr=x,
-                                    fisher=fisher, bias=bias,
-                                    nan_policy=nan_policy)
+    kurtosis_ = sp_kurtosis(x, axis=axis, fisher=fisher, bias=bias,
+                            nan_policy=nan_policy)
     return check_output(kurtosis_, axis=axis, keepdims=keepdims)
 
 

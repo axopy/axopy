@@ -92,8 +92,8 @@ def check_output(array, axis, keepdims):
     if keepdims is True:
         array = np.expand_dims(array, axis)
 
-    # Return np.float64 for 0-dimensional arrays
-    if array.ndim == 0:
+    # Return flaot for 0-dimensional arrays
+    if isinstance(array, np.ndarray) and array.ndim == 0:
         return np.float64(array)
     else:
         return array
