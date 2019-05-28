@@ -1,4 +1,23 @@
 
+"""
+Fit models
+==========
+
+Fits and saves the model for specified subject.
+
+An LDA and an RDA classifier are fitted and their performance is assessed in
+terms of classification accuracy and negative log-loss. The hyper-parameters
+are optimised using random search. K-fold cross-validation is used to tune
+hyper-parameters and estimate generalisation error, where each fold is one
+block of trials (i.e. one repetition of each movement).
+
+Confidence-based rejection thresholds are estimated using the ``fpr_threshold``
+strategy.
+
+All models (including pre-processing transformers, estimators and rejection
+thresholds) are saved to disk for later use during real-time prosthesis control.
+"""
+
 import os
 
 from argparse import ArgumentParser
@@ -16,10 +35,10 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.model_selection import PredefinedSplit, RandomizedSearchCV
-from sklearn.metrics import accuracy_score
 
 from sklearn_ext.discriminant_analysis import RegularizedDiscriminantAnalysis
 from sklearn_ext.roc_analysis import RocThreshold
+
 
 def fit_models(subject, trim_samples, n_iter, fpr_threshold):
     """Fits models.
@@ -79,6 +98,7 @@ def fit_models(subject, trim_samples, n_iter, fpr_threshold):
         'clf__reg_param_alpha': uniform,
         'clf__reg_param_gamma': uniform
     }
+
     search = RandomizedSearchCV(estimator=pipe_rda,
                                 param_distributions=param_distr,
                                 cv=ps,
@@ -94,19 +114,18 @@ def fit_models(subject, trim_samples, n_iter, fpr_threshold):
         search.cv_results_['mean_test_accuracy'][search.best_index_]))
     print("Mean LDA accuracy: {:.4f}".format(
         cross_val_score(pipe_lda, X, Y_le, cv=ps).mean()))
-
     print("Mean best RDA negative logloss: {:.4f}".format(
         search.cv_results_['mean_test_neg_log_loss'][search.best_index_]))
     print("Mean LDA negative logloss: {:.4f}".format(
         cross_val_score(pipe_lda, X, Y_le, cv=ps,
-        scoring='neg_log_loss').mean()))
+                        scoring='neg_log_loss').mean()))
 
     # ROC thresholds (using 50% train test split)
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y_le, test_size=0.5)
     clf = search.best_estimator_.steps[1][1]
     clf.fit(X_train, Y_train)
 
-    rt = RocThreshold(strategy='max_random', fpr_threshold=fpr_threshold)
+    rt = RocThreshold(strategy='fpr_threshold', fpr_threshold=fpr_threshold)
     rt.fit(le.inverse_transform(Y_test), clf.predict_proba(X_test))
 
     return [('input_scaler', search.best_estimator_.steps[0][1]),

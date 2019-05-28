@@ -17,6 +17,9 @@ from configparser import ConfigParser
 from scipy.signal import butter
 
 from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QLabel
+from PyQt5.QtGui import QPixmap
+
 from can.interfaces.pcan import PCANBasic as pcan
 
 from axopy.experiment import Experiment
@@ -24,8 +27,8 @@ from axopy.task import Task
 from axopy import util
 from axopy.timing import Counter, Timer
 from axopy.gui.canvas import Canvas, Text
-from axopy.pipeline import (Callable, Windower, Filter, Pipeline, FeatureExtractor,
-                            Ensure2D, Estimator, Transformer)
+from axopy.pipeline import (Callable, Windower, Filter, Pipeline,
+                            FeatureExtractor, Ensure2D, Estimator, Transformer)
 from axopy.features import waveform_length, logvar
 
 from robolimb import RoboLimbCAN
@@ -218,9 +221,13 @@ class DataCollection(_BaseTask):
         self.writer = storage.create_task('calibration')
 
     def run_trial(self, trial):
+        self.pic = QLabel(self.canvas)
+        self.pic.setGeometry(800, 200, 500, 500)
+        self.pic.setPixmap(QPixmap("pics/1.jpg"))
+        self.pic.show()
         self.reset()
-        self.text.qitem.setText("{}".format(
-            trial.attrs['movement']))
+        # self.text.qitem.setText("{}".format(
+        #     trial.attrs['movement']))
         trial.add_array('data_raw', stack_axis=1)
         trial.add_array('data_proc', stack_axis=1)
 
@@ -235,6 +242,7 @@ class DataCollection(_BaseTask):
         self.timer.increment()
 
     def finish_trial(self):
+        self.pic.hide()
         self.text.qitem.setText("{}".format('relax'))
         self.writer.write(self.trial)
         self.disconnect(self.daqstream.updated, self.update)
@@ -409,7 +417,7 @@ if __name__ == '__main__':
         dev = NoiseGenerator(rate=S_RATE, num_channels=9, amplitude=1.0,
                              read_size=int(S_RATE * READ_LENGTH))
 
-    exp = Experiment(daq=dev, subject='test', allow_overwrite=True)
+    exp = Experiment(daq=dev, subject='test_3', allow_overwrite=True)
 
     if args.train is True:
         N_TRIALS = cp.getint('calibration', 'n_trials')
