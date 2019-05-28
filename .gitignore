@@ -15,3 +15,7 @@ htmlcov/
 build/
 
 data/
+
+*.jpg
+*.png
+*.tiff
