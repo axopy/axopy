@@ -42,8 +42,8 @@ class MyTask(Task):
 
     def prepare_daq(self, daqstream):
         self.daqstream = daqstream
-        for daqstream_ in self.daqstream:
-            daqstream_.start()
+        self.daqstream['dev_1'].start()
+        self.daqstream['dev_2'].start()
 
         # The following list of booleans is used to keep track of when
         # all daqstreams have been updated so as to increment the timer
@@ -78,8 +78,8 @@ class MyTask(Task):
         self.pipeline_dev_1 = self.make_pipeline(win_size=250, read_size=200)
         self.pipeline_dev_2 = self.make_pipeline(win_size=250, read_size=100)
 
-        self.connect(self.daqstream[0].updated, self.update_dev_1)
-        self.connect(self.daqstream[1].updated, self.update_dev_2)
+        self.connect(self.daqstream['dev_1'].updated, self.update_dev_1)
+        self.connect(self.daqstream['dev_2'].updated, self.update_dev_2)
 
     def reset(self):
         self.timer.reset()
@@ -127,8 +127,8 @@ class MyTask(Task):
 
     def finish_trial(self):
         self.writer.write(self.trial)
-        self.disconnect(self.daqstream[0].updated, self.update_dev_1)
-        self.disconnect(self.daqstream[1].updated, self.update_dev_2)
+        self.disconnect(self.daqstream['dev_1'].updated, self.update_dev_1)
+        self.disconnect(self.daqstream['dev_2'].updated, self.update_dev_2)
 
         self.next_trial()
 
@@ -138,35 +138,35 @@ class MyTask(Task):
             self.finish()
 
     def finish(self):
-        for daqstream_ in self.daqstream:
-            daqstream_.stop()
+        self.daqstream['dev_1'].stop()
+        self.daqstream['dev_2'].stop()
         self.finished.emit()
 
 
 if __name__ == '__main__':
-    # from axopy.daq import NoiseGenerator
-    # dev_1 = NoiseGenerator(
-    #     rate=2000,
-    #     num_channels=4,
-    #     amplitude=1.0,
-    #     read_size=200)
-    # dev_2 = NoiseGenerator(
-    #     rate=1000,
-    #     num_channels=2,
-    #     amplitude=1.0,
-    #     read_size=100)
-    from pytrigno import TrignoEMG
-    from cyberglove import CyberGlove
-
-    dev_1 = TrignoEMG(channels=[0,1], samples_per_read=200)
-
-    dev_2 = CyberGlove(18, 'COM3', samples_per_read=4,
-                     cal_path=r"C:\Users\nak142\tmp\glove.cal")
-
-
+    from axopy.daq import NoiseGenerator
+    dev_1 = NoiseGenerator(
+        rate=2000,
+        num_channels=4,
+        amplitude=1.0,
+        read_size=200)
+    dev_2 = NoiseGenerator(
+        rate=1000,
+        num_channels=2,
+        amplitude=1.0,
+        read_size=100)
+    # from pytrigno import TrignoEMG
+    # from cyberglove import CyberGlove
+    #
+    # dev_1 = TrignoEMG(channels=[0,1], samples_per_read=200)
+    #
+    # dev_2 = CyberGlove(18, 'COM3', samples_per_read=4,
+    #                  cal_path=r"C:\Users\nak142\tmp\glove.cal")
 
 
-    exp = Experiment(daq=[dev_1, dev_2],
-                     subject='test_',
+
+
+    exp = Experiment(daq={'dev_1': dev_1, 'dev_2': dev_2},
+                     subject='test',
                      allow_overwrite=True)
     exp.run(MyTask())
