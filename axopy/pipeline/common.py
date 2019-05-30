@@ -427,7 +427,7 @@ class Transformer(Block):
     ----------
     transformer : object
         An object implementing the scikit-learn Transformer interface (i.e.
-        implementing ``fit``, ``transform`` and ``inverer_transform`` methods).
+        implementing ``fit``, ``transform`` and ``inverse_transform`` methods).
     inverse : boolean, optional (default: False)
         If True, call ``inverse_transform`` instead of ``transform``.
     """
@@ -441,7 +441,7 @@ class Transformer(Block):
         """Calls the transformer's ``transform`` or ``inverse_transform``
         method and returns the result.
         """
-        if self.inverse is True:
+        if self.inverse:
             return self.transformer.inverse_transform(data)
         else:
             return self.transformer.transform(data)
