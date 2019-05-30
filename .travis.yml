@@ -1,5 +1,6 @@
 language: python
 os: linux
+dist: xenial
 sudo: required
 
 python:
@@ -34,6 +35,7 @@ install:
       # exclude 5.10 on travis https://bugreports.qt.io/browse/QTBUG-64928
       pip install "pyqt5!=5.10,!=5.12.0"
     fi
+  - apt install libxkbcommon-x11-0
   - pip install -e .[dev]
   - pip install pytest-faulthandler codecov
   - pip list
