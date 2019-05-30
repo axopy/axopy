@@ -427,17 +427,24 @@ class Transformer(Block):
     ----------
     transformer : object
         An object implementing the scikit-learn Transformer interface (i.e.
-        implementing ``fit`` and ``transform`` methods).
+        implementing ``fit``, ``transform`` and ``inverse_transform`` methods).
+    inverse : boolean, optional (default: False)
+        If True, call ``inverse_transform`` instead of ``transform``.
     """
 
-    def __init__(self, transformer, hooks=None):
+    def __init__(self, transformer, inverse=False, hooks=None):
         super(Transformer, self).__init__(hooks=None)
         self.transformer = transformer
+        self.inverse = inverse
 
     def process(self, data):
-        """Calls the transformer's ``transform`` method and returns the result.
+        """Calls the transformer's ``transform`` or ``inverse_transform``
+        method and returns the result.
         """
-        return self.transformer.transform(data)
+        if self.inverse:
+            return self.transformer.inverse_transform(data)
+        else:
+            return self.transformer.transform(data)
 
 
 class Ensure2D(Block):
