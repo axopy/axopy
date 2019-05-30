@@ -1,5 +1,6 @@
 """Common processing tasks implemented as Blocks."""
 
+import warnings
 import numpy as np
 from scipy import signal
 
@@ -430,7 +431,8 @@ class Estimator(Block):
 
     def _check_estimator(self):
         """Check estimator attributes when either ``return_proba`` or
-        ``return_log_proba`` are set to ``True``.
+        ``return_log_proba`` are set to ``True``. If both arguments are True
+        use ``predict_proba and issue a warning.
         """
         if not hasattr(self.estimator, 'predict_proba') and self.return_proba:
             raise ValueError("Estimator {} does not implement a "
@@ -439,6 +441,12 @@ class Estimator(Block):
                 self.return_log_proba:
             raise ValueError("Estimator {} does not implement a "
                              "predict_log_proba method".format(self.estimator))
+
+        if self.return_proba and self.return_log_proba:
+            warnings.warn("Both predict_proba and predict_log_proba were set "
+                          "to True for estimator {}. The process method will "
+                          "default to predict_proba.".format(self.estimator))
+            self.return_log_proba = False
 
 
 class Transformer(Block):
