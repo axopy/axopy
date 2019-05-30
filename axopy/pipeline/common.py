@@ -405,10 +405,11 @@ class Estimator(Block):
         An object implementing the scikit-learn Estimator interface (i.e.
         implementing ``fit`` and ``predict`` methods).
     return_proba : boolean, optional (default: False)
-        If True, return probability estimates.
+        If True, use the estimator's ``predict_proba`` method instead of
+        ``predict`` to return probability estimates.
     return_log_proba : boolean, optional (default: False)
-        If True, return log of probability estimates.
-    """
+        If True, use the estimator's ``predict_log_proba`` method instead of
+        ``predict`` to return probability estimates.    """
 
     def __init__(self, estimator, return_proba=False, return_log_proba=False):
         super(Estimator, self).__init__()
