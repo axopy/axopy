@@ -410,7 +410,7 @@ class Estimator(Block):
         If True, return log of probability estimates.
     """
 
-    def __init__(self, estimator, return_proba=False):
+    def __init__(self, estimator, return_proba=False, return_log_proba=False):
         super(Estimator, self).__init__()
         self.estimator = estimator
         self.return_proba = return_proba
