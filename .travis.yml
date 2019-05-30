@@ -10,6 +10,9 @@ python:
   #- "3.6"
   - "3.7"
 
+before-install:
+  - sudo apt-get install libxkbcommon-x11-0
+
 install:
   - |
     if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
@@ -35,7 +38,6 @@ install:
       # exclude 5.10 on travis https://bugreports.qt.io/browse/QTBUG-64928
       pip install "pyqt5!=5.10,!=5.12.0"
     fi
-  - sudo apt install libxkbcommon-x11-0
   - pip install -e .[dev]
   - pip install pytest-faulthandler codecov
   - pip list
