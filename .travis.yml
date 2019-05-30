@@ -10,7 +10,7 @@ python:
   #- "3.6"
   - "3.7"
 
-before-install:
+before_install:
   - sudo apt-get install libxkbcommon-x11-0
 
 install:
