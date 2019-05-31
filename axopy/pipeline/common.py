@@ -431,8 +431,9 @@ class Estimator(Block):
 
     def _check_estimator(self):
         """Check estimator attributes when either ``return_proba`` or
-        ``return_log_proba`` are set to ``True``. If both arguments are True
-        use ``predict_proba and issue a warning.
+        ``return_log_proba`` are set to ``True``.
+
+        If both arguments are True use ``predict_proba and issue a warning.
         """
         if not hasattr(self.estimator, 'predict_proba') and self.return_proba:
             raise ValueError("Estimator {} does not implement a "
@@ -461,24 +462,17 @@ class Transformer(Block):
     ----------
     transformer : object
         An object implementing the scikit-learn Transformer interface (i.e.
-        implementing ``fit``, ``transform`` and ``inverse_transform`` methods).
-    inverse : boolean, optional (default: False)
-        If True, call ``inverse_transform`` instead of ``transform``.
+        implementing ``fit`` and ``transform`` methods).
     """
 
-    def __init__(self, transformer, inverse=False, hooks=None):
+    def __init__(self, transformer, hooks=None):
         super(Transformer, self).__init__(hooks=None)
         self.transformer = transformer
-        self.inverse = inverse
 
     def process(self, data):
-        """Calls the transformer's ``transform`` or ``inverse_transform``
-        method and returns the result.
+        """Calls the transformer's ``transform`` method and returns the result.
         """
-        if self.inverse:
-            return self.transformer.inverse_transform(data)
-        else:
-            return self.transformer.transform(data)
+        return self.transformer.transform(data)
 
 
 class Ensure2D(Block):
