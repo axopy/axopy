@@ -410,7 +410,8 @@ class Estimator(Block):
         ``predict`` to return probability estimates.
     return_log_proba : boolean, optional (default: False)
         If True, use the estimator's ``predict_log_proba`` method instead of
-        ``predict`` to return probability estimates.    """
+        ``predict`` to return probability estimates.
+        """
 
     def __init__(self, estimator, return_proba=False, return_log_proba=False):
         super(Estimator, self).__init__()
@@ -422,7 +423,7 @@ class Estimator(Block):
     def process(self, data):
         """Calls the estimator's ``predict`` or ``predict_proba`` method and
         returns the result."""
-        if self.return_proba is True:
+        if self.return_proba:
             return self.estimator.predict_proba(data)
         elif self.return_log_proba:
             return self.estimator.predict_log_proba(data)
@@ -433,7 +434,7 @@ class Estimator(Block):
         """Check estimator attributes when either ``return_proba`` or
         ``return_log_proba`` are set to ``True``.
 
-        If both arguments are True use ``predict_proba and issue a warning.
+        If both arguments are True use ``predict_proba`` and issue a warning.
         """
         if not hasattr(self.estimator, 'predict_proba') and self.return_proba:
             raise ValueError("Estimator {} does not implement a "
