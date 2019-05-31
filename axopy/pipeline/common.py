@@ -1,5 +1,6 @@
 """Common processing tasks implemented as Blocks."""
 
+import warnings
 import numpy as np
 from scipy import signal
 
@@ -404,15 +405,50 @@ class Estimator(Block):
     estimator : object
         An object implementing the scikit-learn Estimator interface (i.e.
         implementing ``fit`` and ``predict`` methods).
-    """
+    return_proba : boolean, optional (default: False)
+        If True, use the estimator's ``predict_proba`` method instead of
+        ``predict`` to return probability estimates.
+    return_log_proba : boolean, optional (default: False)
+        If True, use the estimator's ``predict_log_proba`` method instead of
+        ``predict`` to return probability estimates.
+        """
 
-    def __init__(self, estimator):
+    def __init__(self, estimator, return_proba=False, return_log_proba=False):
         super(Estimator, self).__init__()
         self.estimator = estimator
+        self.return_proba = return_proba
+        self.return_log_proba = return_log_proba
+        self._check_estimator()
 
     def process(self, data):
-        """Calls the estimator's ``predict`` method and returns the result."""
-        return self.estimator.predict(data)
+        """Calls the estimator's ``predict`` or ``predict_proba`` method and
+        returns the result."""
+        if self.return_proba:
+            return self.estimator.predict_proba(data)
+        elif self.return_log_proba:
+            return self.estimator.predict_log_proba(data)
+        else:
+            return self.estimator.predict(data)
+
+    def _check_estimator(self):
+        """Check estimator attributes when either ``return_proba`` or
+        ``return_log_proba`` are set to ``True``.
+
+        If both arguments are True use ``predict_proba`` and issue a warning.
+        """
+        if not hasattr(self.estimator, 'predict_proba') and self.return_proba:
+            raise ValueError("Estimator {} does not implement a "
+                             "predict_proba method".format(self.estimator))
+        if not hasattr(self.estimator, 'predict_log_proba') and \
+                self.return_log_proba:
+            raise ValueError("Estimator {} does not implement a "
+                             "predict_log_proba method".format(self.estimator))
+
+        if self.return_proba and self.return_log_proba:
+            warnings.warn("Both predict_proba and predict_log_proba were set "
+                          "to True for estimator {}. The process method will "
+                          "default to predict_proba.".format(self.estimator))
+            self.return_log_proba = False
 
 
 class Transformer(Block):
