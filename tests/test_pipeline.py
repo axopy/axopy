@@ -236,6 +236,16 @@ def test_clear_pipeline():
     assert b.data == init
 
 
+def test_parallel_clear():
+    # see issue #70
+    p = pipeline.Pipeline([
+        (_FBlock(), _GBlock()),
+        _TwoIn()
+    ])
+    out = p.process(data)
+    p.clear()
+
+
 def test_block_repr():
     b = pipeline.Block()
     assert repr(b) == 'axopy.pipeline.core.Block()'
