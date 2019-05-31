@@ -431,8 +431,9 @@ class Estimator(Block):
 
     def _check_estimator(self):
         """Check estimator attributes when either ``return_proba`` or
-        ``return_log_proba`` are set to ``True``. If both arguments are True
-        use ``predict_proba and issue a warning.
+        ``return_log_proba`` are set to ``True``.
+
+        If both arguments are True use ``predict_proba and issue a warning.
         """
         if not hasattr(self.estimator, 'predict_proba') and self.return_proba:
             raise ValueError("Estimator {} does not implement a "
