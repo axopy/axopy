@@ -26,6 +26,8 @@ from axopy.experiment import Experiment
 from axopy.daq import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D
 
+from axopy.pipeline import Block
+
 
 def rainbow():
     dev = NoiseGenerator(rate=2000, num_channels=16, read_size=200)
@@ -93,6 +95,15 @@ def trignoacc():
     run(dev, pipeline)
 
 
+def myoemg():
+    import myo
+    from myo import MyoDaqEMG
+    myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
+    dev = MyoDaqEMG(channels=range(2), samples_per_read=100)
+    pipeline = Pipeline([Callable(lambda x: 0.01 * x), Windower(1000)])
+    run(dev, pipeline)
+
+
 def cyberglove():
     from cyberglove import CyberGlove
     dev = CyberGlove(18, 'COM3', samples_per_read=1,
@@ -125,6 +136,7 @@ if __name__ == '__main__':
         'mouse': mouse,
         'trignoemg': trignoemg,
         'trignoacc': trignoacc,
+        'myoemg': myoemg,
         'cyberglove': cyberglove
     }
 
