@@ -170,6 +170,52 @@ class NoiseGenerator(object):
         self.sleeper.reset()
 
 
+class DumbDaq(object):
+    """An emulated data acquisition device that doesn't generate any data.
+
+    :class:`DumbGenerator` is meant to emulate data acquisition devices that
+    block on each request for data until the data is available. See
+    :meth:`read` for details.
+
+    Parameters
+    ----------
+    rate : int, optional
+        Sample rate in Hz. Default is 1000.
+    read_size : int, optional
+        Number of samples to generate per :meth:`read()` call. Default is 100.
+    """
+
+    def __init__(self, rate=1000, read_size=100):
+        self.rate = rate
+        self.read_size = read_size
+
+        self.sleeper = _Sleeper(float(self.read_size/self.rate))
+
+    def start(self):
+        """Does nothing for this device. Implemented to follow device API."""
+        pass
+
+    def read(self):
+        """
+        Blocks execution.
+
+        This method blocks (calls ``time.sleep()``) to emulate other data
+        acquisition units which wait for the requested number of samples to be
+        read. The amount of time to block is calculated such that consecutive
+        calls will always return with constant frequency, assuming the calls
+        occur faster than required (i.e. processing doesn't fall behind).
+        """
+        self.sleeper.sleep()
+
+    def stop(self):
+        """Does nothing for this device. Implemented to follow device API."""
+        pass
+
+    def reset(self):
+        """Reset the device back to its initialized state."""
+        self.sleeper.reset()
+
+
 class Keyboard(QtCore.QObject):
     """Keyboard input device.
 
