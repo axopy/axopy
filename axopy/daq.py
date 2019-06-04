@@ -347,7 +347,7 @@ class _Sleeper(object):
                 # if we're not meeting real-time requirement, don't wait
                 pass
 
-        self._last_read_time = time.time()
+        self.last_read_time = time.time()
 
     def reset(self):
         self.last_read_time = None
