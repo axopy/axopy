@@ -2,8 +2,9 @@
 Built-In Devices
 ================
 
-This example demonstrates some input devices built into AxoPy for testing. Pass
-the following options to try out different devices:
+This example demonstrates some input devices built into AxoPy for testing as
+well as other hardware devices. Pass the following options to try out different
+devices:
 
 rainbow
     Basic use of an NoiseGenerator to show lots of colorful random data.
@@ -16,6 +17,16 @@ emgsim
     amplitude of Gaussian noise -- they kinda look like EMG signals!
 mouse
     Basic use of a Mouse for velocity input.
+trignoemg
+    Delsys Trigno system EMG channels. Requires ``pytrigno``.
+trignoacc
+    Delsys Trigno system ACC channels. Requires ``pytrigno``.
+myoemg
+    Myo armband EMG channels. Requires ``myo-python``.
+myoimu
+    Myo armband IMU channels. Requires ``myo-python``.
+cyberglove
+    Cyberglove Systems data glove. Requires ``cyberglove``.
 """
 
 import sys
