@@ -83,15 +83,15 @@ def emgsim():
 
 def trignoemg():
     from pytrigno import TrignoEMG
-    dev = TrignoEMG(channels=[0,1], samples_per_read=1)
+    dev = TrignoEMG(channels=range(16), samples_per_read=200)
     pipeline = Pipeline([Windower(20000)])
     run(dev, pipeline)
 
 
 def trignoacc():
     from pytrigno import TrignoACC
-    dev = TrignoACC(channels=[0,1], samples_per_read=1)
-    pipeline = Pipeline([Windower(1000)])
+    dev = TrignoACC(channels=range(16), samples_per_read=12)
+    pipeline = Pipeline([Windower(1200)])
     run(dev, pipeline)
 
 
@@ -99,8 +99,8 @@ def myoemg():
     import myo
     from myo import MyoDaqEMG
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
-    dev = MyoDaqEMG(channels=range(2), samples_per_read=100)
-    pipeline = Pipeline([Callable(lambda x: 0.01 * x), Windower(1000)])
+    dev = MyoDaqEMG(channels=range(8), samples_per_read=20)
+    pipeline = Pipeline([Callable(lambda x: 0.01 * x), Windower(2000)])
     run(dev, pipeline)
 
 
