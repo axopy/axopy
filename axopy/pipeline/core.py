@@ -149,4 +149,7 @@ class Pipeline(Block):
         for b in block:
             out.append(self._call_block(fname, b, data))
 
-        return out
+        if fname == 'process':
+            return out
+        else:
+            return None
