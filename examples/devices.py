@@ -104,6 +104,15 @@ def myoemg():
     run(dev, pipeline)
 
 
+def myoimu():
+    import myo
+    from myo import MyoDaqIMU
+    myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
+    dev = MyoDaqIMU(samples_per_read=5)
+    pipeline = Pipeline([Windower(500)])
+    run(dev, pipeline)
+
+
 def cyberglove():
     from cyberglove import CyberGlove
     dev = CyberGlove(18, 'COM3', samples_per_read=1,
@@ -137,6 +146,7 @@ if __name__ == '__main__':
         'trignoemg': trignoemg,
         'trignoacc': trignoacc,
         'myoemg': myoemg,
+        'myoimu': myoimu,
         'cyberglove': cyberglove
     }
 
