@@ -61,12 +61,12 @@ class ValuePrint(Task):
         self.canvas.add_item(self.text)
         container.set_widget(self.canvas)
 
-    def prepare_input_stream(self, input_stream):
+    def prepare_daq(self, daqstream):
         """Initialize input stream and define how many updates (i.e., cycles)
         take place within each trial (optional).
         """
-        self.input_stream = input_stream
-        self.input_stream.start()
+        self.daqstream = daqstream
+        self.daqstream.start()
         # The following two lines define how many cycles will take place within
         # each trial. The length of the trial is n_cycles * (read_size) / rate.
         # When the counter reaches the maximum count value it will send a
@@ -76,7 +76,7 @@ class ValuePrint(Task):
 
     def run_trial(self, trial):
         self.pipeline.clear()
-        self.connect(self.input_stream.updated, self.update)
+        self.connect(self.daqstream.updated, self.update)
 
     def update(self, data):
         """Define what happens at each update operation (e.g. )
@@ -90,11 +90,11 @@ class ValuePrint(Task):
         self.timer.increment()
 
     def finish_trial(self):
-        self.disconnect(self.input_stream.updated, self.update)
+        self.disconnect(self.daqstream.updated, self.update)
         self.next_trial()
 
     def finish(self):
-        self.input_stream.kill()
+        self.daqstream.stop()
         self.finished.emit()
 
     def key_press(self, key):
@@ -104,7 +104,7 @@ class ValuePrint(Task):
             super().key_press(key)
 
 if __name__ == '__main__':
-    from axopy.stream import NoiseGenerator
+    from axopy.daq import NoiseGenerator
     dev = NoiseGenerator(rate=1000, num_channels=4, read_size=100)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')
