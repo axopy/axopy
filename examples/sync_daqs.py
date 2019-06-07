@@ -5,7 +5,8 @@ Two daqstreams
 This example demonstrates the use of multiple daq devices. It reads from two
 ``daqstream`` objects with different sampling rates. The ``read_size`` for
 the devices is set such that it takes the same amount of time to perform a read
-operation from them. The data are then combined and displayed on a Oscilloscope.
+operation from them. The data are then combined and displayed on a
+Oscilloscope.
 
 The raw and processed data are stored for both devices so that the user can
 check that they have appropriate sizes.
@@ -17,10 +18,8 @@ from axopy.experiment import Experiment
 from axopy.task import Task
 from axopy import util
 from axopy.gui.graph import SignalWidget
-from axopy.timing import Counter, Timer
+from axopy.timing import Counter
 from axopy.pipeline import Windower, Filter, Callable, Pipeline
-from axopy.design import Array
-from axopy.daq import DaqStream
 
 
 class MyTask(Task):
@@ -162,9 +161,6 @@ if __name__ == '__main__':
     #
     # dev_2 = CyberGlove(18, 'COM3', samples_per_read=4,
     #                  cal_path=r"C:\Users\nak142\tmp\glove.cal")
-
-
-
 
     exp = Experiment(daq={'dev_1': dev_1, 'dev_2': dev_2},
                      subject='test',

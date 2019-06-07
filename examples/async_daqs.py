@@ -8,10 +8,10 @@ one another, yet, it makes sense to set their read_sizes such that it takes
 "roughly" the same time to perform a read operation from the various devices.
 A DumbDaq is used as a master daq to control the main program update rate.
 We might want to set the properties of the master daq to be equal to that of
-the "faster" of the real daqs. This is however not strict; we could also set the
-read time of the master daq to be even faster (but not slower). In that case,
-we would end up with correlated samples as we sample faster than the daqs are
-providing data.
+the "faster" of the real daqs. This is however not strict; we could also set
+the read time of the master daq to be even faster (but not slower). In that
+case, we would end up with correlated samples as we sample faster than the daqs
+are providing data.
 
 The example demonstrates how to store the raw data from the multiple devices
 and also how to combine (through concatenation) and store their processed data.
