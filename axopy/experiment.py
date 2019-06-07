@@ -18,7 +18,8 @@ class Experiment(TransmitterBase):
     ----------
     daq : object, optional
         A data acquisition device that follows the AxoPy DAQ protocol. See
-        :mod:`axopy.daq`.
+        :mod:`axopy.daq`. For mutliple devices, a dictionary, list or tuple
+        is expected.
     data : str, optional
         Path to the data. The directory is created for you if it doesn't exist.
     subject : str, optional
