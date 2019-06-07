@@ -1,26 +1,34 @@
 """
-Collect training data. Show videos with 6 classes (5 movements + rest).
-For now just show label.
-TODO:
-* training: sound before trial start
-* training and control: pics instead
-* control: pipeline spit out both pred and proba (in parallel)
+EMG grip classification.
 
+During calibration phase, the participant is asked to reproduce a series of
+postures presented on the screen. Data are collected and stored so that
+they can be used later to train models.
+
+During real-time decoding, the user is prompted to reproduce postures again
+and they can choose whether predictions should be sent as grip  commands to the
+Robolimb hand (if available), be displayed on the screen or both.
+
+The following input devices are supported (mutually exclusive):
+
+trigno
+    Trigno EMG system.
+myo
+    Myo armband.
+noise
+    Noise generator.
+
+All configuration settings are stored and loaded from an external configuration
+file (``config.ini``).
 """
+
 import os
 import joblib
-import time
 import numpy as np
 
 from argparse import ArgumentParser
 from configparser import ConfigParser
 from scipy.signal import butter
-
-from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QLabel
-from PyQt5.QtGui import QPixmap
-
-from can.interfaces.pcan import PCANBasic as pcan
 
 from axopy.experiment import Experiment
 from axopy.task import Task
@@ -28,148 +36,35 @@ from axopy import util
 from axopy.timing import Counter, Timer
 from axopy.gui.canvas import Canvas, Text
 from axopy.pipeline import (Callable, Windower, Filter, Pipeline,
-                            FeatureExtractor, Ensure2D, Estimator, Transformer)
-from axopy.features import waveform_length, logvar
+                            FeatureExtractor, Ensure2D, Estimator)
+from axopy.messaging import Transmitter
+from axopy.gui.prompts import ImagePrompt
 
-from robolimb import RoboLimbCAN
-
-
-class RoboLimbGrip(RoboLimbCAN):
-    def __init__(self,
-                 def_vel=297,
-                 read_rate=0.02,
-                 channel=pcan.PCAN_USBBUS1,
-                 b_rate=pcan.PCAN_BAUD_1M,
-                 hw_type=pcan.PCAN_TYPE_ISA,
-                 io_port=0x3BC,
-                 interrupt=3):
-        super().__init__(
-            def_vel,
-            read_rate,
-            channel,
-            b_rate,
-            hw_type,
-            io_port,
-            interrupt)
-
-        self.grip = None
-        self.executing = False
-        self.grip_queued = None
-
-    def execute(self, grip, force):
-        """Performs grip at maximum velocity."""
-        velocity = 297
-        if (force is False and self.executing is True) or (self.grip == grip):
-            pass
-        else:
-            self.executing = True
-            if grip == 'open':
-                self.open_fingers(velocity=velocity)
-                time.sleep(1)
-                self.grip = 'open'
-            elif grip == 'power':
-                # Preparation
-                [self.open_finger(i, velocity=velocity) for i in range(1, 6)]
-                time.sleep(0.2)
-                self.close_finger(6, velocity=velocity)
-                time.sleep(1.3)
-                # Execution
-                self.stop_all()
-                self.close_fingers(velocity=velocity, force=True)
-                time.sleep(1)
-                self.grip = 'power'
-            elif grip == 'lateral':
-                # Preparation
-                [self.open_finger(i, velocity=velocity) for i in range(1, 4)]
-                time.sleep(0.2)
-                self.open_finger(6, velocity=velocity, force=True)
-                time.sleep(0.1)
-                [self.stop_finger(i) for i in range(2, 4)]
-                [self.close_finger(i, velocity=velocity) for i in range(2, 6)]
-                time.sleep(1.2)
-                # Execution
-                self.stop_all()
-                self.close_finger(1, velocity=velocity, force=True)
-                time.sleep(1)
-                self.grip = 'lateral'
-            elif grip == 'tripod':
-                # Preparation
-                [self.open_finger(i, velocity=velocity) for i in range(1, 4)]
-                time.sleep(0.1)
-                [self.stop_finger(i) for i in range(1, 4)]
-                [self.close_finger(i, velocity=velocity) for i in range(4, 7)]
-                time.sleep(1.4)
-                # Execution
-                self.stop_all()
-                [self.close_finger(i, velocity=velocity, force=True)
-                 for i in range(1, 4)]
-                time.sleep(1)
-                self.grip = 'tripod'
-            elif grip == 'pointer':
-                # Preparation
-                [self.open_finger(i, velocity=velocity) for i in range(1, 3)]
-                time.sleep(0.1)
-                self.open_finger(6, velocity=velocity)
-                time.sleep(1.4)
-                # Execution
-                self.stop_all()
-                [self.close_finger(i, velocity=velocity, force=True)
-                 for i in [1, 3, 4, 5]]
-                time.sleep(1)
-                self.grip = 'pointer'
-
-            self.executing = False
-
-
-class RoboLimbControl(QThread):
-    def __init__(self, robolimb):
-        super(RoboLimbControl, self).__init__()
-        self.running = True
-        self.robolimb = robolimb
-        self.robolimb.start()
-
-    def run(self):
-        while self.running:
-            self.robolimb.execute(self.robolimb.grip_queued, force=False)
-            time.sleep(0.001)
-
-    def stop(self):
-        self.running = False
-        self.exit()
-
-
-class WaveformLength(object):
-    def __init__(self):
-        pass
-
-    def compute(x):
-        return waveform_length(x)
-
-
-class LogVar(object):
-    def __init__(self):
-        pass
-
-    def compute(x):
-        return logvar(x)
+from features import WaveformLength, LogVar
+from hand import RoboLimbGrip
 
 
 class _BaseTask(Task):
+    """Base experimental task.
+
+    Implements the processing pipeline, the daqstream and the trial counter.
+    """
+
     def __init__(self):
         super(_BaseTask, self).__init__()
-
         self.pipeline = self.make_pipeline()
 
     def make_pipeline(self):
-        # Multiple feature extraction could also be implemented using a parallel
-        # pipeline and a block that joins multiple outputs
-        b, a = butter(4, (10/2000./2., 900/2000./2.), 'bandpass')
+        # Multiple feature extraction could also be implemented using a
+        # parallel pipeline and a block that joins multiple outputs.
+        b, a = butter(FILTER_ORDER, (LOWPASS/S_RATE/2., HIGHPASS/S_RATE/2.),
+                      'bandpass')
         pipeline = Pipeline([
             Windower(int(S_RATE * WIN_SIZE)),
             Filter(b, a=a,
                    overlap=(int(S_RATE * WIN_SIZE) -
                             int(S_RATE * READ_LENGTH))),
-            FeatureExtractor([('wl', WaveformLength), ('logvar', LogVar)]),
+            FeatureExtractor([('wl', WaveformLength()), ('logvar', LogVar())]),
             Ensure2D(orientation='col')
         ])
 
@@ -196,11 +91,23 @@ class _BaseTask(Task):
         self.daqstream.stop()
         self.finished.emit()
 
+    def image_path(self, grip):
+        """Returns the path for specified grip. """
+        path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), 'pics',
+            grip + '.jpg')
+        return path
+
 
 class DataCollection(_BaseTask):
+    """Data collection task.
+
+    Collects training data while participants replicates target postures
+    presented to them on the screen.
+    """
+
     def __init__(self):
         super(DataCollection, self).__init__()
-        # self.advance_block_key = None  # No wait between blocks
 
     def prepare_design(self, design):
         # Each block is one movement and has N_TRIALS repetitions
@@ -214,6 +121,9 @@ class DataCollection(_BaseTask):
     def prepare_graphics(self, container):
         self.canvas = Canvas()
         self.text = Text(text='', color='black')
+        self.image = ImagePrompt()
+        self.image.set_image(self.image_path('rest'))
+        self.image.show()
         self.canvas.add_item(self.text)
         container.set_widget(self.canvas)
 
@@ -221,13 +131,11 @@ class DataCollection(_BaseTask):
         self.writer = storage.create_task('calibration')
 
     def run_trial(self, trial):
-        self.pic = QLabel(self.canvas)
-        self.pic.setGeometry(800, 200, 500, 500)
-        self.pic.setPixmap(QPixmap("pics/1.jpg"))
-        self.pic.show()
         self.reset()
-        # self.text.qitem.setText("{}".format(
-        #     trial.attrs['movement']))
+        self.image.set_image(self.image_path(trial.attrs['movement']))
+        self.image.show()
+        self.text.qitem.setText("{}".format(
+            trial.attrs['movement']))
         trial.add_array('data_raw', stack_axis=1)
         trial.add_array('data_proc', stack_axis=1)
 
@@ -242,8 +150,10 @@ class DataCollection(_BaseTask):
         self.timer.increment()
 
     def finish_trial(self):
-        self.pic.hide()
+        # self.pic.hide()
         self.text.qitem.setText("{}".format('relax'))
+        self.image.set_image(self.image_path('rest'))
+        self.image.show()
         self.writer.write(self.trial)
         self.disconnect(self.daqstream.updated, self.update)
 
@@ -253,46 +163,60 @@ class DataCollection(_BaseTask):
 
 
 class RealTimeControl(_BaseTask):
-    def __init__(self, subject):
+    """Real-time decoding.
+
+    Parameters
+    ----------
+    subject : str
+        Subject ID.
+    hand_control : bool
+        If True, the Robolimb will be controlled in real-time.
+    display_output : bool
+        If True, the prediction will be displayed on the screen.
+    """
+
+    grip = Transmitter(object)
+
+    def __init__(self, subject, hand_control, display_output):
         super(RealTimeControl, self).__init__()
+        self.advance_block_key = util.key_return
+
         self.subject = subject
+        self.hand_control = hand_control
+        self.display_output = display_output
 
         self.load_models()
         self.prediction_pipeline = self.make_prediction_pipeline()
-        self.prediction_proba_pipeline = self.make_prediction_proba_pipeline()
 
-        self.robolimb = RoboLimbGrip()
-        self.robolimb.start()
-        self.robolimb.open_all()
-
-        self.robolimb_control = RoboLimbControl(self.robolimb)
-        self.robolimb_control.start()
+        if self.hand_control:
+            self.robolimb = RoboLimbGrip()
+            self.robolimb.start()
+            self.robolimb.open_all()
 
     def load_models(self):
         root_models = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                    'data', self.subject, 'models')
-        self.clf = joblib.load(os.path.join(root_models, 'classifier'))
-        self.ssc = joblib.load(os.path.join(root_models, 'input_scaler'))
-        self.le = joblib.load(os.path.join(root_models, 'output_encoder'))
+        self.mdl = joblib.load(os.path.join(root_models, 'mdl'))
         self.rt = joblib.load(os.path.join(root_models, 'roc_thresholds'))
 
     def make_prediction_pipeline(self):
+        """
+        Prediction pipeline.
+
+        The input is first transposed to match sklearn expected style. Then the
+        ``predict_proba`` method of the estimator is used. The final step of
+        the pipeline consists of a parallel implementation which outputs
+        the predicted label, the associated probability and posterior
+        probability vector.
+        """
         pipeline = Pipeline([
             Callable(lambda x: np.transpose(x)),  # Transpose
-            Transformer(self.ssc),
-            Estimator(self.clf),
-            Transformer(self.le, inverse=True),
-            Callable(lambda x: x[0])
-        ])
-
-        return pipeline
-
-    def make_prediction_proba_pipeline(self):
-        pipeline = Pipeline([
-            Callable(lambda x: np.transpose(x)),  # Transpose
-            Transformer(self.ssc),
-            Estimator(self.clf, return_proba=True),
-            Callable(lambda x: np.max(x))
+            Estimator(self.mdl, return_proba=True),
+            (
+                Callable(lambda x: self.mdl.classes_[np.argmax(x)]),  # pred
+                Callable(lambda x: np.max(x)),  # proba_max
+                Callable(lambda x: x)  # proba
+            )
         ])
 
         return pipeline
@@ -313,16 +237,18 @@ class RealTimeControl(_BaseTask):
         self.text_target = Text(text='', color='black')
         self.text_target.pos = (-0.3, 0.3)
 
-        self.text_prediction = Text(text='', color='red')
-        self.text_prediction.pos = (-0.35, 0.0)
-
         self.text_relax = Text(text='', color='black')
         self.text_relax.qitem.setText('relax')
         self.text_relax.pos = (-0.1, 0.1)
         self.text_relax.hide()
 
+        if self.display_output:
+            self.text_prediction = Text(text='', color='red')
+            self.text_prediction.pos = (-0.35, 0.0)
+
         self.canvas.add_item(self.text_target)
-        self.canvas.add_item(self.text_prediction)
+        if self.display_output:
+            self.canvas.add_item(self.text_prediction)
         self.canvas.add_item(self.text_relax)
         container.set_widget(self.canvas)
 
@@ -337,38 +263,54 @@ class RealTimeControl(_BaseTask):
         trial.add_array('data_raw', stack_axis=1)
         trial.add_array('data_proc', stack_axis=1)
         trial.add_array('prediction', stack_axis=1)
+        trial.add_array('prediction_proba', stack_axis=0)
+        if self.hand_control:
+            trial.add_array('hand_grip', stack_axis=1)
 
         self.connect(self.daqstream.updated, self.update)
+        if self.hand_control:
+            self.connect(self.grip, self.robolimb.execute)
+        if self.display_output:
+            self.connect(self.grip, self.update_text_prediction)
+
+    def update_text_prediction(self, pred):
+        self.text_prediction.qitem.setText("Prediction: {}".format(pred))
 
     def update(self, data):
         data_proc = self.pipeline.process(data)
-        pred = self.prediction_pipeline.process(data_proc)
-        proba = self.prediction_proba_pipeline(data_proc)
-
-        self.text_prediction.pos = (-0.35, 0.0)
-        self.text_prediction.qitem.setText(
-            "Prediction: {}, proba {}".format(pred, proba))
-
-        if proba >= self.rt.theta_opt_[pred]:
-            self.robolimb.grip_queued = pred
+        pred, proba_max, proba = self.prediction_pipeline.process(data_proc)
+        if proba_max >= self.rt.theta_opt_[pred]:
+            self.grip.emit(pred)
 
         # Update Arrays
         self.trial.arrays['data_raw'].stack(data)
         self.trial.arrays['data_proc'].stack(data_proc)
-        self.trial.arrays['prediction'].stack(str(pred).encode("ascii",
-                                                               "ignore"))
+        self.trial.arrays['prediction'].stack(
+            str(pred).encode("ascii", "ignore"))
+        self.trial.arrays['prediction_proba'].stack(proba)
+        if self.hand_control:
+            self.trial.arrays['hand_grip'].stack(
+                str(self.robolimb.grip).encode("ascii", "ignore"))
 
         self.timer.increment()
 
     def finish_trial(self):
-        self.text_prediction.hide()
+        if self.display_output:
+            self.text_prediction.hide()
+        if self.hand_control:
+            self.robolimb.abort_execution()
+            self.robolimb.stop_all()
+            self.robolimb.open_all()
+
         self.text_target.hide()
         self.text_relax.show()
 
-        self.writer.write(self.trial)
+        # self.writer.write(self.trial)
         self.disconnect(self.daqstream.updated, self.update)
-
-        self.robolimb.grip_queued = 'open'
+        if self.hand_control:
+            self.disconnect(self.grip, self.robolimb.execute)
+        if self.display_output:
+            self.disconnect(self.grip, self.text_prediction.qitem.setText)
 
         self.wait_timer = Timer(TRIAL_INTERVAL)
         self.wait_timer.timeout.connect(self.next_trial)
@@ -378,17 +320,20 @@ class RealTimeControl(_BaseTask):
         super(RealTimeControl, self).reset()
         self.text_relax.hide()
         self.text_target.show()
-        self.text_prediction.show()
+        if self.display_output:
+            self.text_prediction.show()
 
     def finish(self):
         self.daqstream.stop()
-        self.robolimb.open_all()
-        time.sleep(1.5)
-        self.robolimb.close_finger(1)
-        time.sleep(1)
-        self.robolimb.stop()
-        self.robolimb_control.stop()
+        if self.hand_control:
+            self.robolimb.stop()
         self.finished.emit()
+
+    def key_press(self, key):
+        if key == util.key_escape:
+            self.finish()
+        else:
+            super().key_press(key)
 
 
 if __name__ == '__main__':
@@ -398,38 +343,56 @@ if __name__ == '__main__':
     task.add_argument('--test', action='store_true')
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--trigno', action='store_true')
+    source.add_argument('--myo', action='store_true')
     source.add_argument('--noise', action='store_true')
+    robolimb = parser.add_argument('--robolimb', action='store_true')
+    display = parser.add_argument('--display', action='store_true')
     args = parser.parse_args()
 
     cp = ConfigParser()
-    cp.read('config.ini')
-    S_RATE = cp.getfloat('hardware', 's_rate')
+    cp.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                         'config.ini'))
     READ_LENGTH = cp.getfloat('hardware', 'read_length')
+    CHANNELS = list(map(int, (cp.get('hardware', 'channels').split(','))))
     WIN_SIZE = cp.getfloat('processing', 'win_size')
+    LOWPASS = cp.getfloat('processing', 'lowpass')
+    HIGHPASS = cp.getfloat('processing', 'highpass')
+    FILTER_ORDER = cp.getfloat('processing', 'filter_order')
     MOVEMENTS = cp.get('experiment', 'movements').split(',')
 
-    if args.trigno is True:
+    if args.trigno:
         from pytrigno import TrignoEMG
-        dev = TrignoEMG(channels=range(9),
+        S_RATE = 2000.
+        dev = TrignoEMG(channels=CHANNELS,
                         samples_per_read=int(S_RATE * READ_LENGTH))
-    elif args.noise is True:
+    elif args.myo:
+        import myo
+        from myo.daq import MyoDaqEMG
+        CHANNELS = range(8)
+        S_RATE = 200.
+        myo.init(
+            sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
+        dev = MyoDaqEMG(channels=CHANNELS,
+                        samples_per_read=int(S_RATE * READ_LENGTH))
+    elif args.noise:
         from axopy.daq import NoiseGenerator
-        dev = NoiseGenerator(rate=S_RATE, num_channels=9, amplitude=1.0,
+        S_RATE = 2000.
+        dev = NoiseGenerator(rate=S_RATE, num_channels=8, amplitude=10.0,
                              read_size=int(S_RATE * READ_LENGTH))
 
-    exp = Experiment(daq=dev, subject='test_3', allow_overwrite=True)
+    exp = Experiment(daq=dev, subject='test_4', allow_overwrite=True)
 
-    if args.train is True:
+    if args.train:
         N_TRIALS = cp.getint('calibration', 'n_trials')
         N_BLOCKS = len(MOVEMENTS)
         TRIAL_LENGTH = cp.getfloat('calibration', 'trial_length')
         TRIAL_INTERVAL = cp.getfloat('calibration', 'trial_interval')
-
         exp.run(DataCollection())
-    elif args.test is True:
+    elif args.test:
         N_TRIALS = len(MOVEMENTS)
         N_BLOCKS = cp.getint('control', 'n_blocks')
         TRIAL_LENGTH = cp.getfloat('control', 'trial_length')
         TRIAL_INTERVAL = cp.getfloat('control', 'trial_interval')
-
-        exp.run(RealTimeControl(subject=exp.subject))
+        exp.run(RealTimeControl(subject=exp.subject,
+                                hand_control=args.robolimb,
+                                display_output=args.display))

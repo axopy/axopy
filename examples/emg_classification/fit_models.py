@@ -14,8 +14,8 @@ block of trials (i.e. one repetition of each movement).
 Confidence-based rejection thresholds are estimated using the ``fpr_threshold``
 strategy.
 
-All models (including pre-processing transformers, estimators and rejection
-thresholds) are saved to disk for later use during real-time prosthesis control.
+All models (i.e. estimators and rejection thresholds) are saved to disk for
+later use during real-time prosthesis control.
 """
 
 import os
@@ -84,9 +84,6 @@ def fit_models(subject, trim_samples, n_iter, fpr_threshold):
 
     ps = PredefinedSplit(test_fold=Y_r)
 
-    le = LabelEncoder().fit(Y)
-    Y_le = le.transform(Y)
-
     pipe_lda = Pipeline(steps=[
         ('ssc', StandardScaler()),
         ('clf', LinearDiscriminantAnalysis())])
@@ -108,29 +105,27 @@ def fit_models(subject, trim_samples, n_iter, fpr_threshold):
                                 n_iter=n_iter,
                                 n_jobs=-1,
                                 verbose=1)
-    search.fit(X, Y_le)
+    search.fit(X, Y)
 
     print("Mean best RDA accuracy: {:.4f}".format(
         search.cv_results_['mean_test_accuracy'][search.best_index_]))
     print("Mean LDA accuracy: {:.4f}".format(
-        cross_val_score(pipe_lda, X, Y_le, cv=ps).mean()))
+        cross_val_score(pipe_lda, X, Y, cv=ps).mean()))
     print("Mean best RDA negative logloss: {:.4f}".format(
         search.cv_results_['mean_test_neg_log_loss'][search.best_index_]))
     print("Mean LDA negative logloss: {:.4f}".format(
-        cross_val_score(pipe_lda, X, Y_le, cv=ps,
+        cross_val_score(pipe_lda, X, Y, cv=ps,
                         scoring='neg_log_loss').mean()))
 
     # ROC thresholds (using 50% train test split)
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y_le, test_size=0.5)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.5)
     clf = search.best_estimator_.steps[1][1]
     clf.fit(X_train, Y_train)
 
     rt = RocThreshold(strategy='fpr_threshold', fpr_threshold=fpr_threshold)
-    rt.fit(le.inverse_transform(Y_test), clf.predict_proba(X_test))
+    rt.fit(Y_test, clf.predict_proba(X_test))
 
-    return [('input_scaler', search.best_estimator_.steps[0][1]),
-            ('output_encoder', le),
-            ('classifier', search.best_estimator_.steps[1][1]),
+    return [('mdl', search),
             ('roc_thresholds', rt)]
 
 
@@ -153,7 +148,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     cp = ConfigParser()
-    cp.read('config.ini')
+    cp.read(os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                         'config.ini'))
     READ_LENGTH = cp.getfloat('hardware', 'read_length')
     TRIM_LENGTH = cp.getfloat('fit', 'trim_length')
     trim_samples = int(TRIM_LENGTH / READ_LENGTH)
