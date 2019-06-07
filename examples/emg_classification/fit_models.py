@@ -2,22 +2,6 @@
 """
 Fit models
 ==========
-
-Fits and saves the model for specified subject.
-
-An LDA and an RDA classifier are fitted and their performance is assessed in
-terms of classification accuracy and negative log-loss. The hyper-parameters
-are optimised using random search. K-fold cross-validation is used to tune
-hyper-parameters and estimate generalisation error, where each fold is one
-block of trials (i.e. one repetition of each movement).
-
-Confidence-based rejection thresholds are estimated using the ``fpr_threshold``
-strategy.
-
-All models (i.e. estimators and rejection thresholds) are saved to disk for
-later use during real-time prosthesis control.
-"""
-
 import os
 
 from argparse import ArgumentParser

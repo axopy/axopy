@@ -36,7 +36,7 @@ class Experiment(TransmitterBase):
                  allow_overwrite=False):
         super(Experiment, self).__init__()
         self.daq = daq
-        self.daqstream = DaqStream(daq)
+
         self.storage = Storage(data, allow_overwrite=allow_overwrite)
 
         self._receive_keys = False
@@ -45,6 +45,9 @@ class Experiment(TransmitterBase):
 
         # main screen
         self.screen = _MainWindow()
+
+        # Prepare daqstream(s)
+        self._prepare_daqstream()
 
     def configure(self, **options):
         """Configure the experiment with custom options.
@@ -134,3 +137,15 @@ class Experiment(TransmitterBase):
                 self._run_task()
         else:
             self.key_pressed.emit(key)
+
+    def _prepare_daqstream(self):
+        if isinstance(self.daq, (list, tuple)):
+            self.daqstream = []
+            for daq_ in self.daq:
+                self.daqstream.append(DaqStream(daq_))
+        elif isinstance(self.daq, dict):
+            self.daqstream = dict()
+            for daq_name, daq_ in self.daq.items():
+                self.daqstream[daq_name] = DaqStream(daq_)
+        else:
+            self.daqstream = DaqStream(self.daq)
