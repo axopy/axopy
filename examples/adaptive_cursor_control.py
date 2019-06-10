@@ -162,6 +162,12 @@ class CursorFollowing(Task):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD:examples/example.py
+    # from pytrigno import TrignoEMG
+    # dev = TrignoEMG((0, 3), 200, host='192.168.1.114', units='normalized')
+    from axopy.stream import NoiseGenerator
+=======
+>>>>>>> master:examples/adaptive_cursor_control.py
     dev = NoiseGenerator(rate=2000, num_channels=4, read_size=200)
 
     b, a = butter(4, (10/2000./2., 450/2000./2.), 'bandpass')
@@ -172,7 +178,8 @@ if __name__ == '__main__':
     ])
     main_pipeline = pipeline.Pipeline([
         preproc_pipeline,
-        pipeline.Callable(mean_absolute_value),
+        pipeline.Callable(mean_absolute_value,
+        func_kwargs={'weights': 'mav', 'axis': -1, 'keepdims': False}),
         RLSMapping(4, 2, 0.99)
     ])
 

@@ -3,6 +3,26 @@
 import numpy as np
 
 
+def ensure_1d(array):
+    """Make sure an array has at least 1 dimension.
+
+    Useful for handling arrays with ``shape=()`` when you want ``(1,)``.
+
+    Parameters
+    ----------
+    array : array, shape ()
+        The input array. If 1-dimensional, nothing is done.
+
+    Returns
+    -------
+    array : array, shape (1,)
+        The input array as a 1-d array.
+    """
+    if array.ndim == 0:
+        array = np.atleast_1d(array)
+    return array
+
+
 def ensure_2d(array):
     """Make sure an array has at least 2 dimensions.
 
@@ -21,6 +41,62 @@ def ensure_2d(array):
     if array.ndim == 1:
         array = np.atleast_2d(array)
     return array
+
+
+def flatten_2d(array, axis):
+    """Flatten a 2-dimensional array.
+
+    Useful for feature functions that extract multiple features per channel. The
+    ``axis`` argument is required to ensure correct reshaping order. Only 1- and
+    2-dimensional inputs are currently supported. The extracted feature
+    data are flattend such that the output 1-dimensional array has the form:
+    F1/Ch1  F1/Ch2  F1/Ch3  ...  F1/ChC  F2/Ch1  F2/Ch2  ...
+
+    Parameters
+    ----------
+    array : array, shape (n_features, n_channels) or (n_channels, n_features)
+        The input array.
+    axis : int
+        The axis along which the feature has been computed. One of {-1, 0, 1}.
+    """
+    if axis == 0:
+        return array.reshape((array.size,), order='C')
+    elif np.abs(axis) == 1:
+        return array.reshape((array.size), order='F')
+    else:
+        raise ValueError("1-d or 2-d input data are only supported for " +
+                         "functions extracting multiple features per channel.")
+
+
+def check_output(array, axis, keepdims):
+    """Make sure the output has the desired shape and type. The ``keepdims``
+    parameter determines whether the array will be expanded along the given
+    axis. This function is useful when features have been computed by calling
+    functions that implicitly reduce the dimensionality (e.g.
+    numpy.apply_along_axis).
+
+    Parameters
+    ----------
+    array : array or float
+        The array with the computed feature.
+    axis : int
+        The axis along which the feature has been computed.
+    keepdims : bool
+        When True the dimensionality of the input will be retained by expanding
+        the output.
+
+    Returns
+    -------
+    out : array or float64
+    """
+    if keepdims is True:
+        array = np.expand_dims(array, axis)
+
+    # Return flaot for 0-dimensional arrays
+    if isinstance(array, np.ndarray) and array.ndim == 0:
+        return np.float64(array)
+    else:
+        return array
 
 
 def rolling_window(array, n):
@@ -107,7 +183,7 @@ def inverted_t_window(n, p=0.25, a=0.5):
 
     Examples
     --------
-    >>> from axopy.features.util import inverted_t_window 
+    >>> from axopy.features.util import inverted_t_window
     >>> inverted_t_window(8)
     array([ 0.5,  1. ,  1. ,  1. ,  1. ,  1. ,  0.5,  0.5])
     """
@@ -159,3 +235,8 @@ def trapezoidal_window(n, p=0.25):
     w[r2] = (1/p) * (n - (r2 + 1)) / n
 
     return w
+
+
+def nextpow2(n):
+    """Returns the smaller power of 2 greater than or equal to n."""
+    return 2**(np.ceil(np.log2(n))).astype(np.int)

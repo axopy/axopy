@@ -7,8 +7,12 @@ Notation:
 """
 
 import numpy as np
-from axopy.features.util import (ensure_2d, rolling_window, inverted_t_window,
-                                 trapezoidal_window)
+from scipy.stats import skew as sp_skewness, kurtosis as sp_kurtosis
+
+from axopy.features.util import (flatten_2d, check_output, rolling_window,
+                                 inverted_t_window, trapezoidal_window)
+from axopy.features.external.sample_entropy import sample_entropy_1d
+from axopy.features.external.ar import autocorrelation, levinson
 
 
 def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
@@ -121,6 +125,31 @@ def mean_absolute_value(x, weights='mav', axis=-1, keepdims=False):
     return np.mean(w * np.absolute(x), axis=axis, keepdims=keepdims)
 
 
+def mean_value(x, axis=-1, keepdims=False):
+    """Computes the mean value of each signal.
+
+    .. math:: \\text{MV} = \\frac{1}{N} \\sum_{i=1}^{N} x_i
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        MV of each channel.
+    """
+    return np.mean(x, axis=axis, keepdims=keepdims)
+
+
 def waveform_length(x, axis=-1, keepdims=False):
     """Computes the waveform length (WL) of each signal.
 
@@ -154,6 +183,48 @@ def waveform_length(x, axis=-1, keepdims=False):
     """
     return np.sum(np.absolute(np.diff(x, axis=axis)),
                   axis=axis, keepdims=keepdims)
+
+
+def wilson_amplitude(x, threshold=5e-6, axis=-1, keepdims=False):
+    """Computes the Wilson amplitude of each signal.
+
+    The Wilson amplitude is the number of counts for each change in the EMG
+    signal amplitude that exceeds a predefined threshold.
+
+    .. math:: \\text{WAMP} = \sum_{i=1}^{N-1} f\left( \left| x_{i+1} -
+        x_i \right| \right)
+
+    .. math::
+       f\left(x\right) =
+       \begin{cases}
+            1, \text{if } x \geq \text{threshold},\\
+                0, \text{ otherwise}
+        \end{cases}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    threshold : float, optional
+        The threshold used for the comparison between two consecutive samples.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        WAMP of each channel.
+
+    References
+    ----------
+    .. [1] M. Zardoshti-Kermani, B. C. Wheeler, K. Badie, R. M. Hashemi, "EMG
+        feature evaluation for movement control of upper extremity prostheses."
+        IEEE Transactions on Rehabilitation Engineering, vol. 3, no. 4, p.p
+        324-33, 1995.
+    """
+    return np.sum(np.abs(np.diff(x, n=1, axis=axis)) > threshold, axis=axis,
+                  keepdims=keepdims)
 
 
 def zero_crossings(x, threshold=0, axis=-1, keepdims=False):
@@ -306,6 +377,33 @@ def integrated_emg(x, axis=-1, keepdims=False):
     return np.sum(np.absolute(x), axis=axis, keepdims=keepdims)
 
 
+def var(x, axis=-1, keepdims=False):
+    """Variance of the signal.
+
+    .. math::
+        \\text{var} = \left( \\frac{1}{N}
+            \\sum_{i=1}^{N} \\left(x_i - \\mu \\right)^2 \\right)
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        var of each channel.
+    """
+    return np.var(x, axis=axis, keepdims=keepdims)
+
+
 def logvar(x, axis=-1, keepdims=False):
     """Log of the variance of the signal.
 
@@ -348,3 +446,236 @@ def logvar(x, axis=-1, keepdims=False):
        Engineering, vol. 22, no. 2, pp. 269–279, 2014.
     """
     return np.log10(np.var(x, axis=axis, keepdims=keepdims))
+
+
+def skewness(x, bias=True, nan_policy='propagate', axis=-1,
+             keepdims=False):
+    """Skewness of the signal.
+
+    .. math::
+        \\text{Skewness} = \\frac{\\frac{1}{n} \\sum_{i=1}^n \\left( x_i-
+            \\bar{x} \\right )^3}{\\left( \\frac{1}{n} \\sum_{i=1}^n
+                \\left( x_i-\\bar{x} \\right )^2\\right )^\\frac{3}{2}}
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    bias : bool, optional
+        If False, then the calculations are corrected for statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        skewness of each channel.
+    """
+    skewness_ = sp_skewness(x, axis=axis, bias=bias,
+                            nan_policy=nan_policy)
+    return check_output(skewness_, axis=axis, keepdims=keepdims)
+
+
+def kurtosis(x, fisher=True, bias=True, nan_policy='propagate', axis=-1,
+             keepdims=False):
+    """Kurtosis of the signal.
+
+    .. math::
+        \\text{Kurtosis} = \\frac{\\frac{1}{n} \\sum_{i=1}^n \\left( x_i-
+            \\bar{x} \\right )^4}{\\left( \\frac{1}{n} \\sum_{i=1}^n
+                \\left( x_i-\\bar{x} \\right )^2\\right )^2} - 3
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    fisher : bool, optional
+        If True, Fisher's definition is used (normal ==> 0.0). If False,
+        Pearson's definition is used (normal ==> 3.0).
+    bias : bool, optional
+        If False, then the calculations are corrected for statistical bias.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels,)
+        kurtosis of each channel.
+    """
+    kurtosis_ = sp_kurtosis(x, axis=axis, fisher=fisher, bias=bias,
+                            nan_policy=nan_policy)
+    return check_output(kurtosis_, axis=axis, keepdims=keepdims)
+
+
+def ar(x, order, axis=-1, keepdims=False):
+    """Auto-regressive (linear prediction filter) coefficients.
+
+    .. math::
+        x_n = \\sum_{i=1}^p a_i x_{n-i}
+
+    .. math::
+        \text{AR} = [a_1 \\ldots a_p]
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    order : int
+        Order (p) of the autoregressive linear process.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. If True and
+        ``order`` > 1, the output will have one more dimension than the input.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels, order) or (order, n_channels)
+        The AR coefficients. The shape of the output will be determined by the
+        input format. If x has shape (n_channels, n_samples), then the output
+        shape will be (n_channels, order), otherwise it will be
+        (order, n_channels).
+    """
+
+    R = autocorrelation(x, axis=axis)
+    ar_ = np.apply_along_axis(levinson, axis=axis, arr=R, order=order,
+                              allow_singularity=False)
+    ar_ = flatten_2d(ar_, axis=axis)
+    return check_output(ar_, axis=axis, keepdims=keepdims)
+
+
+def sample_entropy(x, m=2, r=None, delta=1, axis=-1, keepdims=False):
+    """
+    Multiscale sample entropy.
+
+    Parameters
+    ----------
+    x : array
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    m : int, optional
+        Embedding dimension. Default is 2.
+    r : float, optional
+        Tolerance level. Default is 0.2 * np.std(x).
+    delta : int, optional
+        Skipping parameter (downsampling factor). Default is 1, which
+        corresponds to no skipping.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. That is, if the
+        input is 2D, the output will be 2D even if a dimension collapses to
+        size 1.
+
+    Returns
+    ------
+    y : array
+        Sample entropy of each channel.
+
+    References
+    ----------
+    .. [1] J. S. Richman, J. R. Moorman, "Physiological time-series analysis
+        using approximate entropy and sample entropy," American Journal of
+        Physiology-Heart and Circulatory Physiology, vol. 278, no. 6, pp.
+        H2039--H2049, 2000.
+    """
+    if r is None:
+        r = 0.2 * np.std(x)
+
+    samp_en = np.apply_along_axis(sample_entropy_1d, axis=axis, arr=x, m=m, r=r,
+                                  delta=delta)
+
+    return check_output(samp_en, axis=axis, keepdims=keepdims)
+
+
+def hjorth(x, axis=-1, keepdims=False):
+    """Computes the Hjorth parameters.
+
+    The following Hjorth parameters are computed: Activity, Mobility, and
+    Complexity.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. If True, the
+        output will have one more dimension than the input.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels, 3) or (3, n_channels)
+        The Hjorth parameters are returned in the following order: Activity,
+        Mobility, and Complexity. The shape of the output will be determined by
+        the input format. If x has shape (n_channels, n_samples), then the
+        output shape will be (n_channels, 3), otherwise it will be
+        (3, n_channels).
+
+    References
+    ----------
+    .. [1] B. Hjorth, "EEG analysis based on time domain properties,"
+      Electroencephalography and clinical neurophysiology, vol. 29, no. 3, pp.
+      306-310, 1970.
+    """
+    activity = [np.var(x_, axis=axis, keepdims=True).reshape(-1,) for x_ in
+                [np.diff(x, i, axis=axis) for i in range(3)]]
+    mobility = [np.sqrt(activity[i+1] / activity[i]).reshape(-1,) for i in
+                range(2)]
+    complexity = mobility[1] / mobility[0]
+    hjorth_ = np.concatenate((activity[0], mobility[0], complexity))
+    return check_output(hjorth_, axis, keepdims=keepdims)
+
+
+def histogram(x, bins, axis=-1, keepdims=False):
+    """Computes the histogram of the signal.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input data. Use the ``axis`` argument to specify the "time axis".
+    bins : int or sequence of scalars or str, optional
+        If ``bins`` is an int, it defines the number of equal-width
+        bins in the given range. If ``bins`` is a sequence, it defines the bin
+        edges, including the rightmost edge, allowing for non-uniform bin
+        widths.
+    axis : int, optional
+        The axis to compute the feature along. By default, it is computed along
+        rows, so the input is assumed to be shape (n_channels, n_samples).
+    keepdims : bool, optional
+        Whether or not to keep the dimensionality of the input. If True, the
+        output will have one more dimension than the input.
+
+    Returns
+    -------
+    y : ndarray, shape (n_channels, bins) or (bins, n_channels)
+        The shape of the output will be determined by the input format. If x
+        has shape (n_channels, n_samples), then the output shape will be
+        (n_channels, bins), otherwise it will be (bins, n_channels).
+    """
+    # numpy histogram returns counts and edges but we only need the counts
+    hist = np.apply_along_axis(lambda x: np.histogram(x, bins)[0], axis=axis,
+                               arr=x)
+    hist = flatten_2d(hist, axis=axis)
+    return check_output(hist, axis=axis, keepdims=keepdims)
