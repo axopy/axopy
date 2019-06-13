@@ -25,12 +25,13 @@ class Oscilloscope(Task):
         etc.).
     """
 
-    def __init__(self, pipeline=None):
+    def __init__(self, pipeline=None, channel_names=None):
         super(Oscilloscope, self).__init__()
         self.pipeline = pipeline
+        self.channel_names = channel_names
 
     def prepare_graphics(self, container):
-        self.scope = SignalWidget()
+        self.scope = SignalWidget(channel_names=self.channel_names)
         container.set_widget(self.scope)
 
     def prepare_daq(self, daqstream):

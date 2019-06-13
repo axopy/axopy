@@ -13,13 +13,14 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
     widget, and all channels share y-axis zoom.
     """
 
-    def __init__(self):
+    def __init__(self, channel_names=None):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
         self.plot_data_items = []
 
         self.n_channels = 0
+        self.channel_names = channel_names
 
         self.setBackground(None)
 
@@ -38,6 +39,10 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
         nch, nsamp = data.shape
         if nch != self.n_channels:
             self.n_channels = nch
+
+            if self.channel_names is None:
+                self.channel_names = range(self.n_channels)
+
             self._update_num_channels()
 
         for i, pdi in enumerate(self.plot_data_items):
@@ -49,7 +54,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
         self.plot_items = []
         self.plot_data_items = []
         pen = _MultiPen(self.n_channels)
-        for i in range(self.n_channels):
+        for i, name in zip(range(self.n_channels), self.channel_names):
             plot_item = self.addPlot(row=i, col=0)
             plot_data_item = plot_item.plot(pen=pen.get_pen(i), antialias=True)
 
@@ -59,7 +64,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
             plot_item.setMenuEnabled(False)
 
             if self.n_channels > 1:
-                label = "ch {}".format(i)
+                label = "{}".format(name)
                 plot_item.setLabels(left=label)
 
             if i > 0:

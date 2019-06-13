@@ -41,19 +41,23 @@ from axopy.pipeline import Block
 
 
 def rainbow():
-    dev = NoiseGenerator(rate=2000, num_channels=16, read_size=200)
-    run(dev)
+    num_channels = 16
+    dev = NoiseGenerator(rate=2000, num_channels=num_channels, read_size=200)
+    channel_names = ['Ch ' + str(i) for i in range(1, num_channels+1)]
+    run(dev, channel_names=channel_names)
 
 
 def keyboard():
-    dev = Keyboard()
+    keys = list('wasd')
+    dev = Keyboard(keys=keys)
     # need a windower to show something interesting in the oscilloscope
     pipeline = Pipeline([Windower(10)])
-    run(dev, pipeline)
+    run(dev, pipeline, channel_names=keys)
 
 
 def keystick():
-    dev = Keyboard(rate=20, keys=list('wasd'))
+    keys = list('wasd')
+    dev = Keyboard(rate=20, keys=keys)
     pipeline = Pipeline([
         # window to average over
         Windower(10),
@@ -62,10 +66,11 @@ def keystick():
         # window to show in the oscilloscope
         Windower(60)
     ])
-    run(dev, pipeline)
+    run(dev, pipeline, keys)
 
 
 def emgsim():
+    keys = list('wasd')
     # sampling rate of the simulated EMG data
     fs = 2000
     # update rate of the generated data
@@ -89,31 +94,38 @@ def emgsim():
         Windower(osc_view_time * update_rate * samp_per_input),
     ])
 
-    dev = Keyboard(rate=update_rate, keys=list('wasd'))
-    run(dev, pipeline)
+    dev = Keyboard(rate=update_rate, keys=keys)
+    run(dev, pipeline, keys)
 
 def trignoemg():
     from pytrigno import TrignoEMG
-    dev = TrignoEMG(channels=range(16), samples_per_read=200,
+    num_channels = 16
+    dev = TrignoEMG(channels=range(num_channels), samples_per_read=200,
                     units='normalized')
     pipeline = Pipeline([Callable(lambda x: 5*x), Windower(20000)])
-    run(dev, pipeline)
+    channel_names = ['EMG ' + str(i) for i in range(1, num_channels+1)]
+    run(dev, pipeline, channel_names)
 
 
 def trignoacc():
     from pytrigno import TrignoACC
-    dev = TrignoACC(channels=range(16), samples_per_read=12)
+    n_channels = 16
+    dev = TrignoACC(channels=range(n_channels), samples_per_read=12)
     pipeline = Pipeline([Windower(1200)])
-    run(dev, pipeline)
+    channel_names = ['Acc ' + str(i) + '_' + axis \
+                     for i in range(1, n_channels+1) for axis in ['x','y','z']]
+    run(dev, pipeline, channel_names)
 
 
 def myoemg():
     import myo
     from myo import MyoDaqEMG
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
-    dev = MyoDaqEMG(channels=range(8), samples_per_read=20)
+    n_channels = 8
+    dev = MyoDaqEMG(channels=range(n_channels), samples_per_read=20)
     pipeline = Pipeline([Callable(lambda x: 0.01*x), Windower(2000)])
-    run(dev, pipeline)
+    channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
+    run(dev, pipeline, channel_names)
 
 
 def myoimu():
@@ -122,14 +134,17 @@ def myoimu():
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
     dev = MyoDaqIMU(samples_per_read=5)
     pipeline = Pipeline([Windower(500)])
-    run(dev, pipeline)
+    channel_names = list('wxyz')
+    run(dev, pipeline, channel_namesexi)
 
 
 def cyberglove():
     from cyberglove import CyberGlove
-    dev = CyberGlove(18, 'COM3', samples_per_read=1,
+    n_df = 18
+    dev = CyberGlove(n_df, 'COM3', samples_per_read=1,
                      cal_path=r"C:\Users\nak142\tmp\glove.cal")
     pipeline = Pipeline([Ensure2D('col'), Windower(1000)])
+    channel_names = ['DOF ' + str(i) for i in range(1, n_df+1)]
     run(dev, pipeline)
 
 def mouse():
@@ -140,12 +155,14 @@ def mouse():
         # window to show in the oscilloscope
         Windower(40)
     ])
-    run(dev, pipeline)
+    channel_names = list('xy')
+    run(dev, pipeline, channel_names)
 
 
-def run(dev, pipeline=None):
+def run(dev, pipeline=None, channel_names=None):
     # run an experiment with just an oscilloscope task
-    Experiment(daq=dev, subject='test').run(Oscilloscope(pipeline))
+    Experiment(daq=dev, subject='test').run(Oscilloscope(
+        pipeline, channel_names))
 
 
 if __name__ == '__main__':
