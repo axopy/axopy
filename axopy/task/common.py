@@ -2,7 +2,6 @@
 
 from axopy.task import Task
 from axopy import util
-from axopy.messaging import Transmitter
 from axopy.gui.graph import SignalWidget
 
 
