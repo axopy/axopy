@@ -4,7 +4,7 @@ from PyQt5 import QtCore, QtWidgets
 import numpy as np
 from axopy import util
 from axopy.gui.main import _MainWindow, Container, _SessionConfig
-from axopy.gui.graph import SignalWidget
+from axopy.gui.graph import SignalWidget, BarWidget
 from axopy.gui.canvas import Canvas, Circle, Cross, Line, Text, Rectangle
 
 
@@ -114,6 +114,19 @@ def test_signal_widget():
     # adjusts to plotting data with different shape
     w.plot(np.random.randn(10, 1000))
     assert w.n_channels == 10
+
+
+def test_bar_widget():
+    w = BarWidget()
+
+    w.plot(np.random.randn(4, 3))
+    assert w.n_channels == 4
+    assert w.groups == 3
+
+    # adjusts to plotting data with different shape
+    w.plot(np.random.randn(10, 5))
+    assert w.n_channels == 10
+    assert w.groups == 5
 
 
 def test_canvas():

@@ -1,7 +1,7 @@
 """
 Widgets for plotting multi-channel signals.
 """
-
+import numpy as np
 import pyqtgraph
 
 
@@ -75,6 +75,80 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
 
         self.plot_items[0].disableAutoRange(pyqtgraph.ViewBox.YAxis)
         self.plot_items[0].setYRange(-1, 1)
+
+
+class BarWidget(pyqtgraph.PlotWidget):
+    """
+    Bar graph widget for displaying real-time signals.
+
+    Intended for multi-group viewing, each group can optionally use a
+    different color.
+    """
+
+    def __init__(self, channel_names=None, group_colors=None):
+        super(BarWidget, self).__init__()
+
+        self.channel_names = channel_names
+        self.group_colors = group_colors
+
+        self.plot_items = None
+        self.plot_data_items = None
+
+        self.n_channels = 0
+        self.n_groups = 0
+
+        self.showGrid(y=True, alpha=0.5)
+        self.setBackground(None)  # White background
+        self.setMouseEnabled(x=False)
+        self.setMenuEnabled(False)
+
+        self.setBackground(None)
+
+    def plot(self, data):
+        """
+        Adds a data sample to the widget.
+
+        Parameters
+        ----------
+        data : ndarray, shape = (n_channels, n_groups)
+            Data sample to show on the graph.
+        """
+        nch, ngr = data.shape
+        if nch != self.n_channels or ngr != self.n_groups:
+            self.n_channels = nch
+            self.n_groups = ngr
+
+            if self.channel_names is None:
+                self.channel_names = range(self.n_channels)
+
+            if self.group_colors is None:
+                self.group_colors = [0.5] * self.n_groups  # default gray
+
+            self._update_num_channels()
+
+        for i, pdi in enumerate(self.plot_items):
+            pdi.setOpts(height=data[:, i])
+
+    def _update_num_channels(self):
+        self.clear()
+
+        self.plot_items = []
+        self.plot_data_items = []
+        for i, color in zip(range(self.n_groups), self.group_colors):
+            width = 1./(self.n_groups+1)
+            x = np.arange(self.n_channels) + (i - self.n_groups/2 + 0.5)*width
+            plot_item = pyqtgraph.BarGraphItem(x=x, height=0, width=width,
+                                               brush=color, pen='k')
+
+            self.plot_items.append(plot_item)
+            self.addItem(plot_item)
+
+        self.disableAutoRange(pyqtgraph.ViewBox.YAxis)
+        self.setYRange(-1, 1)
+
+        ax = self.getAxis('bottom')
+        x_ticks = [(i, name) for i, name in enumerate(self.channel_names)]
+        ax.setTicks([x_ticks])
 
 
 class _MultiPen(object):
