@@ -135,7 +135,7 @@ def myoimu():
     dev = MyoDaqIMU(samples_per_read=5)
     pipeline = Pipeline([Windower(500)])
     channel_names = list('wxyz')
-    run(dev, pipeline, channel_namesexi)
+    run(dev, pipeline, channel_names)
 
 
 def cyberglove():
@@ -143,9 +143,9 @@ def cyberglove():
     n_df = 18
     dev = CyberGlove(n_df, 'COM3', samples_per_read=1,
                      cal_path=r"C:\Users\nak142\tmp\glove.cal")
-    pipeline = Pipeline([Ensure2D('col'), Windower(1000)])
+    pipeline = Pipeline([Ensure2D('row'), Windower(1000)])
     channel_names = ['DOF ' + str(i) for i in range(1, n_df+1)]
-    run(dev, pipeline)
+    run(dev, pipeline, channel_names)
 
 def mouse():
     dev = Mouse(rate=20)
