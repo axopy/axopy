@@ -196,9 +196,9 @@ class TaskWriter(object):
         self.trials.write(trial.attrs)
 
         ind = self.trials.df.index[-1]
-        for name, array, dtype in trial.arrays.items():
+        for name, array in trial.arrays.items():
             path = _array_path(self.root, name)
-            write_hdf5(path, array.data, dataset=str(ind), dtype=dtype)
+            write_hdf5(path, array.data, dataset=str(ind), dtype=array.dtype)
             array.clear()
 
     def pickle(self, obj, name):
