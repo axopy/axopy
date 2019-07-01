@@ -154,6 +154,8 @@ class Array(object):
         to :meth:`stack` is used for initialization.
     stack_axis : int, optional
         Axis to stack the data along.
+    dtype : str, optional
+        Array data type. Default is 'f'.
 
     Attributes
     ----------
@@ -163,9 +165,10 @@ class Array(object):
 
     _stack_funcs = {0: numpy.vstack, 1: numpy.hstack, 2: numpy.dstack}
 
-    def __init__(self, data=None, stack_axis=1):
+    def __init__(self, data=None, stack_axis=1, dtype='f'):
         self.data = data
         self.stack_axis = stack_axis
+        self.dtype = dtype
 
     def stack(self, data):
         """Stack new data onto the array.
