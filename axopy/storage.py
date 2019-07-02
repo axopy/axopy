@@ -198,7 +198,7 @@ class TaskWriter(object):
         ind = self.trials.df.index[-1]
         for name, array in trial.arrays.items():
             path = _array_path(self.root, name)
-            write_hdf5(path, array.data, dataset=str(ind))
+            write_hdf5(path, array.data, dataset=str(ind), dtype=array.dtype)
             array.clear()
 
     def pickle(self, obj, name):
@@ -353,7 +353,7 @@ def read_hdf5(filepath, dataset='data'):
         return f.get('/{}'.format(dataset))[:]
 
 
-def write_hdf5(filepath, data, dataset='data'):
+def write_hdf5(filepath, data, dataset='data', dtype='f'):
     """Write data to an hdf5 file.
 
     The data is written to a new file with a single dataset called "data" in
@@ -370,9 +370,11 @@ def write_hdf5(filepath, data, dataset='data'):
         resulting dataset in storage is determined by this array directly.
     dataset : str, optional
         Name of the dataset to create. Default is 'data'.
+    dtype : str, optional
+        Array data type. Default is 'f'.
     """
     with h5py.File(filepath, 'a') as f:
-        f.create_dataset(dataset, data=data)
+        f.create_dataset(dataset, data=data, dtype=dtype)
 
 
 def storage_to_zip(path, outfile=None):
