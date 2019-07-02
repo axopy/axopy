@@ -1,6 +1,6 @@
 import time
 
-from can.interfaces.pcan import PCANBasic as pcan
+from can.interfaces.pcan.basic import PCAN_USBBUS1, PCAN_BAUD_1M, PCAN_TYPE_ISA
 from robolimb import RoboLimbCAN
 
 from utils import StoppableThread
@@ -27,9 +27,9 @@ class RoboLimbGrip(RoboLimbCAN):
     def __init__(self,
                  def_vel=297,
                  read_rate=0.02,
-                 channel=pcan.PCAN_USBBUS1,
-                 b_rate=pcan.PCAN_BAUD_1M,
-                 hw_type=pcan.PCAN_TYPE_ISA,
+                 channel=PCAN_USBBUS1,
+                 b_rate=PCAN_BAUD_1M,
+                 hw_type=PCAN_TYPE_ISA,
                  io_port=0x3BC,
                  interrupt=3):
         super().__init__(
