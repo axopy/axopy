@@ -22,9 +22,13 @@ trignoemg
 trignoacc
     Delsys Trigno system ACC channels. Requires ``pytrigno``.
 myoemg
-    Myo armband EMG channels. Requires ``myo-python``.
+    Myo armband EMG channels. Requires ``myo-python`` and ``pydaqs``.
 myoimu
-    Myo armband IMU channels. Requires ``myo-python``.
+    Myo armband IMU channels. Requires ``myo-python`` and ``pydaqs``.
+nidaq
+    NIDAQ device. Requires ``nidaqmx`` and ``pydaqs``.
+blackrock
+    Blackrock Neuroport device. Requires ``cbpy`` and ``pydaqs``.
 cyberglove
     Cyberglove Systems data glove. Requires ``cyberglove``.
 """
@@ -102,7 +106,9 @@ def trignoemg():
     num_channels = 16
     dev = TrignoEMG(channels=range(num_channels), samples_per_read=200,
                     units='normalized')
-    pipeline = Pipeline([Callable(lambda x: 5*x), Windower(20000)])
+    pipeline = Pipeline([Ensure2D(orientation='row'),
+                         Callable(lambda x: 5*x),
+                         Windower(20000)])
     channel_names = ['EMG ' + str(i) for i in range(1, num_channels+1)]
     run(dev, pipeline, channel_names)
 
@@ -119,22 +125,42 @@ def trignoacc():
 
 def myoemg():
     import myo
-    from myo import MyoDaqEMG
+    from pydaqs.myo import MyoEMG
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
     n_channels = 8
     dev = MyoDaqEMG(channels=range(n_channels), samples_per_read=20)
-    pipeline = Pipeline([Callable(lambda x: 0.01*x), Windower(2000)])
+    pipeline = Pipeline([Ensure2D(orientation='row'),
+                         Callable(lambda x: 0.01*x),
+                         Windower(2000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
     run(dev, pipeline, channel_names)
 
 
 def myoimu():
     import myo
-    from myo import MyoDaqIMU
+    from pydaqs.myo import MyoIMU
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
     dev = MyoDaqIMU(samples_per_read=5)
     pipeline = Pipeline([Windower(500)])
     channel_names = list('wxyz')
+    run(dev, pipeline, channel_names)
+
+
+def nidaq():
+    from pydaqs.nidaq import Nidaq
+    n_channels = 1
+    dev = Nidaq(channels=range(n_channels), samples_per_read=200, rate=2000)
+    pipeline = Pipeline([Ensure2D(orientation='row'), Windower(20000)])
+    channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
+    run(dev, pipeline, channel_names)
+
+
+def blackrock():
+    from pydaqs.blackrock import Blackrock
+    n_channels = 2
+    dev = Blackrock(channels=range(n_channels), samples_per_read=200)
+    pipeline = Pipeline([Ensure2D(orientation='row'), Windower(20000)])
+    channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
     run(dev, pipeline, channel_names)
 
 
@@ -146,6 +172,7 @@ def cyberglove():
     pipeline = Pipeline([Ensure2D('row'), Windower(1000)])
     channel_names = ['DOF ' + str(i) for i in range(1, n_df+1)]
     run(dev, pipeline, channel_names)
+
 
 def mouse():
     dev = Mouse(rate=20)
@@ -176,6 +203,8 @@ if __name__ == '__main__':
         'trignoacc': trignoacc,
         'myoemg': myoemg,
         'myoimu': myoimu,
+        'nidaq': nidaq,
+        'blackrock': blackrock,
         'cyberglove': cyberglove
     }
 
