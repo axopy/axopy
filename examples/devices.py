@@ -128,7 +128,7 @@ def myoemg():
     from pydaqs.myo import MyoEMG
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
     n_channels = 8
-    dev = MyoDaqEMG(channels=range(n_channels), samples_per_read=20)
+    dev = MyoEMG(channels=range(n_channels), samples_per_read=20)
     pipeline = Pipeline([Ensure2D(orientation='row'),
                          Callable(lambda x: 0.01*x),
                          Windower(2000)])
@@ -140,7 +140,7 @@ def myoimu():
     import myo
     from pydaqs.myo import MyoIMU
     myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
-    dev = MyoDaqIMU(samples_per_read=5)
+    dev = MyoIMU(samples_per_read=5)
     pipeline = Pipeline([Windower(500)])
     channel_names = list('wxyz')
     run(dev, pipeline, channel_names)
