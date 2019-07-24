@@ -332,9 +332,8 @@ class FeatureExtractor(Block):
     named_features : dict
         Dictionary of features accessed by name.
     feature_indices : dict
-        Dictionary of (start, stop) tuples indicating the bounds of each
-        feature, accessed by name. Will be empty until after data is first
-        passed through.
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name. Will be empty until after data is first passed through.
     """
 
     def __init__(self, features, hooks=None):
@@ -377,7 +376,7 @@ class FeatureExtractor(Block):
         for i, (name, feature) in enumerate(self.features):
             if allocating:
                 x = feature.compute(data)
-                self.feature_indices[name] = (ind, ind+x.size)
+                self.feature_indices[name] = tuple(range(ind, ind + x.size))
                 ind += x.size
 
                 if self._output is None:
@@ -385,8 +384,7 @@ class FeatureExtractor(Block):
                 else:
                     self._output = np.hstack([self._output, x])
             else:
-                self._output[self.feature_indices[name][0]:
-                             self.feature_indices[name][1]] = \
+                self._output[list(self.feature_indices[name])] = \
                     feature.compute(data)
 
         return self._output
