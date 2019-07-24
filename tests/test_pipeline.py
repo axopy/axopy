@@ -487,6 +487,9 @@ def test_fextractor_simple():
     assert ex.feature_indices['0'] == (0, 1)
     assert ex.feature_indices['1'] == (2, 3)
 
+    assert ex.channel_indices['0'] == (0, 2)
+    assert ex.channel_indices['1'] == (1, 3)
+
     assert ex.named_features['0'] is f0
 
 
