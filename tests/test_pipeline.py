@@ -6,6 +6,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal)
 
 import axopy.pipeline as pipeline
+from axopy.features.classes import _FeatureBase
 
 np.random.seed(12345)
 
@@ -361,8 +362,9 @@ def test_callable_block_with_args():
 # axopy.pipeline.common tests
 #
 
-class _NthSampleFeature(object):
+class _NthSampleFeature(_FeatureBase):
     def __init__(self, ind, channel=None):
+        super().__init__(features_per_channel=1)
         self.ind = ind
         self.channel = channel
 
