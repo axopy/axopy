@@ -40,6 +40,7 @@ from axopy.task import Oscilloscope
 from axopy.experiment import Experiment
 from axopy.daq import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D
+from axopy.gui.main import get_qtapp
 
 from axopy.pipeline import Block
 
@@ -108,7 +109,7 @@ def trignoemg():
                     units='normalized')
     pipeline = Pipeline([Ensure2D(orientation='row'),
                          Callable(lambda x: 5*x),
-                         Windower(20000)])
+                         Windower(2000)])
     channel_names = ['EMG ' + str(i) for i in range(1, num_channels+1)]
     run(dev, pipeline, channel_names)
 
@@ -157,11 +158,12 @@ def nidaq():
 
 def blackrock():
     from pydaqs.blackrock import Blackrock
-    n_channels = 2
-    dev = Blackrock(channels=range(n_channels), samples_per_read=200)
-    pipeline = Pipeline([Ensure2D(orientation='row'), Windower(20000)])
+    n_channels = 1
+    app = get_qtapp()
+    dev = Blackrock(channels=range(1, n_channels + 1), samples_per_read=100)
+    pipeline = Pipeline([Windower(5000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline=pipeline, channel_names=channel_names)
 
 
 def cyberglove():
