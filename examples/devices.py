@@ -103,20 +103,21 @@ def emgsim():
 
 def trignoemg():
     from pytrigno import TrignoEMG
-    num_channels = 16
-    dev = TrignoEMG(channels=range(num_channels), samples_per_read=200,
-                    units='normalized')
+    n_channels = 16
+    dev = TrignoEMG(channels=range(1, n_channels + 1), samples_per_read=200,
+                    zero_based=False, units='normalized')
     pipeline = Pipeline([Ensure2D(orientation='row'),
                          Callable(lambda x: 5*x),
                          Windower(20000)])
-    channel_names = ['EMG ' + str(i) for i in range(1, num_channels+1)]
+    channel_names = ['EMG ' + str(i) for i in range(1, n_channels + 1)]
     run(dev, pipeline, channel_names)
 
 
 def trignoacc():
     from pytrigno import TrignoACC
-    n_channels = 16
-    dev = TrignoACC(channels=range(n_channels), samples_per_read=12)
+    n_channels = 2
+    dev = TrignoACC(channels=range(n_channels), samples_per_read=12,
+                    zero_based=True)
     pipeline = Pipeline([Windower(1200)])
     channel_names = ['Acc ' + str(i) + '_' + axis \
                      for i in range(1, n_channels+1) for axis in ['x','y','z']]

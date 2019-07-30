@@ -326,22 +326,28 @@ class FeatureExtractor(Block):
     features : list
         List of (name, feature) tuples (i.e. implementing a ``compute``
         method).
+    channel_names : list, optional
+        List of strings with channel names. By default, channel names are
+        assigned numbers in increasing order using 0-based indexing.
 
     Attributes
     ----------
     named_features : dict
         Dictionary of features accessed by name.
     feature_indices : dict
-        Dictionary of (start, stop) tuples indicating the bounds of each
-        feature, accessed by name. Will be empty until after data is first
-        passed through.
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name. Will be empty until after data is first passed through.
     """
 
-    def __init__(self, features, hooks=None):
+    def __init__(self, features, n_channels=None, channel_names=None,
+                 hooks=None):
         super(FeatureExtractor, self).__init__(hooks=hooks)
         self.features = features
+        self.n_channels = n_channels
+        self.channel_names = channel_names
 
         self.feature_indices = {}
+        self.channel_indices = {}
         self._output = None
 
     @property
@@ -373,11 +379,29 @@ class FeatureExtractor(Block):
         out : array, shape (n_features,)
         """
         allocating = (self._output is None)
+        # Set channel_indices attribute
+        if allocating:
+            if self.channel_names is None:
+                channel_names = [str(c) for c in range(data.shape[0])]
+            else:
+                if len(self.channel_names) != data.shape[0]:
+                    raise ValueError("Number of channel names must equal " + \
+                                     "number of channels.")
+                channel_names = self.channel_names
+
+            fpc = [feat[1].features_per_channel for feat in self.features]
+            for c_idx, channel in enumerate(channel_names):
+                c_ind, ind = [], 0
+                for elem in fpc:
+                    c_ind.extend(list(np.arange(ind, ind + elem) + c_idx*elem))
+                    ind += elem * data.shape[0]
+                self.channel_indices[channel] = tuple(c_ind)
+
         ind = 0
         for i, (name, feature) in enumerate(self.features):
             if allocating:
                 x = feature.compute(data)
-                self.feature_indices[name] = (ind, ind+x.size)
+                self.feature_indices[name] = tuple(range(ind, ind + x.size))
                 ind += x.size
 
                 if self._output is None:
@@ -385,8 +409,7 @@ class FeatureExtractor(Block):
                 else:
                     self._output = np.hstack([self._output, x])
             else:
-                self._output[self.feature_indices[name][0]:
-                             self.feature_indices[name][1]] = \
+                self._output[list(self.feature_indices[name])] = \
                     feature.compute(data)
 
         return self._output

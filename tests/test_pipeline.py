@@ -483,10 +483,12 @@ def test_fextractor_simple():
                      [5, 6, 7, 8, 9]])
 
     assert_array_equal(np.array([0, 5, 1, 6]), ex.process(data))
-    assert_array_equal(np.array([0, 5, 1, 6]), ex.process(data))
 
-    assert ex.feature_indices['0'] == (0, 2)
-    assert ex.feature_indices['1'] == (2, 4)
+    assert ex.feature_indices['0'] == (0, 1)
+    assert ex.feature_indices['1'] == (2, 3)
+
+    assert ex.channel_indices['0'] == (0, 2)
+    assert ex.channel_indices['1'] == (1, 3)
 
     assert ex.named_features['0'] is f0
 
