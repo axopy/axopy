@@ -326,9 +326,14 @@ class FeatureExtractor(Block):
     features : list
         List of (name, feature) tuples (i.e. implementing a ``compute``
         method).
+    n_channels : int, optional
+        Number of channels.
     channel_names : list, optional
         List of strings with channel names. By default, channel names are
         assigned numbers in increasing order using 0-based indexing.
+    hooks : list, optional, default=None
+        List of callables (callbacks) to run when after the block's `process`
+        method is called.
 
     Attributes
     ----------
@@ -336,23 +341,32 @@ class FeatureExtractor(Block):
         Dictionary of features accessed by name.
     feature_indices : dict
         Dictionary of tuples indicating the indices of each feature, accessed
-        by name. Will be empty until after data is first passed through.
+        by name. If none of ``n_channels`` or ``channel_names`` is provided,
+        it will be empty until after data is first passed through.
+    channel_indices : dict
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name. If none of ``n_channels`` or ``channel_names`` is provided,
+        it will be empty until after data is first passed through.
     """
 
     def __init__(self, features, n_channels=None, channel_names=None,
                  hooks=None):
         super(FeatureExtractor, self).__init__(hooks=hooks)
         self.features = features
-        self.n_channels = n_channels
-        self.channel_names = channel_names
+        self.n_channels, self.channel_names = self._check_channels(
+            n_channels, channel_names)
 
-        self.feature_indices = {}
-        self.channel_indices = {}
+        self.feature_indices, self.channel_indices = self._make_indices()
         self._output = None
 
     @property
     def named_features(self):
         return dict(self.features)
+
+    @property
+    def n_features_total(self):
+        fpc = [feature.features_per_channel for (_, feature) in self.features]
+        return np.array(fpc).sum() * self.n_channels
 
     def clear(self):
         """Clears the output array.
@@ -379,47 +393,72 @@ class FeatureExtractor(Block):
         -------
         out : array, shape (n_features,)
         """
-        allocating = (self._output is None)
-        # Set channel_indices attribute
-        if allocating:
-            if self.channel_names is None:
-                channel_names = [str(c) for c in range(data.shape[0])]
-            else:
-                if len(self.channel_names) != data.shape[0]:
-                    raise ValueError("Number of channel names must equal " + \
-                                     "number of channels.")
-                channel_names = self.channel_names
+        if (self._output is None):
+            n_channels = data.shape[0]
+            self.n_channels, self.channel_names = self._check_channels(
+                n_channels=n_channels)
+            self.feature_indices, self.channel_indices = self._make_indices()
+            self._output = np.zeros((self.n_features_total,))
 
-            if self.n_channels is None:
-                n_channels = data.shape[0]
-            else:
-                if self.n_channels != data.shape[0]:
-                    raise ValueError("Number of channels in the data is " + \
-                                     "different to the one provided.")
-                n_channels = self.n_chanels
-
-            fpc = [feat[1].features_per_channel for feat in self.features]
-            total_n_features = np.array(fpc).sum() * n_channels
-            for c_idx, channel in enumerate(channel_names):
-                self.channel_indices[channel] = tuple(range(
-                    c_idx, total_n_features, n_channels))
-
-        ind = 0
         for i, (name, feature) in enumerate(self.features):
-            if allocating:
-                x = feature.compute(data)
-                self.feature_indices[name] = tuple(range(ind, ind + x.size))
-                ind += x.size
-
-                if self._output is None:
-                    self._output = x
-                else:
-                    self._output = np.hstack([self._output, x])
-            else:
-                self._output[list(self.feature_indices[name])] = \
-                    feature.compute(data)
+            self._output[list(self.feature_indices[name])] = \
+                feature.compute(data)
 
         return self._output
+
+    def _check_channels(self, n_channels=None, channel_names=None):
+        """Performs checks for arguments ``n_channels`` and ``channel_names``.
+
+        Parameters
+        ----------
+        n_channels : int
+            Number of channels.
+
+        channel_names : list
+            Channel names.
+
+        Returns
+        -------
+        n_channels : int
+            Number of channels.
+
+        channel_names : list
+            Channel names.
+        """
+        if channel_names is None:
+            if n_channels is None:
+                pass
+            else:
+                channel_names = [str(c) for c in range(n_channels)]
+        else:
+            if n_channels is None:
+                n_channels = len(channel_names)
+            else:
+                if n_channels != len(channel_names):
+                    raise ValueError("Inconsistent number of channels and " + \
+                                     "channel names.")
+
+        return (n_channels, channel_names)
+
+    def _make_indices(self):
+        if self.n_channels is None and self.channel_names is None:
+            feature_indices = {}
+            channel_indices = {}
+        else:
+            feature_indices = {}
+            ind = 0
+            for (name, feature) in self.features:
+                feature_indices[name] = tuple(range(
+                    ind, ind + self.n_channels * feature.features_per_channel))
+                ind += self.n_channels * feature.features_per_channel
+
+            channel_indices = {}
+
+            for c_idx, channel in enumerate(self.channel_names):
+                channel_indices[channel] = tuple(range(
+                    c_idx, self.n_features_total, self.n_channels))
+
+        return (feature_indices, channel_indices)
 
 
 class Estimator(Block):

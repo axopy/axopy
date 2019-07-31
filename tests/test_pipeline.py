@@ -375,6 +375,15 @@ class _NthSampleFeature(_FeatureBase):
             return data[self.channel, self.ind]
 
 
+class _RandomMultipleFeature(_FeatureBase):
+    def __init__(self, features_per_channel):
+        super().__init__(features_per_channel=features_per_channel)
+        self.features_per_channel = features_per_channel
+
+    def compute(self, data):
+        return np.random.randn(self.features_per_channel * data.shape[0],)
+
+
 def _window_generator(data, length):
     for i in range(0, data.shape[-1], length):
         yield data[:, i:i+length]
@@ -493,14 +502,6 @@ def test_fextractor_simple():
     assert ex.named_features['0'] is f0
 
 
-def test_fextractor_unequal_feature_sizes():
-    ex = pipeline.FeatureExtractor([('0', _NthSampleFeature(0)),
-                                    ('1', _NthSampleFeature(2, channel=1))])
-    data = np.array([[0, 1, 2, 3, 4],
-                     [5, 6, 7, 8, 9]])
-    assert_array_equal(np.array([0, 5, 7]), ex.process(data))
-
-
 def test_fextractor_clear():
     ex = pipeline.FeatureExtractor([('0', _NthSampleFeature(0)),
                                     ('1', _NthSampleFeature(2))])
@@ -511,6 +512,43 @@ def test_fextractor_clear():
     assert_array_equal(np.array([0, 5, 2, 7]), ex.process(data_2ch))
     ex.clear()
     assert_array_equal(np.array([0, 2]), ex.process(data_1ch))
+
+
+def test_fextractor_indices_with_names():
+    ex = pipeline.FeatureExtractor(
+        [('rand', _RandomMultipleFeature(features_per_channel=2)),
+         ('0', _NthSampleFeature(0))],
+         channel_names=['channel_1', 'channel_2'])
+    assert ex.channel_indices == {'channel_1' : (0,2,4), 'channel_2' : (1,3,5)}
+    assert ex.feature_indices == {'rand' : (0,1,2,3), '0' : (4,5)}
+
+
+def test_fextractor_indices_with_channel_number():
+    ex = pipeline.FeatureExtractor(
+        [('rand', _RandomMultipleFeature(features_per_channel=2)),
+         ('0', _NthSampleFeature(0))],
+         n_channels=2)
+    assert ex.channel_indices == {'0' : (0,2,4), '1' : (1,3,5)}
+    assert ex.feature_indices == {'rand' : (0,1,2,3), '0' : (4,5)}
+
+
+def test_fextractor_indices_no_arguments():
+    ex = pipeline.FeatureExtractor(
+        [('rand', _RandomMultipleFeature(features_per_channel=2)),
+         ('0', _NthSampleFeature(0))])
+    assert ex.channel_indices == {}
+    assert ex.feature_indices == {}
+
+
+def test_fextractor_indices_no_arguments_inferred():
+    ex = pipeline.FeatureExtractor(
+        [('rand', _RandomMultipleFeature(features_per_channel=2)),
+         ('0', _NthSampleFeature(0))])
+    data = np.array([[0, 1, 2, 3, 4],
+                     [5, 6, 7, 8, 9]])
+    ex.process(data)
+    assert ex.channel_indices == {'0' : (0,2,4), '1' : (1,3,5)}
+    assert ex.feature_indices == {'rand' : (0,1,2,3), '0' : (4,5)}
 
 
 def test_ensure2d_bad_orientation():
