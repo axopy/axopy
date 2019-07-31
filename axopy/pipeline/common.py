@@ -361,6 +361,7 @@ class FeatureExtractor(Block):
         way (i.e. the shape of the input array changes).
         """
         self.feature_indices = {}
+        self.channel_indices = {}
         self._output = None
 
     def process(self, data):
@@ -389,13 +390,19 @@ class FeatureExtractor(Block):
                                      "number of channels.")
                 channel_names = self.channel_names
 
+            if self.n_channels is None:
+                n_channels = data.shape[0]
+            else:
+                if self.n_channels != data.shape[0]:
+                    raise ValueError("Number of channels in the data is " + \
+                                     "different to the one provided.")
+                n_channels = self.n_chanels
+
             fpc = [feat[1].features_per_channel for feat in self.features]
+            total_n_features = np.array(fpc).sum() * n_channels
             for c_idx, channel in enumerate(channel_names):
-                c_ind, ind = [], 0
-                for elem in fpc:
-                    c_ind.extend(list(np.arange(ind, ind + elem) + c_idx*elem))
-                    ind += elem * data.shape[0]
-                self.channel_indices[channel] = tuple(c_ind)
+                self.channel_indices[channel] = tuple(range(
+                    c_idx, total_n_features, n_channels))
 
         ind = 0
         for i, (name, feature) in enumerate(self.features):
