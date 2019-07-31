@@ -518,18 +518,21 @@ def test_fextractor_indices_with_names():
     ex = pipeline.FeatureExtractor(
         [('rand', _RandomMultipleFeature(features_per_channel=2)),
          ('0', _NthSampleFeature(0))],
-         channel_names=['channel_1', 'channel_2'])
-    assert ex.channel_indices == {'channel_1' : (0,2,4), 'channel_2' : (1,3,5)}
-    assert ex.feature_indices == {'rand' : (0,1,2,3), '0' : (4,5)}
+        channel_names=['channel_1', 'channel_2'])
+    assert ex.channel_indices == {
+        'channel_1': (
+            0, 2, 4), 'channel_2': (
+            1, 3, 5)}
+    assert ex.feature_indices == {'rand': (0, 1, 2, 3), '0': (4, 5)}
 
 
 def test_fextractor_indices_with_channel_number():
     ex = pipeline.FeatureExtractor(
         [('rand', _RandomMultipleFeature(features_per_channel=2)),
          ('0', _NthSampleFeature(0))],
-         n_channels=2)
-    assert ex.channel_indices == {'0' : (0,2,4), '1' : (1,3,5)}
-    assert ex.feature_indices == {'rand' : (0,1,2,3), '0' : (4,5)}
+        n_channels=2)
+    assert ex.channel_indices == {'0': (0, 2, 4), '1': (1, 3, 5)}
+    assert ex.feature_indices == {'rand': (0, 1, 2, 3), '0': (4, 5)}
 
 
 def test_fextractor_indices_no_arguments():
@@ -547,8 +550,40 @@ def test_fextractor_indices_no_arguments_inferred():
     data = np.array([[0, 1, 2, 3, 4],
                      [5, 6, 7, 8, 9]])
     ex.process(data)
-    assert ex.channel_indices == {'0' : (0,2,4), '1' : (1,3,5)}
-    assert ex.feature_indices == {'rand' : (0,1,2,3), '0' : (4,5)}
+    assert ex.channel_indices == {'0': (0, 2, 4), '1': (1, 3, 5)}
+    assert ex.feature_indices == {'rand': (0, 1, 2, 3), '0': (4, 5)}
+
+
+def test_channel_selector():
+    fe = pipeline.FeatureExtractor(
+        [('0', _NthSampleFeature(0)),
+         ('2', _NthSampleFeature(2))],
+        channel_names=['channel_1', 'channel_2', 'channel_3'])
+    cs = pipeline.ChannelSelector(
+        channels=['channel_1', 'channel_3'],
+        channel_indices=fe.channel_indices)
+    pipe = pipeline.Pipeline([fe, cs])
+    data = np.array([[0, 1, 2, 3, 4],
+                     [5, 6, 7, 8, 9],
+                     [10, 11, 12, 13, 14]])
+    truth = np.array([0, 10, 2, 12])
+    assert_array_equal(truth, pipe.process(data))
+
+
+def test_feature_selector():
+    fe = pipeline.FeatureExtractor(
+        [('N0', _NthSampleFeature(0)),
+         ('N2', _NthSampleFeature(2))],
+        n_channels=3)
+    fs = pipeline.FeatureSelector(
+        features=['N2'],
+        feature_indices=fe.feature_indices)
+    pipe = pipeline.Pipeline([fe, fs])
+    data = np.array([[0, 1, 2, 3, 4],
+                     [5, 6, 7, 8, 9],
+                     [10, 11, 12, 13, 14]])
+    truth = np.array([2, 7, 12])
+    assert_array_equal(truth, pipe.process(data))
 
 
 def test_ensure2d_bad_orientation():

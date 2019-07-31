@@ -435,7 +435,7 @@ class FeatureExtractor(Block):
                 n_channels = len(channel_names)
             else:
                 if n_channels != len(channel_names):
-                    raise ValueError("Inconsistent number of channels and " + \
+                    raise ValueError("Inconsistent number of channels and " +
                                      "channel names.")
 
         return (n_channels, channel_names)
@@ -459,6 +459,80 @@ class FeatureExtractor(Block):
                     c_idx, self.n_features_total, self.n_channels))
 
         return (feature_indices, channel_indices)
+
+
+class Selector(Block):
+    """Selects a subset of features according to some property.
+
+    This block is intended to be used only after a ``FeatureExtractor`` block.
+
+    Parameters
+    ----------
+    items : list
+        List of strings specifying the items to be selected.
+
+    item_indices : dict
+        Dictionary of tuples indicating the indices of each item, accessed
+        by name.
+    """
+
+    def __init__(self, items, item_indices):
+        super(Selector, self).__init__()
+        self.items = items
+        self.item_indices = item_indices
+
+        self._initialize()
+
+    def _initialize(self):
+        """Compute the indices corresponding to the specified items. """
+        self._indices = []
+        for item in self.items:
+            self._indices.extend(self.item_indices[item])
+        self._indices.sort()
+
+    def process(self, data):
+        """Selects the specified items. """
+        return data[self._indices]
+
+
+class ChannelSelector(Selector):
+    """Selects features from specified channels.
+
+    This block is intended to be used only after a ``FeatureExtractor`` block,
+    using the ``channel_indices`` attribute.
+
+    Parameters
+    ----------
+    channels : list
+        List of strings specifying the channels to be selected.
+
+    channel_indices : dict
+        Dictionary of tuples indicating the indices of each channel, accessed
+        by name.
+    """
+
+    def __init__(self, channels, channel_indices):
+        super(ChannelSelector, self).__init__(channels, channel_indices)
+
+
+class FeatureSelector(Selector):
+    """Selects specified features.
+
+    This block is intended to be used only after a ``FeatureExtractor`` block,
+    using the ``feature_indices`` attribute.
+
+    Parameters
+    ----------
+    features : list
+        List of strings specifying the features to be selected.
+
+    feature_indices : dict
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name.
+    """
+
+    def __init__(self, features, feature_indices):
+        super(FeatureSelector, self).__init__(features, feature_indices)
 
 
 class Estimator(Block):
