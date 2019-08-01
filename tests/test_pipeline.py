@@ -520,9 +520,8 @@ def test_fextractor_indices_with_names():
          ('0', _NthSampleFeature(0))],
         channel_names=['channel_1', 'channel_2'])
     assert ex.channel_indices == {
-        'channel_1': (
-            0, 2, 4), 'channel_2': (
-            1, 3, 5)}
+        'channel_1': (0, 2, 4),
+        'channel_2': (1, 3, 5)}
     assert ex.feature_indices == {'rand': (0, 1, 2, 3), '0': (4, 5)}
 
 
