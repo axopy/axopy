@@ -326,27 +326,47 @@ class FeatureExtractor(Block):
     features : list
         List of (name, feature) tuples (i.e. implementing a ``compute``
         method).
+    n_channels : int, optional
+        Number of channels.
+    channel_names : list, optional
+        List of strings with channel names. By default, channel names are
+        assigned numbers in increasing order using 0-based indexing.
+    hooks : list, optional, default=None
+        List of callables (callbacks) to run when after the block's `process`
+        method is called.
 
     Attributes
     ----------
     named_features : dict
         Dictionary of features accessed by name.
     feature_indices : dict
-        Dictionary of (start, stop) tuples indicating the bounds of each
-        feature, accessed by name. Will be empty until after data is first
-        passed through.
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name. If none of ``n_channels`` or ``channel_names`` is provided,
+        it will be empty until after data is first passed through.
+    channel_indices : dict
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name. If none of ``n_channels`` or ``channel_names`` is provided,
+        it will be empty until after data is first passed through.
     """
 
-    def __init__(self, features, hooks=None):
+    def __init__(self, features, n_channels=None, channel_names=None,
+                 hooks=None):
         super(FeatureExtractor, self).__init__(hooks=hooks)
         self.features = features
+        self.n_channels, self.channel_names = self._check_channels(
+            n_channels, channel_names)
 
-        self.feature_indices = {}
+        self.feature_indices, self.channel_indices = self._make_indices()
         self._output = None
 
     @property
     def named_features(self):
         return dict(self.features)
+
+    @property
+    def n_features_total(self):
+        fpc = [feature.features_per_channel for (_, feature) in self.features]
+        return np.array(fpc).sum() * self.n_channels
 
     def clear(self):
         """Clears the output array.
@@ -355,6 +375,7 @@ class FeatureExtractor(Block):
         way (i.e. the shape of the input array changes).
         """
         self.feature_indices = {}
+        self.channel_indices = {}
         self._output = None
 
     def process(self, data):
@@ -372,24 +393,146 @@ class FeatureExtractor(Block):
         -------
         out : array, shape (n_features,)
         """
-        allocating = (self._output is None)
-        ind = 0
-        for i, (name, feature) in enumerate(self.features):
-            if allocating:
-                x = feature.compute(data)
-                self.feature_indices[name] = (ind, ind+x.size)
-                ind += x.size
+        if (self._output is None):
+            n_channels = data.shape[0]
+            self.n_channels, self.channel_names = self._check_channels(
+                n_channels=n_channels)
+            self.feature_indices, self.channel_indices = self._make_indices()
+            self._output = np.zeros((self.n_features_total,))
 
-                if self._output is None:
-                    self._output = x
-                else:
-                    self._output = np.hstack([self._output, x])
-            else:
-                self._output[self.feature_indices[name][0]:
-                             self.feature_indices[name][1]] = \
-                    feature.compute(data)
+        for i, (name, feature) in enumerate(self.features):
+            self._output[list(self.feature_indices[name])] = \
+                feature.compute(data)
 
         return self._output
+
+    def _check_channels(self, n_channels=None, channel_names=None):
+        """Performs checks for arguments ``n_channels`` and ``channel_names``.
+
+        Parameters
+        ----------
+        n_channels : int
+            Number of channels.
+
+        channel_names : list
+            Channel names.
+
+        Returns
+        -------
+        n_channels : int
+            Number of channels.
+
+        channel_names : list
+            Channel names.
+        """
+        if channel_names is None:
+            if n_channels is None:
+                pass
+            else:
+                channel_names = [str(c) for c in range(n_channels)]
+        else:
+            if n_channels is None:
+                n_channels = len(channel_names)
+            else:
+                if n_channels != len(channel_names):
+                    raise ValueError("Inconsistent number of channels and " +
+                                     "channel names.")
+
+        return (n_channels, channel_names)
+
+    def _make_indices(self):
+        if self.n_channels is None and self.channel_names is None:
+            feature_indices = {}
+            channel_indices = {}
+        else:
+            feature_indices = {}
+            ind = 0
+            for (name, feature) in self.features:
+                feature_indices[name] = tuple(range(
+                    ind, ind + self.n_channels * feature.features_per_channel))
+                ind += self.n_channels * feature.features_per_channel
+
+            channel_indices = {}
+
+            for c_idx, channel in enumerate(self.channel_names):
+                channel_indices[channel] = tuple(range(
+                    c_idx, self.n_features_total, self.n_channels))
+
+        return (feature_indices, channel_indices)
+
+
+class Selector(Block):
+    """Selects a subset of features according to some property.
+
+    This block is intended to be used only after a ``FeatureExtractor`` block.
+
+    Parameters
+    ----------
+    items : list
+        List of strings specifying the items to be selected.
+
+    item_indices : dict
+        Dictionary of tuples indicating the indices of each item, accessed
+        by name.
+    """
+
+    def __init__(self, items, item_indices):
+        super(Selector, self).__init__()
+        self.items = items
+        self.item_indices = item_indices
+
+        self._initialize()
+
+    def _initialize(self):
+        """Compute the indices corresponding to the specified items. """
+        self._indices = []
+        for item in self.items:
+            self._indices.extend(self.item_indices[item])
+        self._indices.sort()
+
+    def process(self, data):
+        """Selects the specified items. """
+        return data[self._indices]
+
+
+class ChannelSelector(Selector):
+    """Selects features from specified channels.
+
+    This block is intended to be used only after a ``FeatureExtractor`` block,
+    using the ``channel_indices`` attribute.
+
+    Parameters
+    ----------
+    channels : list
+        List of strings specifying the channels to be selected.
+
+    channel_indices : dict
+        Dictionary of tuples indicating the indices of each channel, accessed
+        by name.
+    """
+
+    def __init__(self, channels, channel_indices):
+        super(ChannelSelector, self).__init__(channels, channel_indices)
+
+
+class FeatureSelector(Selector):
+    """Selects specified features.
+
+    This block is intended to be used only after a ``FeatureExtractor`` block,
+    using the ``feature_indices`` attribute.
+
+    Parameters
+    ----------
+    features : list
+        List of strings specifying the features to be selected.
+
+    feature_indices : dict
+        Dictionary of tuples indicating the indices of each feature, accessed
+        by name.
+    """
+
+    def __init__(self, features, feature_indices):
+        super(FeatureSelector, self).__init__(features, feature_indices)
 
 
 class Estimator(Block):
