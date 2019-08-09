@@ -110,10 +110,13 @@ class BarWidget(pyqtgraph.PlotWidget):
 
         Parameters
         ----------
-        data : ndarray, shape = (n_channels, n_groups)
+        data : ndarray, shape = (n_channels, n_groups) or (n_channels,)
             Data sample to show on the graph.
         """
+        # Handle both cases: (n_channels, n_groups) and (n_channels,)
+        data = np.reshape(data, (len(data), -1))
         nch, ngr = data.shape
+
         if nch != self.n_channels or ngr != self.n_groups:
             self.n_channels = nch
             self.n_groups = ngr
