@@ -13,7 +13,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
     widget, and all channels share y-axis zoom.
     """
 
-    def __init__(self, channel_names=None):
+    def __init__(self, channel_names=None, yrange=(-1,1)):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
@@ -21,6 +21,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
 
         self.n_channels = 0
         self.channel_names = channel_names
+        self.yrange = yrange
 
         self.setBackground(None)
 
@@ -74,7 +75,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
             self.plot_data_items.append(plot_data_item)
 
         self.plot_items[0].disableAutoRange(pyqtgraph.ViewBox.YAxis)
-        self.plot_items[0].setYRange(-1, 1)
+        self.plot_items[0].setYRange(*self.yrange)
 
 
 class BarWidget(pyqtgraph.PlotWidget):
@@ -85,11 +86,12 @@ class BarWidget(pyqtgraph.PlotWidget):
     different color.
     """
 
-    def __init__(self, channel_names=None, group_colors=None):
+    def __init__(self, channel_names=None, group_colors=None, yrange=(-1,1)):
         super(BarWidget, self).__init__()
 
         self.channel_names = channel_names
         self.group_colors = group_colors
+        self.yrange = yrange
 
         self.plot_items = None
         self.plot_data_items = None
@@ -147,7 +149,7 @@ class BarWidget(pyqtgraph.PlotWidget):
             self.addItem(plot_item)
 
         self.disableAutoRange(pyqtgraph.ViewBox.YAxis)
-        self.setYRange(-1, 1)
+        self.setYRange(*self.yrange)
 
         ax = self.getAxis('bottom')
         x_ticks = [(i, name) for i, name in enumerate(self.channel_names)]
