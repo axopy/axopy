@@ -85,11 +85,12 @@ class BarWidget(pyqtgraph.PlotWidget):
     different color.
     """
 
-    def __init__(self, channel_names=None, group_colors=None):
+    def __init__(self, channel_names=None, group_colors=None, yrange=(-1,1)):
         super(BarWidget, self).__init__()
 
         self.channel_names = channel_names
         self.group_colors = group_colors
+        self.yrange = yrange
 
         self.plot_items = None
         self.plot_data_items = None
@@ -147,7 +148,7 @@ class BarWidget(pyqtgraph.PlotWidget):
             self.addItem(plot_item)
 
         self.disableAutoRange(pyqtgraph.ViewBox.YAxis)
-        self.setYRange(-1, 1)
+        self.setYRange(*self.yrange)
 
         ax = self.getAxis('bottom')
         x_ticks = [(i, name) for i, name in enumerate(self.channel_names)]
