@@ -3,7 +3,7 @@ Widgets for plotting multi-channel signals.
 """
 import numpy as np
 import pyqtgraph
-
+from PyQt5.QtGui import QFont
 
 class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
     """
@@ -13,7 +13,8 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
     widget, and all channels share y-axis zoom.
     """
 
-    def __init__(self, channel_names=None, yrange=(-1,1)):
+    def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1),
+                 font_size=12):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
@@ -21,9 +22,15 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
 
         self.n_channels = 0
         self.channel_names = channel_names
+        self.bg_color = bg_color
         self.yrange = yrange
+        self.font_size = font_size
 
-        self.setBackground(None)
+        self.setBackground(self.bg_color)
+        font = QFont()
+        font.setPixelSize(self.font_size)
+        self.getAxis('bottom').tickFont = font
+        self.getAxis('left').tickFont = font
 
     def plot(self, data):
         """
@@ -86,12 +93,15 @@ class BarWidget(pyqtgraph.PlotWidget):
     different color.
     """
 
-    def __init__(self, channel_names=None, group_colors=None, yrange=(-1,1)):
+    def __init__(self, channel_names=None, group_colors=None, bg_color=None,
+                 yrange=(-1,1), font_size=12):
         super(BarWidget, self).__init__()
 
         self.channel_names = channel_names
         self.group_colors = group_colors
+        self.bg_color = bg_color
         self.yrange = yrange
+        self.font_size = font_size
 
         self.plot_items = None
         self.plot_data_items = None
@@ -100,11 +110,14 @@ class BarWidget(pyqtgraph.PlotWidget):
         self.n_groups = 0
 
         self.showGrid(y=True, alpha=0.5)
-        self.setBackground(None)  # White background
+        self.setBackground(self.bg_color)
         self.setMouseEnabled(x=False)
         self.setMenuEnabled(False)
 
-        self.setBackground(None)
+        font = QFont()
+        font.setPixelSize(self.font_size)
+        self.getAxis('bottom').tickFont = font
+        self.getAxis('left').tickFont = font
 
     def plot(self, data):
         """
