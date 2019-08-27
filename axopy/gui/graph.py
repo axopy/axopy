@@ -13,8 +13,7 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
     widget, and all channels share y-axis zoom.
     """
 
-    def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1),
-                 font_size=12):
+    def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1)):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
@@ -24,13 +23,8 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
         self.channel_names = channel_names
         self.bg_color = bg_color
         self.yrange = yrange
-        self.font_size = font_size
 
         self.setBackground(self.bg_color)
-        font = QFont()
-        font.setPixelSize(self.font_size)
-        self.getAxis('bottom').tickFont = font
-        self.getAxis('left').tickFont = font
 
     def plot(self, data):
         """
