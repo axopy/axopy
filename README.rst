@@ -1,4 +1,4 @@
-.. image:: docs/_static/axopy.png
+.. image:: https://github.com/axopy/axopy/raw/master/docs/_static/axopy.png
    :alt: AxoPy Logo
 
 |
