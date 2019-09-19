@@ -65,6 +65,13 @@ generated signal in real time. You can press ``Enter`` again to finish the task
 When the task finishes, the :class:`Experiment` looks for the next task to run.
 Since there aren't any more, the application exits.
 
+.. note::
+
+    AxoPy supports multiple DAQs being passed to an :class:`Experiment` in
+    a dictionary, list, or tuple. In that case, your tasks need to accept the
+    same type of collection in the :meth:`~axopy.task.Task.prepare_daq` method.
+    See :ref:`task` for information on writing the ``prepare_*`` methods.
+
 .. [#f1] At least visual. For now, AxoPy doesn't have a standardized way to
    talk to other kinds of feedback-producing devices (an audio output module
    would be cool, PRs welcome). That said, AxoPy doesn't do anything to

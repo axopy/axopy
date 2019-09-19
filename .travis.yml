@@ -4,8 +4,6 @@ dist: xenial
 sudo: required
 
 python:
-  - "2.7"
-  - "3.4"
   - "3.5"
   - "3.6"
   - "3.7"
@@ -14,30 +12,8 @@ before_install:
   - sudo apt-get install libxkbcommon-x11-0
 
 install:
-  - |
-    if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]] || [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
-      # python<=3.4
-      CONDA_URL="https://repo.continuum.io/miniconda"
-      CONDA_FILE="Miniconda3-latest-Linux-x86_64.sh"
-      CONDA_DEST="$HOME/miniconda"
-
-      wget "$CONDA_URL/$CONDA_FILE" -O miniconda.sh
-      bash miniconda.sh -b -p "$CONDA_DEST"
-
-      export PATH="$CONDA_DEST/bin:$PATH"
-      conda config --set always_yes yes --set changeps1 no
-      conda update -q conda
-      conda info -a
-
-      # create the env in two steps for specific python version
-      conda create -n testenv python="$TRAVIS_PYTHON_VERSION"
-      source activate testenv
-      conda env update -n testenv -f environment.yml
-    else
-      # python>=3.5
-      # exclude 5.10 on travis https://bugreports.qt.io/browse/QTBUG-64928
-      pip install "pyqt5!=5.10,!=5.12.0"
-    fi
+  # exclude 5.10 on travis https://bugreports.qt.io/browse/QTBUG-64928
+  - pip install "pyqt5!=5.10,!=5.12.0"
   - pip install -e .[dev]
   - pip install pytest-faulthandler codecov
   - pip list
