@@ -73,7 +73,7 @@ class Block(list):
         self.append(trial)
         return trial
 
-    def shuffle(self, reset_index=True):
+    def shuffle(self, reset_index=True, seed=None):
         """Shuffle the block's trials in random order.
 
         Parameters
@@ -89,7 +89,7 @@ class Block(list):
         """
         if seed is not None:
             random.seed(seed)
-            
+
         random.shuffle(self)
         if reset_index:
             for i, trial in enumerate(self):
