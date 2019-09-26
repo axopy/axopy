@@ -82,10 +82,11 @@ class Block(list):
             Whether or not to set the ``trial`` attribute of each trial such
             that they remain in sequential order after shuffling. This is the
             default.
-
         seed : int, optional
             If provided, the random seed will be set to the specified value to
-            ensure reproducible shuffling.
+            ensure reproducible shuffling. Note that if you have multiple
+            identical blocks and want to shuffle them differently, use a
+            different seed value for each block.
         """
         if seed is not None:
             random.seed(seed)
