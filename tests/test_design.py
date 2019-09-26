@@ -37,3 +37,17 @@ def test_block_shuffle():
     for i in range(10):
         b.shuffle()
         assert b[0].attrs['trial'] == 0
+
+
+def test_block_shuffle_seed():
+    d = design.Design()
+    for i in range(2):
+        b = d.add_block()
+
+        for j in range(10):
+            b.add_trial()
+
+        b.shuffle(reset_index=False, seed=10)
+
+    for j in range(10):
+        assert d[0][j].attrs['trial'] == d[1][j].attrs['trial']
