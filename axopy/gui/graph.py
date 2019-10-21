@@ -2,15 +2,24 @@
 Widgets for plotting multi-channel signals.
 """
 import numpy as np
-import pyqtgraph
+import pyqtgraph as pg
 from PyQt5.QtGui import QFont
 
-class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
+class SignalWidget(pg.GraphicsLayoutWidget):
     """
     Scrolling oscilloscope-like widget for displaying real-time signals.
 
     Intended for multi-channel viewing, each channel gets its own row in the
     widget, and all channels share y-axis zoom.
+
+    Parameters
+    ----------
+    channel_names : list, optional
+        List of channel names.
+    bg_color : pyqtgraph color, optional
+        Background color. Default is None (i.e., default background color).
+    y_range : tuple, optional
+        Y-axis range. Default is (-1, 1).
     """
 
     def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1)):
@@ -75,16 +84,29 @@ class SignalWidget(pyqtgraph.GraphicsLayoutWidget):
             self.plot_items.append(plot_item)
             self.plot_data_items.append(plot_data_item)
 
-        self.plot_items[0].disableAutoRange(pyqtgraph.ViewBox.YAxis)
+        self.plot_items[0].disableAutoRange(pg.ViewBox.YAxis)
         self.plot_items[0].setYRange(*self.yrange)
 
 
-class BarWidget(pyqtgraph.PlotWidget):
+class BarWidget(pg.PlotWidget):
     """
     Bar graph widget for displaying real-time signals.
 
     Intended for multi-group viewing, each group can optionally use a
     different color.
+
+    Parameters
+    ----------
+    channel_names : list, optional
+        List of channel names.
+    group_colors : list, optional
+        List of pyqtgraph colors. One for each group.
+    bg_color : pyqtgraph color, optional
+        Background color. Default is None (i.e., default background color).
+    y_range : tuple, optional
+        Y-axis range. Default is (-1, 1).
+    font_size : int, optional
+        Axes font size. Default is 12.
     """
 
     def __init__(self, channel_names=None, group_colors=None, bg_color=None,
@@ -115,7 +137,7 @@ class BarWidget(pyqtgraph.PlotWidget):
 
     def plot(self, data):
         """
-        Adds a data sample to the widget.
+        Plots a data sample.
 
         Parameters
         ----------
@@ -149,13 +171,13 @@ class BarWidget(pyqtgraph.PlotWidget):
         for i, color in zip(range(self.n_groups), self.group_colors):
             width = 1./(self.n_groups+1)
             x = np.arange(self.n_channels) + (i - self.n_groups/2 + 0.5)*width
-            plot_item = pyqtgraph.BarGraphItem(x=x, height=0, width=width,
-                                               brush=color, pen='k')
+            plot_item = pg.BarGraphItem(x=x, height=0, width=width,
+                                        brush=color, pen='k')
 
             self.plot_items.append(plot_item)
             self.addItem(plot_item)
 
-        self.disableAutoRange(pyqtgraph.ViewBox.YAxis)
+        self.disableAutoRange(pg.ViewBox.YAxis)
         self.setYRange(*self.yrange)
 
         ax = self.getAxis('bottom')
@@ -163,7 +185,7 @@ class BarWidget(pyqtgraph.PlotWidget):
         ax.setTicks([x_ticks])
 
 
-class PolarWidget(pyqtgraph.GraphicsLayoutWidget):
+class PolarWidget(pg.GraphicsLayoutWidget):
     """
     Polar graph widget for displaying real-time polar data.
 
@@ -211,7 +233,7 @@ class PolarWidget(pyqtgraph.GraphicsLayoutWidget):
 
     def plot(self, data, color=None):
         """
-        Adds a data sample to the widget.
+        Plots a data sample.
 
         Parameters
         ----------
@@ -229,9 +251,8 @@ class PolarWidget(pyqtgraph.GraphicsLayoutWidget):
 
         if color is not None:
             self.plot_data_item.setPen(
-                pyqtgraph.mkPen(pyqtgraph.mkColor(color), width=self.width))
-            self.plot_data_item.setBrush(
-                pyqtgraph.mkBrush(pyqtgraph.mkColor(color)))
+                pg.mkPen(pg.mkColor(color), width=self.width))
+            self.plot_data_item.setBrush(pg.mkBrush(pg.mkColor(color)))
 
         x, y = self._transform_data(data)
         self.plot_data_item.setData(x, y)
@@ -241,25 +262,24 @@ class PolarWidget(pyqtgraph.GraphicsLayoutWidget):
         self.clear()
 
         self.plot_item = self.addPlot(row=0, col=0)
-        self.plot_data_item = pyqtgraph.PlotCurveItem(
-            pen=pyqtgraph.mkPen(self.color, width=self.width), antialias=True)
+        self.plot_data_item = pg.PlotCurveItem(
+            pen=pg.mkPen(self.color, width=self.width), antialias=True)
         if self.fill:
             self.plot_data_item.setFillLevel(1)
             fill_color = self.color
-            self.plot_data_item.setBrush(
-                pyqtgraph.mkBrush(pyqtgraph.mkColor(fill_color)))
+            self.plot_data_item.setBrush(pg.mkBrush(pg.mkColor(fill_color)))
 
         self.plot_item.addItem(self.plot_data_item)
 
         # Add polar grid lines
-        self.plot_item.addLine(x=0, pen=pyqtgraph.mkPen(
+        self.plot_item.addLine(x=0, pen=pg.mkPen(
             color=self.circle_color, width=self.circle_width))
-        self.plot_item.addLine(y=0, pen=pyqtgraph.mkPen(
+        self.plot_item.addLine(y=0, pen=pg.mkPen(
             color=self.circle_color, width=self.circle_width))
 
         for r in np.linspace(0., 3 * self.max_value, self.n_circles):
-            circle = pyqtgraph.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
-            circle.setPen(pyqtgraph.mkPen(
+            circle = pg.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
+            circle.setPen(pg.mkPen(
                 color=self.circle_color, width=self.circle_width))
             self.plot_item.addItem(circle)
 
@@ -297,7 +317,7 @@ class _MultiPen(object):
         self.max_hue = self.MIN_HUE + n_colors*self.HUE_INC
 
     def get_pen(self, index):
-        return pyqtgraph.intColor(
+        return pg.intColor(
             index, hues=self.n_colors,
             minHue=self.MIN_HUE, maxHue=self.max_hue,
             minValue=self.VAL, maxValue=self.VAL)
