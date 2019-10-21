@@ -8,6 +8,10 @@ devices:
 
 rainbow
     Basic use of an NoiseGenerator to show lots of colorful random data.
+bar
+    Basic use of an NoiseGenerator to show a bar plot using filtered data.
+polar
+    Basic use of an NoiseGenerator to show a polar plot using filtered data.
 keyboard
     Basic use of a Keyboard to show roughly-timed keyboard inputs.
 keystick
