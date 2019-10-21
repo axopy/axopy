@@ -163,6 +163,129 @@ class BarWidget(pyqtgraph.PlotWidget):
         ax.setTicks([x_ticks])
 
 
+class PolarWidget(pyqtgraph.GraphicsLayoutWidget):
+    """
+    Polar graph widget for displaying real-time polar data.
+
+    Parameters
+    ----------
+    max_value : float, optional
+        Expected maximum value of the data. Default is 1.
+    fill : boolean, optional
+        If True, fill the space between the origin and the plot. Default is
+        True.
+    color : pyqtgraph color, optional
+        Line color. Default is 'k'.
+    width : float, optional
+        Line width. Default is 3.
+    circle_color : pyqtgraph color, optional
+        Circe color. Default is 'k'.
+    circle_width : float, optional
+        Circle width. Default is 0.2.
+    n_circles : int, optional
+        Number of circles to draw. Default is 30.
+    bg_color : pyqtgraph color, optional
+        Background color. Default is None (i.e., default background color).
+    """
+
+    def __init__(self, max_value=1., fill=True, color='k', width=3.,
+                 circle_color='k', circle_width=0.2, n_circles=30,
+                 bg_color=None):
+        super(PolarWidget, self).__init__()
+
+        self.max_value = max_value
+        self.fill = fill
+        self.color = color
+        self.width = width
+        self.circle_color = circle_color
+        self.circle_width = circle_width
+        self.n_circles = n_circles
+        self.bg_color = bg_color
+
+        self.n_channels = 0
+
+        self.plot_item = None
+        self.plot_data_item = None
+
+        self.setBackground(self.bg_color)
+
+    def plot(self, data, color=None):
+        """
+        Adds a data sample to the widget.
+
+        Parameters
+        ----------
+        data : ndarray, shape = (n_channels,) or (n_channels, 1)
+            Data sample to show on the graph.
+        """
+        # Handle both cases: (n_channels,) and (n_channels, 1)
+        data = np.reshape(data, (-1,))
+        nch = data.size
+
+        if nch != self.n_channels:
+            self.n_channels = nch
+
+            self._update_num_channels()
+
+        if color is not None:
+            self.plot_data_item.setPen(
+                pyqtgraph.mkPen(pyqtgraph.mkColor(color), width=self.width))
+            self.plot_data_item.setBrush(
+                pyqtgraph.mkBrush(pyqtgraph.mkColor(color)))
+
+        x, y = self._transform_data(data)
+        self.plot_data_item.setData(x, y)
+
+
+    def _update_num_channels(self):
+        self.clear()
+
+        self.plot_item = self.addPlot(row=0, col=0)
+        self.plot_data_item = pyqtgraph.PlotCurveItem(
+            pen=pyqtgraph.mkPen(self.color, width=self.width), antialias=True)
+        if self.fill:
+            self.plot_data_item.setFillLevel(1)
+            fill_color = self.color
+            self.plot_data_item.setBrush(
+                pyqtgraph.mkBrush(pyqtgraph.mkColor(fill_color)))
+
+        self.plot_item.addItem(self.plot_data_item)
+
+        # Add polar grid lines
+        self.plot_item.addLine(x=0, pen=pyqtgraph.mkPen(
+            color=self.circle_color, width=self.circle_width))
+        self.plot_item.addLine(y=0, pen=pyqtgraph.mkPen(
+            color=self.circle_color, width=self.circle_width))
+
+        for r in np.linspace(0., 3 * self.max_value, self.n_circles):
+            circle = pyqtgraph.QtGui.QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
+            circle.setPen(pyqtgraph.mkPen(
+                color=self.circle_color, width=self.circle_width))
+            self.plot_item.addItem(circle)
+
+        self.theta = np.linspace(0, 2 * np.pi, self.n_channels + 1)
+
+        self.plot_item.showAxis('bottom', False)
+        self.plot_item.showAxis('left', False)
+        self.plot_item.showGrid(y=False, x=False)
+        self.plot_item.setMouseEnabled(x=False)
+        self.plot_item.setMenuEnabled(False)
+
+        self.plot_item.setYRange(-self.max_value, self.max_value)
+        self.plot_item.setXRange(-self.max_value, self.max_value)
+        self.plot_item.setAspectLocked()
+
+    def _transform_data(self, data):
+        "Performs polar transformation. "
+        # Connect end to start to make a continuous plot
+        data = np.hstack((data, data[0]))
+
+        x = data * np.cos(self.theta)
+        y = data * np.sin(self.theta)
+
+        return (x, y)
+
+
 class _MultiPen(object):
 
     MIN_HUE = 160
