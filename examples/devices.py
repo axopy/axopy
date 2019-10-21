@@ -36,7 +36,7 @@ cyberglove
 import sys
 import argparse
 import numpy as np
-from axopy.task import Oscilloscope
+from axopy.task import Oscilloscope, BarPlotter, PolarPlotter
 from axopy.experiment import Experiment
 from axopy.daq import NoiseGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D
@@ -50,6 +50,30 @@ def rainbow():
     dev = NoiseGenerator(rate=2000, num_channels=num_channels, read_size=200)
     channel_names = ['Ch ' + str(i) for i in range(1, num_channels+1)]
     run(dev, channel_names=channel_names)
+
+
+def bar():
+    num_channels = 10
+    channel_names = ['Ch ' + str(i) for i in range(1, num_channels+1)]
+    dev = NoiseGenerator(rate=200, num_channels=num_channels, read_size=20)
+    pipeline = Pipeline([
+        Windower(100),
+        Callable(lambda x: 3 * np.mean(x, axis=1, keepdims=True))])
+    Experiment(daq=dev, subject='test').run(BarPlotter(
+        pipeline, channel_names=channel_names, group_colors=[[255, 204, 204]],
+        yrange=(-0.5, 0.5)))
+
+
+def polar():
+    num_channels = 10
+    dev = NoiseGenerator(rate=60, num_channels=num_channels, read_size=1)
+    pipeline = Pipeline([
+        Callable(lambda x: np.abs(x)),
+        Callable(lambda x: np.clip(x, a_min=0., a_max=1.)),
+        Windower(10),
+        Callable(lambda x: np.mean(x, axis=1, keepdims=True))])
+    Experiment(daq=dev, subject='test').run(PolarPlotter(
+        pipeline, color=[0, 128, 255], fill=True, n_circles=30, max_value=1.))
 
 
 def keyboard():
@@ -71,7 +95,7 @@ def keystick():
         # window to show in the oscilloscope
         Windower(60)
     ])
-    run(dev, pipeline, keys)
+    run(dev, pipeline, channel_names=keys)
 
 
 def emgsim():
@@ -100,7 +124,7 @@ def emgsim():
     ])
 
     dev = Keyboard(rate=update_rate, keys=keys)
-    run(dev, pipeline, keys)
+    run(dev, pipeline, channel_names=keys)
 
 def trignoemg():
     from pytrigno import TrignoEMG
@@ -111,7 +135,7 @@ def trignoemg():
                          Callable(lambda x: 5*x),
                          Windower(20000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels + 1)]
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def trignoacc():
@@ -122,7 +146,7 @@ def trignoacc():
     pipeline = Pipeline([Windower(1200)])
     channel_names = ['Acc ' + str(i) + '_' + axis \
                      for i in range(1, n_channels+1) for axis in ['x','y','z']]
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def myoemg():
@@ -135,7 +159,7 @@ def myoemg():
                          Callable(lambda x: 0.01*x),
                          Windower(2000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def myoimu():
@@ -145,7 +169,7 @@ def myoimu():
     dev = MyoIMU(samples_per_read=5)
     pipeline = Pipeline([Windower(500)])
     channel_names = list('wxyz')
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def nidaq():
@@ -154,7 +178,7 @@ def nidaq():
     dev = Nidaq(channels=range(n_channels), samples_per_read=200, rate=2000)
     pipeline = Pipeline([Ensure2D(orientation='row'), Windower(20000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def blackrock():
@@ -164,7 +188,7 @@ def blackrock():
     dev = Blackrock(channels=range(1, n_channels + 1), samples_per_read=100)
     pipeline = Pipeline([Windower(5000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
-    run(dev, pipeline=pipeline, channel_names=channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def cyberglove():
@@ -174,7 +198,7 @@ def cyberglove():
                      cal_path=r"C:\Users\nak142\tmp\glove.cal")
     pipeline = Pipeline([Ensure2D('row'), Windower(1000)])
     channel_names = ['DOF ' + str(i) for i in range(1, n_df+1)]
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
 def mouse():
@@ -186,18 +210,19 @@ def mouse():
         Windower(40)
     ])
     channel_names = list('xy')
-    run(dev, pipeline, channel_names)
+    run(dev, pipeline, channel_names=channel_names)
 
 
-def run(dev, pipeline=None, channel_names=None):
+def run(dev, pipeline=None, **kwargs):
     # run an experiment with just an oscilloscope task
-    Experiment(daq=dev, subject='test').run(Oscilloscope(
-        pipeline, channel_names))
+    Experiment(daq=dev, subject='test').run(Oscilloscope(pipeline, **kwargs))
 
 
 if __name__ == '__main__':
     functions = {
         'rainbow': rainbow,
+        'bar': bar,
+        'polar': polar,
         'keyboard': keyboard,
         'keystick': keystick,
         'emgsim': emgsim,

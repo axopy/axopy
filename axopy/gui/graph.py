@@ -291,8 +291,8 @@ class PolarWidget(pg.GraphicsLayoutWidget):
         self.plot_item.setMouseEnabled(x=False)
         self.plot_item.setMenuEnabled(False)
 
-        self.plot_item.setYRange(-self.max_value, self.max_value)
-        self.plot_item.setXRange(-self.max_value, self.max_value)
+        self.plot_item.setYRange(-self.max_value / 2, self.max_value / 2)
+        self.plot_item.setXRange(-self.max_value / 2, self.max_value / 2)
         self.plot_item.setAspectLocked()
 
     def _transform_data(self, data):
