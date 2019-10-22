@@ -42,7 +42,7 @@ import argparse
 import numpy as np
 from axopy.task import Oscilloscope, BarPlotter, PolarPlotter
 from axopy.experiment import Experiment
-from axopy.daq import NoiseGenerator, Keyboard, Mouse
+from axopy.daq import NoiseGenerator, RandomWalkGenerator, Keyboard, Mouse
 from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D
 from axopy.gui.main import get_qtapp
 
@@ -69,15 +69,14 @@ def bar():
 
 
 def polar():
-    num_channels = 10
-    dev = NoiseGenerator(rate=60, num_channels=num_channels, read_size=1)
+    num_channels = 5
+    dev = RandomWalkGenerator(rate=60, num_channels=num_channels,
+                              amplitude=0.03, read_size=1)
+    # Polar plot can only show non-negative values
     pipeline = Pipeline([
-        Callable(lambda x: np.abs(x)),
-        Callable(lambda x: np.clip(x, a_min=0., a_max=1.)),
-        Windower(10),
-        Callable(lambda x: np.mean(x, axis=1, keepdims=True))])
+        Callable(lambda x: np.abs(x))])
     Experiment(daq=dev, subject='test').run(PolarPlotter(
-        pipeline, color=[0, 128, 255], fill=True, n_circles=30, max_value=1.))
+        pipeline, color=[0, 128, 255], fill=True, n_circles=10, max_value=5.))
 
 
 def keyboard():
