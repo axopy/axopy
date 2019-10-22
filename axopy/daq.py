@@ -170,6 +170,83 @@ class NoiseGenerator(object):
         self.sleeper.reset()
 
 
+class RandomWalkGenerator(object):
+    """An emulated data acquisition device which generates data using a random
+    walk.
+
+    Each sample of the generated data is sampled from a zero-mean Gaussian
+    distribution with variance determined by the amplitude specified, which
+    corresponds to three standard deviations. That is, approximately 99.7% of
+    the samples should be within the desired peak amplitude.
+
+    :class:`RandomWalkGenerator` is meant to emulate data acquisition devices
+    that block on each request for data until the data is available. See
+    :meth:`read` for details.
+
+    Parameters
+    ----------
+    rate : int, optional
+        Sample rate in Hz. Default is 1000.
+    num_channels : int, optional
+        Number of "channels" to generate. Default is 1.
+    amplitude : float or array-like, optional
+        Standard deviation of random step. Default is 1.
+    start : float or array-like, optional
+        Starting point. Default is 0.
+    read_size : int, optional
+        Number of samples to generate per :meth:`read()` call. Default is 100.
+    """
+
+    def __init__(self, rate=1000, num_channels=1, amplitude=1.0, start_pos=0.,
+                 read_size=100):
+        self.rate = rate
+        self.num_channels = num_channels
+        self.amplitude = amplitude
+        self.start_pos = start_pos
+        self.read_size = read_size
+
+        self.previous_ = self.start_pos
+
+        self.sleeper = _Sleeper(float(self.read_size/self.rate))
+
+    def start(self):
+        """Does nothing for this device. Implemented to follow device API."""
+        pass
+
+    def read(self):
+        """
+        Generates zero-mean Gaussian data.
+
+        This method blocks (calls ``time.sleep()``) to emulate other data
+        acquisition units which wait for the requested number of samples to be
+        read. The amount of time to block is calculated such that consecutive
+        calls will always return with constant frequency, assuming the calls
+        occur faster than required (i.e. processing doesn't fall behind).
+
+        Returns
+        -------
+        data : ndarray, shape (num_channels, read_size)
+            The generated data.
+        """
+        self.sleeper.sleep()
+        steps = numpy.random.normal(
+            loc=0.0,
+            scale=self.amplitude,
+            size=(self.num_channels,self.read_size))
+        data = self.previous_ + numpy.cumsum(steps, axis=1)
+        self.previous_ = data
+        return data
+
+    def stop(self):
+        """Does nothing for this device. Implemented to follow device API."""
+        pass
+
+    def reset(self):
+        """Reset the device back to its initialized state."""
+        self.sleeper.reset()
+        self.previous_ = self.start_pos
+
+
 class DumbDaq(object):
     """An emulated data acquisition device that doesn't generate any data.
 
