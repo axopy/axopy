@@ -57,15 +57,17 @@ def rainbow():
 
 
 def bar():
+    # simulate random walk using filtered (windowed) Gaussian noise
     num_channels = 10
     channel_names = ['Ch ' + str(i) for i in range(1, num_channels+1)]
-    dev = NoiseGenerator(rate=200, num_channels=num_channels, read_size=20)
+    dev = NoiseGenerator(rate=100, num_channels=num_channels, amplitude=5.0,
+                         read_size=10)
     pipeline = Pipeline([
         Windower(100),
-        Callable(lambda x: 3 * np.mean(x, axis=1, keepdims=True))])
+        Callable(lambda x: np.mean(x, axis=1, keepdims=True))])
     Experiment(daq=dev, subject='test').run(BarPlotter(
-        pipeline, channel_names=channel_names, group_colors=[[255, 204, 204]],
-        yrange=(-0.5, 0.5)))
+        pipeline=pipeline, channel_names=channel_names,
+        group_colors=[[255, 204, 204]], yrange=(-0.5, 0.5)))
 
 
 def polar():
