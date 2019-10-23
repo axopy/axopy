@@ -283,6 +283,7 @@ class DumbDaq(object):
         occur faster than required (i.e. processing doesn't fall behind).
         """
         self.sleeper.sleep()
+        return None
 
     def stop(self):
         """Does nothing for this device. Implemented to follow device API."""
