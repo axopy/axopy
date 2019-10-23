@@ -145,7 +145,7 @@ class BarWidget(pg.PlotWidget):
             Data sample to show on the graph.
         """
         # Handle both cases: (n_channels, n_groups) and (n_channels,)
-        data = np.reshape(data, (len(data), -1))
+        data = np.reshape(data, (data.size, -1))
         nch, ngr = data.shape
 
         if nch != self.n_channels or ngr != self.n_groups:
