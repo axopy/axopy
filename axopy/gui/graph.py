@@ -22,7 +22,8 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         Y-axis range. Default is (-1, 1).
     """
 
-    def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1)):
+    def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1),
+                 show_bottom=False):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
@@ -32,10 +33,11 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         self.channel_names = channel_names
         self.bg_color = bg_color
         self.yrange = yrange
+        self.show_bottom = show_bottom
 
         self.setBackground(self.bg_color)
 
-    def plot(self, data):
+    def plot(self, y, x=None):
         """
         Adds a window of data to the widget.
 
@@ -44,10 +46,12 @@ class SignalWidget(pg.GraphicsLayoutWidget):
 
         Parameters
         ----------
-        data : ndarray, shape = (n_channels, n_samples)
+        y : ndarray, shape = (n_channels, n_samples)
             Window of data to add to the end of the currently-shown data.
+        x : array, shape = (n_samples,), optional (default: None)
+            Independent variable values that will be displayed on x axis.
         """
-        nch, nsamp = data.shape
+        nch, nsamp = y.shape
         if nch != self.n_channels:
             self.n_channels = nch
 
@@ -57,7 +61,10 @@ class SignalWidget(pg.GraphicsLayoutWidget):
             self._update_num_channels()
 
         for i, pdi in enumerate(self.plot_data_items):
-            pdi.setData(data[i])
+            if x is not None:
+                pdi.setData(x, y[i])
+            else:
+                pdi.setData(y[i])
 
     def _update_num_channels(self):
         self.clear()
@@ -69,7 +76,8 @@ class SignalWidget(pg.GraphicsLayoutWidget):
             plot_item = self.addPlot(row=i, col=0)
             plot_data_item = plot_item.plot(pen=pen.get_pen(i), antialias=True)
 
-            plot_item.showAxis('bottom', False)
+            if self.show_bottom is not True:
+                plot_item.showAxis('bottom', False)
             plot_item.showGrid(y=True, alpha=0.5)
             plot_item.setMouseEnabled(x=False)
             plot_item.setMenuEnabled(False)
@@ -86,6 +94,8 @@ class SignalWidget(pg.GraphicsLayoutWidget):
 
         self.plot_items[0].disableAutoRange(pg.ViewBox.YAxis)
         self.plot_items[0].setYRange(*self.yrange)
+        if self.show_bottom == 'last':
+            self.plot_items[-1].showAxis('bottom', True)
 
 
 class BarWidget(pg.PlotWidget):

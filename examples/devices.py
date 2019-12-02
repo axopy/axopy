@@ -43,8 +43,9 @@ import numpy as np
 from axopy.task import Oscilloscope, BarPlotter, PolarPlotter
 from axopy.experiment import Experiment
 from axopy.daq import NoiseGenerator, RandomWalkGenerator, Keyboard, Mouse
-from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D
+from axopy.pipeline import Pipeline, Callable, Windower, Filter, Ensure2D, FeatureExtractor
 from axopy.gui.main import get_qtapp
+from axopy.features import MeanAbsoluteValue, mean_absolute_value
 
 from axopy.pipeline import Block
 
@@ -133,15 +134,46 @@ def emgsim():
 
 def trignoemg():
     from pytrigno import TrignoEMG
-    n_channels = 16
+    n_channels = 8
     dev = TrignoEMG(channels=range(1, n_channels + 1), samples_per_read=200,
                     zero_based=False, units='normalized')
     pipeline = Pipeline([Ensure2D(orientation='row'),
-                         Callable(lambda x: 5*x),
+                         # Callable(lambda x: 5*x),
                          Windower(20000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels + 1)]
     run(dev, pipeline, channel_names=channel_names)
 
+
+def trignoemgmav():
+    from pytrigno import TrignoEMG
+    n_channels = 8
+    dev = TrignoEMG(channels=range(1, n_channels + 1), samples_per_read=200,
+                    zero_based=False)
+    pipeline = Pipeline([Windower(250),
+                         FeatureExtractor(
+                             [('mav', MeanAbsoluteValue())]),
+                         Callable(lambda x: 30 * x),
+                         Ensure2D(orientation='col'),
+                         Windower(100)
+                         ])
+    channel_names = ['EMG ' + str(i) for i in range(1, n_channels + 1)]
+    run(dev, pipeline, channel_names=channel_names)
+
+def myoemgmav():
+    import myo
+    from pydaqs.myo import MyoEMG
+    myo.init(sdk_path=r'C:\Users\nak142\Coding\myo-python\myo-sdk-win-0.9.0')
+    n_channels = 8
+    dev = MyoEMG(channels=range(n_channels), samples_per_read=20)
+    pipeline = Pipeline([Windower(250),
+                         FeatureExtractor(
+                             [('mav', MeanAbsoluteValue())]),
+                         Callable(lambda x: 30 * x),
+                         Ensure2D(orientation='col'),
+                         Windower(100)
+                         ])
+    channel_names = ['EMG ' + str(i) for i in range(1, n_channels + 1)]
+    run(dev, pipeline, channel_names=channel_names)
 
 def trignoacc():
     from pytrigno import TrignoACC
@@ -161,7 +193,7 @@ def myoemg():
     n_channels = 8
     dev = MyoEMG(channels=range(n_channels), samples_per_read=20)
     pipeline = Pipeline([Ensure2D(orientation='row'),
-                         Callable(lambda x: 0.01*x),
+                         # Callable(lambda x: 0.01*x),
                          Windower(2000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
     run(dev, pipeline, channel_names=channel_names)
@@ -238,7 +270,9 @@ if __name__ == '__main__':
         'myoimu': myoimu,
         'nidaq': nidaq,
         'blackrock': blackrock,
-        'cyberglove': cyberglove
+        'cyberglove': cyberglove,
+        'trignoemgmav': trignoemgmav,
+        'myoemgmav': myoemgmav
     }
 
     parser = argparse.ArgumentParser(usage=__doc__)
