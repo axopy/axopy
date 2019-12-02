@@ -20,6 +20,9 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         Background color. Default is None (i.e., default background color).
     y_range : tuple, optional
         Y-axis range. Default is (-1, 1).
+    show_bottom : boolean or str
+        Whether to show x-axis in plots. If set to ``last``, x-axis will only
+        be visible in the last row.
     """
 
     def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1),
