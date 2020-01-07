@@ -222,8 +222,8 @@ def blackrock():
     from pydaqs.blackrock import Blackrock
     n_channels = 1
     app = get_qtapp()
-    dev = Blackrock(channels=range(1, n_channels + 1), samples_per_read=100)
-    pipeline = Pipeline([Windower(5000)])
+    dev = Blackrock(channels=range(1, n_channels + 1), samples_per_read=20)
+    pipeline = Pipeline([Callable(lambda x: 1e-4 * x), Windower(5000)])
     channel_names = ['EMG ' + str(i) for i in range(1, n_channels+1)]
     run(dev, pipeline, channel_names=channel_names)
 
