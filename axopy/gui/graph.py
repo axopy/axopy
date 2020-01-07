@@ -26,7 +26,7 @@ class SignalWidget(pg.GraphicsLayoutWidget):
     """
 
     def __init__(self, channel_names=None, bg_color=None, yrange=(-1,1),
-                 show_bottom=False):
+                 show_bottom=False, xlabel=None):
         super(SignalWidget, self).__init__()
 
         self.plot_items = []
@@ -37,6 +37,7 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         self.bg_color = bg_color
         self.yrange = yrange
         self.show_bottom = show_bottom
+        self.xlabel = xlabel
 
         self.setBackground(self.bg_color)
 
@@ -99,6 +100,9 @@ class SignalWidget(pg.GraphicsLayoutWidget):
         self.plot_items[0].setYRange(*self.yrange)
         if self.show_bottom == 'last':
             self.plot_items[-1].showAxis('bottom', True)
+
+        if self.xlabel is not None:
+            self.plot_items[-1].setLabels(bottom=self.xlabel)
 
 
 class BarWidget(pg.PlotWidget):
