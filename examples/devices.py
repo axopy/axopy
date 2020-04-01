@@ -263,6 +263,20 @@ def nidaq():
     run(dev, pipeline, channel_names=channel_names)
 
 
+def arduino():
+    from pydaqs.arduino import ArduinoDAQ
+    pins = [0, 1, 2]
+    dev = ArduinoDAQ(
+        rate=1000,
+        port='COM5',
+        pins=pins,
+        samples_per_read=10,
+        zero_based=True)
+    pipeline = Pipeline([Windower(10000)])
+    channel_names = ['A ' + str(i) for i in pins]
+    run(dev, pipeline, channel_names=channel_names, yrange=(0, 1))
+
+
 def blackrock():
     from pydaqs.blackrock import Blackrock
     from axopy.gui.main import get_qtapp
@@ -311,6 +325,7 @@ if __name__ == '__main__':
         'myoemg': myoemg,
         'myoimu': myoimu,
         'nidaq': nidaq,
+        'arduino': arduino,
         'blackrock': blackrock,
         'cyberglove': cyberglove,
     }
