@@ -42,6 +42,12 @@ blackrock
     Blackrock Neuroport device. Requires ``cbpy`` and ``pydaqs``.
 cyberglove
     Cyberglove Systems data glove. Requires ``cyberglove``.
+tcpsocket
+    TCP socket reader. Runs the data generation and socket data streaming on a
+    separate thread.
+udpsocket
+    UDP socket reader. Requires that data are being streamed on a different
+    process.
 """
 
 import sys
@@ -303,9 +309,78 @@ def cyberglove():
     run(dev, pipeline, channel_names=channel_names, yrange=(0, 200))
 
 
+def tcpsocket():
+    from threading import Thread
+    from pydaqs.socket import TCPSocketReader
+    ip = "127.0.0.1"
+    port = 5005
+    array_len = 4
+    precision = 'double'
+    dev = TCPSocketReader(
+        ip=ip,
+        port=port,
+        array_len=array_len,
+        samples_per_read=1,
+        precision=precision,
+        timeout=3)
+    pipeline = Pipeline([Windower(25)])
+    _ = Thread(
+        target=_tcp_socket_streamer,
+        args=(ip, port, array_len, precision),
+        daemon=True).start()
+    run(dev, pipeline, yrange=(-3, 3))
+
+
+def udpsocket():
+    from threading import Thread
+    from pydaqs.socket import UDPSocketReader
+    ip = "127.0.0.1"
+    port = 5005
+    array_len = 8
+    precision = 'single'
+    dev = UDPSocketReader(
+        ip=ip,
+        port=port,
+        array_len=array_len,
+        samples_per_read=1,
+        precision=precision,
+        timeout=None)
+    pipeline = Pipeline([Windower(25)])
+    run(dev, pipeline, yrange=(-3, 3))
+
+
 def run(dev, pipeline=None, **kwargs):
     # run an experiment with just an oscilloscope task
     Experiment(daq=dev, subject='test').run(Oscilloscope(pipeline, **kwargs))
+
+
+def _tcp_socket_streamer(ip, port, array_len, precision):
+    """Random data socket streamer that will run on a separate thred when
+    either tcpsocket or udpsocket is selected."""
+    import socket
+    import struct
+    from axopy.daq import NoiseGenerator
+
+    gen = NoiseGenerator(rate=1000, num_channels=array_len, read_size=100)
+
+    if precision == 'single':
+        format = 'f'
+    elif precision == 'double':
+        format = 'd'
+
+    fmt = ('%s' + format) % array_len
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((ip, port))
+    sock.listen(1)
+    conn, addr = sock.accept()
+    while True:
+        data = gen.read()
+        data_list = list(data.T)
+        data_bytes = bytes()
+        for sample in data_list:
+            data_bytes += struct.pack(fmt, *sample)
+
+        conn.send(data_bytes)
 
 
 if __name__ == '__main__':
@@ -328,6 +403,8 @@ if __name__ == '__main__':
         'arduino': arduino,
         'blackrock': blackrock,
         'cyberglove': cyberglove,
+        'tcpsocket': tcpsocket,
+        'udpsocket': udpsocket,
     }
 
     parser = argparse.ArgumentParser(usage=__doc__)
