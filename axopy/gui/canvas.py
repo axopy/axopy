@@ -323,7 +323,7 @@ class Rectangle(Item):
         br = QtGui.QBrush(QtGui.QColor(color))
         self.qitem.setBrush(br)
         self.qitem.setPen(QtGui.QPen(br, self.penwidth,
-                          cap=QtCore.Qt.FlatCap))
+                                     cap=QtCore.Qt.FlatCap))
 
     @property
     def width(self):
@@ -336,3 +336,96 @@ class Rectangle(Item):
         rect.setWidth(width)
         self.qitem.setRect(rect)
         self.pos = p
+
+
+class Basket(Item):
+    """Collection of two lines oriented as a "V sign".
+
+    Parameters
+    ----------
+    xy_origin : tuple
+        Coordinates of bottom basket.
+    xy_rotate : float, optional (default = 45)
+        Basket rotation (in degrees).
+    x : float
+        x-coordinate of bottom basket
+    y : float
+        y-coordinate of bottom basket
+    size : float, optional (default = 0.2)
+        The size is the length of each line making up the basket.
+    linewidth : float, optional (default = 0.01)
+        Thickness of each line making up the basket.
+    color : str or QColor, optional (default = 'white')
+        Color of the lines making up the basket.
+    """
+
+    def __init__(self, xy_origin, xy_rotate=45, size=0.2,
+                 linewidth=0.01, color='white'):
+        path = QtGui.QPainterPath()
+        path.moveTo(0., 0.)
+        path.arcTo(-size, size, 2*size, -2*size, 0, 90)
+        path.closeSubpath()
+        qitem = QtWidgets.QGraphicsPathItem(path)
+        self.br = QtGui.QBrush(QtGui.QColor(color))
+        qitem.setPen(QtGui.QPen(self.br, linewidth))
+        qitem.rotate(xy_rotate)
+        qitem.setPos(xy_origin[0], xy_origin[1])
+        super(Basket, self).__init__(qitem)
+
+        self.xy_origin = xy_origin
+        self.xy_rotate = xy_rotate
+        self.size = size
+        self.linewidth = linewidth
+
+
+class Target(Item):
+    """Collection of lines and arches that form a target in the V-shaped task.
+    Defined with respect to a specified origin (e.g. a basket).
+
+    Parameters
+    ----------
+    xy_origin : tuple
+        Coordinates of origin.
+    theta_target : float
+        Target width.
+    r1 : float
+        Small radius.
+    r2 : float
+        Large radius.
+    rotation : float
+        Target rotation (in degrees).
+    linewidth : float
+        Thickness of each line that makes up the target
+    color = str
+        Color of the lines making up the target
+    """
+
+    def __init__(self, xy_origin, theta_target, r1=0.5, r2=0.8, rotation=90,
+                 linewidth=0.01, color='white'):
+        path = QtGui.QPainterPath()
+        path.moveTo(r1, 0)
+        path.arcTo(-r1, r1, 2*r1, -2*r1, 0, theta_target)
+        path.arcTo(-r2, r2, 2*r2, -2*r2, theta_target, -theta_target)
+        path.closeSubpath()
+        qitem = QtWidgets.QGraphicsPathItem(path)
+        self.br = QtGui.QBrush(QtGui.QColor(color))
+        qitem.setPen(QtGui.QPen(self.br, linewidth))
+        qitem.rotate(rotation)
+        qitem.setPos(xy_origin[0], xy_origin[1])
+        super(Target, self).__init__(qitem)
+
+        self.xy_origin = xy_origin
+        self.theta_target = theta_target
+        self.r1 = r1
+        self.r2 = r2
+        self.rotation = rotation
+        self.linewidth = linewidth
+
+    @property
+    def color(self):
+        return self.br.color().getRgb()
+
+    @color.setter
+    def color(self, color):
+        self.br = QtGui.QBrush(QtGui.QColor(color))
+        self.qitem.setPen(QtGui.QPen(self.br, self.linewidth))
