@@ -347,10 +347,6 @@ class Basket(Item):
         Coordinates of bottom basket.
     xy_rotate : float, optional (default = 45)
         Basket rotation (in degrees).
-    x : float
-        x-coordinate of bottom basket
-    y : float
-        y-coordinate of bottom basket
     size : float, optional (default = 0.2)
         The size is the length of each line making up the basket.
     linewidth : float, optional (default = 0.01)
@@ -387,7 +383,7 @@ class Target(Item):
     xy_origin : tuple
         Coordinates of origin.
     theta_target : float
-        Target width.
+        Target width (in degrees).
     r1 : float
         Small radius.
     r2 : float
