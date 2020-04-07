@@ -688,3 +688,41 @@ class Ensure2D(Block):
             return data
         else:
             return data.T
+
+
+class MinMaxScaler(Block):
+    """Scales data between specified minimum and maximum values.
+
+    Parameters
+    ----------
+    min_ : array or list, shape (n_channels,)
+        Minimum values.
+    max_ : array or list, shape (n_channels,)
+        Maximum values.
+    """
+
+    def __init__(self, min_, max_):
+        super(MinMaxScaler, self).__init__()
+        self.min = np.asarray(min_)
+        self.max = np.asarray(max_)
+
+        if min_.shape != max_.shape:
+            raise ValueError("Scaling arrays must have the same shape.")
+
+        if min_.ndim != 1 or max_.ndim != 1:
+            raise ValueError("Scaling arrays must be 1-dimensional.")
+
+    def process(self, data):
+        """Scales the data.
+
+        Parameters
+        ----------
+        data : array, shape (n_channels,) or (dim_1, dim_2, ..., n_channels)
+            Input data.
+        """
+        if data.shape[-1] != self.min.shape[0]:
+            raise ValueError("The last dimension of the input data must match "
+                             "that of the scalling arrays.")
+
+        data_sc = (data-self.min) / (self.max-self.min)
+        return data_sc

@@ -637,6 +637,34 @@ def test_transformer():
     block.process(0)
 
 
+def test_minmaxscaler():
+    data = rand_data_2d
+    min_ = np.min(data, axis=-1)
+    max_ = np.max(data, axis=-1)
+    block = pipeline.MinMaxScaler(min_=min_, max_=max_)
+    data_proc = block.process(rand_data_2d.T)
+    assert_equal(np.min(data_proc), 0.)
+    assert_equal(np.max(data_proc), 1.)
+
+
+def test_minmaxscaler_dims():
+    data = rand_data_2d
+    min_ = np.min(data, axis=-1)
+    max_ = np.max(data, axis=-1)
+    block = pipeline.MinMaxScaler(min_=min_, max_=max_)
+
+    # Wrong dimensionality
+    with pytest.raises(ValueError):
+        block.process(np.random.randn(min_.shape[0] + 1))
+
+    # Dimensions mixed up
+    with pytest.raises(ValueError):
+        block.process(data)
+
+    # Check tht broadcasting works OK
+    block.process(np.random.randn(4, 2, min_.shape[0]))
+
+
 #
 # axopy.pipeline.sources tests
 #
