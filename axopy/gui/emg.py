@@ -5,7 +5,7 @@ from pyqtgraph.Qt import QtCore, QtGui
 from axopy.messaging import Transmitter
 
 
-class EMGCalibrationWidget(QtGui.QWidget):
+class EnvelopeCalibrationWidget(QtGui.QWidget):
     """EMG envelope calibration widget.
 
     Consists of two sub-widgets, a ``PlotWidget`` and a ``BarWidget``. There
@@ -63,7 +63,7 @@ class EMGCalibrationWidget(QtGui.QWidget):
 
     def __init__(self, id=None, task_channels=None, name=None, size=None,
                  pos=None, autorange=True, yrange=(-1, 1)):
-        super(EMGCalibrationWidget, self).__init__()
+        super(EnvelopeCalibrationWidget, self).__init__()
         self.id = id
         self.task_channels = task_channels
         self.name = name

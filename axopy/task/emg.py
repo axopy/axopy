@@ -4,7 +4,7 @@ import numpy as np
 from scipy.signal import butter
 from PyQt5.QtWidgets import QDesktopWidget, QMessageBox
 from axopy.task import Task
-from axopy.gui.emg_calibration import EMGCalibrationWidget
+from axopy.gui.emg import EnvelopeCalibrationWidget
 from axopy.gui.canvas import Canvas
 from axopy import util
 from axopy.pipeline import (Pipeline, Windower, Filter, MinMaxScaler,
@@ -16,7 +16,7 @@ class EnvelopeCalibration(Task):
     """EMG task channel selection and envelope calibration.
 
     This task is intended for task channel selection and calibration of EMG
-    envelopes. One `EMGCalibrationWidget` is created for each EMG channel,
+    envelopes. One `EnvelopeCalibrationWidget` is created for each EMG channel,
     which can be used to calibrate the maximum and minimum values for the
     specific channel as well as perform task channel selection. The following
     calibration data will be stored:
@@ -33,8 +33,9 @@ class EnvelopeCalibration(Task):
     channels : list of int
         EMG channel numbers.
     task_channels : list of str
-        Task channel names. These will be passed to `EMGCalibrationWidget` so
-        that they provided names are offered as options in the dropdown menus.
+        Task channel names. These will be passed to `EnvelopeCalibrationWidget`
+        so that they provided names are offered as options in the dropdown
+        menus.
     rate : float
         Sampling rate (in Hz).
     read_length : float
@@ -60,28 +61,26 @@ class EnvelopeCalibration(Task):
     filter_highcut : float, optional (default=None)
         Filter high cutoff frequency. If ``filter`` is ``False``, it will be
         ignored.
-    emg_autorange : boolean, optional (default=True)
-        If ``False`` the autorange option will be disabled from the
-        ``PlotWidget``.
-    emg_yrange : tuple, optional (default=(-1, 1))
-        When ``autorange`` is ``False``, this is the yrange for the
-        ``PlotWidget``. When ``autorange`` is ``True``, this will be ignored.
     c_min : array, shape=(n_channels,), optional (default=None)
         If provided, it will be used to initialize the calibration minimum
         values.
     c_max : array, shape=(n_channels,), optional (default=None)
         If provided, it will be used to initialize the calibration maximum
         values.
-    c_select : dict, list or array, shape=(n_channels,), optional
+    c_select : dict, list or array, len=(n_channels), optional
         If provided, it will be used to initialize the calibration selection
-        dictionary. Can be either a dictionary with keys matching
-        ``task_channels``, a list or an array. In the latter case, the ordering
-        is assumed to match that of ``task_channels``. Default is None.
+        dictionary. It can be either a dictionary with keys matching the
+        elements of ``task_channels``, a list or an array. In the latter case,
+        the ordering is assumed to match that of ``task_channels``. Default is
+        None.
     storage_name : str, optional (default='calibration')
         Name used for storing calibration data.
     verbose : boolean, optional (default=False)
         If ``True``, calibration values and actions will be printed on the
         console.
+    kwargs : key, value mappings
+        Other keyword arguments are passed through to
+        `EnvelopeCalibrationWidget`.
 
     Attributes
     ----------
@@ -95,9 +94,9 @@ class EnvelopeCalibration(Task):
     def __init__(self, channels, task_channels, rate, read_length,
                  win_size_mav, win_size_disp, win_size_calib,
                  filter=False, filter_type=None, filter_order=None,
-                 filter_lowcut=None, filter_highcut=None, emg_autorange=True,
-                 emg_yrange=(-1, 1), c_min=None, c_max=None, c_select=None,
-                 storage_name='calibration', verbose=False):
+                 filter_lowcut=None, filter_highcut=None, c_min=None,
+                 c_max=None, c_select=None, storage_name='calibration',
+                 verbose=False, **kwargs):
         super(EnvelopeCalibration, self).__init__()
         self.channels = channels
         self.task_channels = task_channels
@@ -111,13 +110,12 @@ class EnvelopeCalibration(Task):
         self.filter_order = filter_order
         self.filter_lowcut = filter_lowcut
         self.filter_highcut = filter_highcut
-        self.emg_autorange = emg_autorange
-        self.emg_yrange = emg_yrange
         self.c_min = c_min
         self.c_max = c_max
         self.c_select = c_select
         self.storage_name = storage_name
         self.verbose = verbose
+        self.kwargs = kwargs
 
         if self.c_min is None:
             self.c_min = np.full(len(self.channels), np.nan)
@@ -151,12 +149,16 @@ class EnvelopeCalibration(Task):
             pipeline['scope'] is used to window raw EMG data for plotting them
             pipeline['mav_win']  is used to window MAV (processed) data which
                 are queried when calibration values are updated. We use a
-                window as a safety net.
+                window after MAV extraction as a safety net.
             pipeline['mav_norm'] is used to produce the calibrated (normalized)
                 MAV data which are plotted in the bar graphs.
         """
         self.pipeline = {}
-        # pipeline['scope']
+        self.make_scope_pipeline()
+        self.make_mav_win_pipeline()
+        self.make_mav_norm_pipeline()
+
+    def make_scope_pipeline(self):
         windower = Windower(int(self.rate * self.win_size_disp))
         if self.filter:
             filter = self.make_filter(win_size=self.win_size_disp)
@@ -166,7 +168,7 @@ class EnvelopeCalibration(Task):
         else:
             self.pipeline['scope'] = Pipeline([windower])
 
-        # pipeline['mav_win']
+    def make_mav_win_pipeline(self):
         windower_pre = Windower(int(self.rate * self.win_size_mav))
         if self.filter:
             filter = self.make_filter(win_size=self.win_size_mav)
@@ -183,7 +185,7 @@ class EnvelopeCalibration(Task):
             self.pipeline['mav_win'] = Pipeline([
                 windower_pre, fe, e2d, windower_post])
 
-        # pipeline['mav_norm']
+    def make_mav_norm_pipeline(self):
         windower = Windower(int(self.rate * self.win_size_mav))
         if self.filter:
             filter = self.make_filter(win_size=self.win_size_mav)
@@ -242,14 +244,13 @@ class EnvelopeCalibration(Task):
         # Use 0-based indexing for widget id's
         for i, _ in enumerate(self.channels):
             size, pos = self.get_widget_geometry(id=i)
-            widget = EMGCalibrationWidget(
+            widget = EnvelopeCalibrationWidget(
                 id=i,
                 name=self.channel_names[i],
                 task_channels=self.task_channels,
                 size=size,
                 pos=pos,
-                autorange=self.emg_autorange,
-                yrange=self.emg_yrange)
+                **self.kwargs)
             widget.show()
             self.widgets.append(widget)
 
@@ -365,10 +366,12 @@ class EnvelopeCalibration(Task):
         self.widgets[id].set_emg_color('b')
 
     def key_press(self, key):
-        """The only check that is performed on exit is whether the task
+        """The only check that is performed on exit (esc) is whether the task
         channels have been successfully assigned. If they haven't, the user
         is prompted that calibration will not be saved should they choose to
-        continue. """
+        continue. Pressing z on the main window will calibrate all minimum
+        values.
+        """
         if key == util.key_escape:
             if not self.check_task_channel_selection():
                 msg = "Task channels have not been appropriately " + \
@@ -384,6 +387,10 @@ class EnvelopeCalibration(Task):
 
             else:
                 self.finish_trial()
+
+        if key == util.key_z:
+            for id in range(len(self.channels)):
+                self.min_update(id)
 
     def check_task_channel_selection(self):
         """Performs the task channel selection check. """
