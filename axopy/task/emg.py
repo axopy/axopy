@@ -40,11 +40,11 @@ class EnvelopeCalibration(Task):
         Sampling rate (in Hz).
     read_length : float
         Size of data chunk in each read operation (in seconds).
-    win_size_mav : type
+    win_size_mav : float
         Size of window used to extract MAV (in seconds).
-    win_size_disp : type
+    win_size_disp : float
         Size of window used for raw EMG data plotting (in seconds).
-    win_size_calib : type
+    win_size_calib : float
         Size of window used for EMG MAV calibration (in seconds). This window
         will be applied after feature extraction.
     filter : boolean, optional (default=False)
