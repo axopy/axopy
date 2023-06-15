@@ -1,0 +1,11 @@
+numpy
+scipy
+pandas
+h5py
+pyqt5
+pyqtgraph>=0.10
+sphinx
+sphinx_rtd_theme
+sphinx-gallery
+matplotlib
+pillow
