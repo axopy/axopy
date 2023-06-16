@@ -4,8 +4,8 @@ pandas
 h5py
 pyqt5
 pyqtgraph>=0.10
-sphinx
-sphinx_rtd_theme
-sphinx-gallery
+sphinx==7.0.1
+sphinx_rtd_theme==1.2.2
+sphinx-gallery==0.13.0
 matplotlib
 pillow
