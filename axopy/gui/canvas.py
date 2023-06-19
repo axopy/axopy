@@ -47,11 +47,11 @@ class Canvas(QtWidgets.QGraphicsView):
         self.setScene(scene)
 
         if self.invert_x:
-            self.scale(-1, 1)
+            self.setTransform(QtGui.QTransform.fromScale(-1, 1), combine=True)
 
         # Qt is positive downward, so invert logic for y inversion
         if not self.invert_y:
-            self.scale(1, -1)
+            self.setTransform(QtGui.QTransform.fromScale(1, -1), combine=True)
 
         self.setRenderHint(QtGui.QPainter.Antialiasing)
         self.setBackgroundBrush(QtGui.QColor(self.bg_color))
@@ -270,8 +270,9 @@ class Line(Item):
 
     @color.setter
     def color(self, color):
-        self.qitem.setPen(QtGui.QPen(QtGui.QBrush(QtGui.QColor(color)),
-                                     self.width, cap=QtCore.Qt.FlatCap))
+        pen = QtGui.QPen(QtGui.QBrush(QtGui.QColor(color)), self.width)
+        pen.setCapStyle(QtCore.Qt.FlatCap)
+        self.qitem.setPen(pen)
 
 
 class Text(Item):
@@ -284,7 +285,7 @@ class Text(Item):
         self.color = color
 
         # invert because Canvas is inverted
-        self.qitem.scale(0.01, -0.01)
+        self.qitem.setTransform(QtGui.QTransform.fromScale(0.01, -0.01))
 
         self._center()
 
@@ -321,9 +322,10 @@ class Rectangle(Item):
     def color(self, color):
         """Color of the rectangle."""
         br = QtGui.QBrush(QtGui.QColor(color))
+        pen = QtGui.QPen(br, self.penwidth)
+        pen.setCapStyle(QtCore.Qt.FlatCap)
         self.qitem.setBrush(br)
-        self.qitem.setPen(QtGui.QPen(br, self.penwidth,
-                          cap=QtCore.Qt.FlatCap))
+        self.qitem.setPen(pen)
 
     @property
     def width(self):
