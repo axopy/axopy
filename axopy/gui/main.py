@@ -268,7 +268,7 @@ class _SessionConfig(QtWidgets.QDialog):
                 w = QtWidgets.QLineEdit()
                 self.widgets[label] = w
                 form_layout.addRow(label, w)
-            elif isinstance(typ, collections.Sequence):
+            elif isinstance(typ, collections.abc.Sequence):
                 w = QtWidgets.QComboBox()
                 for choice in typ:
                     w.addItem(str(choice))
